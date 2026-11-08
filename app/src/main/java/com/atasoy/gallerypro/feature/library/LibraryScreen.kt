@@ -168,6 +168,11 @@ fun LibraryScreen(
         top = topInset + 112.dp + bannerSpace,
         bottom = bottomInset + 104.dp
     )
+    // Kartlarda sayaç çipi cam kontrollerin altında kalmasın.
+    val cardPadding = PaddingValues(
+        top = topInset + 112.dp + bannerSpace,
+        bottom = bottomInset + 176.dp
+    )
 
     // Başlığın altındaki tarih: ekranda görünen ilk satırın tarihi.
     val visibleDate by remember(content.items, ui.columns) {
@@ -227,7 +232,7 @@ fun LibraryScreen(
                             periods = content.months,
                             isYears = false,
                             state = monthsState,
-                            contentPadding = listPadding,
+                            contentPadding = cardPadding,
                             onOpen = { period ->
                                 pendingGridIndex = period.firstIndex
                                 viewModel.setMode(LibraryMode.All)
@@ -238,7 +243,7 @@ fun LibraryScreen(
                             periods = content.years,
                             isYears = true,
                             state = yearsState,
-                            contentPadding = listPadding,
+                            contentPadding = cardPadding,
                             onOpen = { period ->
                                 pendingMonthKey = content.months.lastOrNull { it.year == period.year }?.key
                                 viewModel.setMode(LibraryMode.Months)
