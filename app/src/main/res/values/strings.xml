@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gallerypro</string>
+
+    <!-- Kütüphane -->
+    <string name="library_title">Kütüphane</string>
+    <string name="library_select">Seç</string>
+    <string name="library_cancel">Vazgeç</string>
+    <string name="library_more">Diğer seçenekler</string>
+    <string name="library_years">Yıllar</string>
+    <string name="library_months">Aylar</string>
+    <string name="library_all">Tümü</string>
+    <string name="library_select_items">Öğe seçin</string>
+    <string name="library_empty_title">Henüz fotoğraf yok</string>
+    <string name="library_empty_body">Çektiğin fotoğraf ve videolar burada görünecek.</string>
+    <string name="library_loading">Fotoğraflar yükleniyor…</string>
+    <string name="library_years_range">%1$d – %2$d</string>
+    <string name="library_subtitle">%1$s · %2$s</string>
+
+    <!-- Filtre menüsü -->
+    <string name="filter_all">Tüm öğeler</string>
+    <string name="filter_favorites">Yalnızca favoriler</string>
+    <string name="filter_videos">Yalnızca videolar</string>
+    <string name="filter_photos">Yalnızca fotoğraflar</string>
+
+    <!-- Sekmeler -->
+    <string name="tab_library">Kütüphane</string>
+    <string name="tab_collections">Koleksiyonlar</string>
+    <string name="tab_search">Ara</string>
+    <string name="coming_collections">Koleksiyonlar 4. aşamada geliyor</string>
+    <string name="coming_search">Yapay zekâ araması 5. aşamada geliyor</string>
+
+    <!-- Seçim -->
+    <string name="action_share">Paylaş</string>
+    <string name="action_delete">Sil</string>
+    <string name="share_chooser">Paylaş</string>
+    <string name="trash_needs_android11">Silme Android 11 ve üstünde çalışır</string>
+
+    <!-- Kısmi erişim -->
+    <string name="partial_access_text">Yalnızca seçtiğin öğeler görünüyor</string>
+    <string name="partial_access_action">Daha fazla seç</string>
+
+    <!-- İzin ekranı -->
+    <string name="permission_title">Fotoğraflarına erişim</string>
+    <string name="permission_body">Galerinin fotoğraf ve videolarını gösterebilmesi için izin gerekiyor. Hiçbir şey cihazından dışarı çıkmaz; uygulamanın internet izni bile yok.</string>
+    <string name="permission_allow">İzin ver</string>
+    <string name="permission_settings">Ayarları aç</string>
+    <string name="permission_denied_hint">İzin kapalı. Ayarlar › İzinler › Fotoğraflar ve videolar bölümünden açabilirsin.</string>
+
+    <!-- Hücre erişilebilirliği -->
+    <string name="cd_photo">Fotoğraf, %1$s</string>
+    <string name="cd_video">Video, %1$s, %2$s</string>
+    <string name="cd_selected">seçili</string>
+
+    <plurals name="items_count">
+        <item quantity="one">%1$s öğe</item>
+        <item quantity="other">%1$s öğe</item>
+    </plurals>
+    <plurals name="items_selected">
+        <item quantity="one">%1$s öğe seçildi</item>
+        <item quantity="other">%1$s öğe seçildi</item>
+    </plurals>
+    <plurals name="items_trashed">
+        <item quantity="one">%1$s öğe Son Silinenler\'e taşındı</item>
+        <item quantity="other">%1$s öğe Son Silinenler\'e taşındı</item>
+    </plurals>
+</resources>

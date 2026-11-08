@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="library_title">Library</string>
+    <string name="library_select">Select</string>
+    <string name="library_cancel">Cancel</string>
+    <string name="library_more">More options</string>
+    <string name="library_years">Years</string>
+    <string name="library_months">Months</string>
+    <string name="library_all">All</string>
+    <string name="library_select_items">Select items</string>
+    <string name="library_empty_title">No photos yet</string>
+    <string name="library_empty_body">Photos and videos you take will show up here.</string>
+    <string name="library_loading">Loading photos…</string>
+    <string name="library_years_range">%1$d – %2$d</string>
+    <string name="library_subtitle">%1$s · %2$s</string>
+
+    <string name="filter_all">All items</string>
+    <string name="filter_favorites">Favorites only</string>
+    <string name="filter_videos">Videos only</string>
+    <string name="filter_photos">Photos only</string>
+
+    <string name="tab_library">Library</string>
+    <string name="tab_collections">Collections</string>
+    <string name="tab_search">Search</string>
+    <string name="coming_collections">Collections arrive in phase 4</string>
+    <string name="coming_search">AI search arrives in phase 5</string>
+
+    <string name="action_share">Share</string>
+    <string name="action_delete">Delete</string>
+    <string name="share_chooser">Share</string>
+    <string name="trash_needs_android11">Deleting requires Android 11 or later</string>
+
+    <string name="partial_access_text">Only the items you picked are visible</string>
+    <string name="partial_access_action">Pick more</string>
+
+    <string name="permission_title">Access to your photos</string>
+    <string name="permission_body">The gallery needs permission to show your photos and videos. Nothing leaves your device; the app does not even have internet access.</string>
+    <string name="permission_allow">Allow</string>
+    <string name="permission_settings">Open settings</string>
+    <string name="permission_denied_hint">Permission is off. Turn it on in Settings › Permissions › Photos and videos.</string>
+
+    <string name="cd_photo">Photo, %1$s</string>
+    <string name="cd_video">Video, %1$s, %2$s</string>
+    <string name="cd_selected">selected</string>
+
+    <plurals name="items_count">
+        <item quantity="one">%1$s item</item>
+        <item quantity="other">%1$s items</item>
+    </plurals>
+    <plurals name="items_selected">
+        <item quantity="one">%1$s item selected</item>
+        <item quantity="other">%1$s items selected</item>
+    </plurals>
+    <plurals name="items_trashed">
+        <item quantity="one">%1$s item moved to Recently Deleted</item>
+        <item quantity="other">%1$s items moved to Recently Deleted</item>
+    </plurals>
+</resources>

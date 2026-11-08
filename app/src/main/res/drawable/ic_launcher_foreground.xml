@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cam kareler: güvenli alan 66dp, merkez 54,54 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#59FFFFFF"
+        android:strokeColor="#E6FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M37,33h11a4,4 0 0 1 4,4v11a4,4 0 0 1 -4,4h-11a4,4 0 0 1 -4,-4v-11a4,4 0 0 1 4,-4z" />
+    <path
+        android:fillColor="#59FFFFFF"
+        android:strokeColor="#E6FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M60,33h11a4,4 0 0 1 4,4v11a4,4 0 0 1 -4,4h-11a4,4 0 0 1 -4,-4v-11a4,4 0 0 1 4,-4z" />
+    <path
+        android:fillColor="#59FFFFFF"
+        android:strokeColor="#E6FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M37,56h11a4,4 0 0 1 4,4v11a4,4 0 0 1 -4,4h-11a4,4 0 0 1 -4,-4v-11a4,4 0 0 1 4,-4z" />
+    <path
+        android:fillColor="#CCFFFFFF"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M60,56h11a4,4 0 0 1 4,4v11a4,4 0 0 1 -4,4h-11a4,4 0 0 1 -4,-4v-11a4,4 0 0 1 4,-4z" />
+</vector>
