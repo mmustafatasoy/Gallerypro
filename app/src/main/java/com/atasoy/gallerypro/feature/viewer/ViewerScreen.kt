@@ -91,7 +91,6 @@ import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaThumb
 import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.copyToClipboard
-import com.atasoy.gallerypro.data.media.openInSystemViewer
 import com.atasoy.gallerypro.data.media.openMap
 import com.atasoy.gallerypro.data.media.openWith
 import com.atasoy.gallerypro.data.media.setAs
@@ -166,6 +165,9 @@ fun ViewerScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var zoomed by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf<String?>(null) }
+    // Açık video oynatıcı (3. aşama) ve onun kontrollerinin görünürlüğü.
+    var playingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var videoChrome by remember { mutableStateOf(true) }
 
     var infoProgress by remember { mutableFloatStateOf(0f) }
     var dismissOffset by remember { mutableFloatStateOf(0f) }
@@ -212,7 +214,12 @@ fun ViewerScreen(
     }
 
     // ---------------------------------------------------------------- sistem çubukları
-    ViewerSystemBars(hidden = !chromeVisible || slideshow)
+    ViewerSystemBars(hidden = if (playingId != null) !videoChrome else !chromeVisible || slideshow)
+
+    // Gösterilen öğe değişirse (silme, şerit) açık video kapanır.
+    LaunchedEffect(current?.id) {
+        if (playingId != null && playingId != current?.id) playingId = null
+    }
 
     // ---------------------------------------------------------------- işlemler
     val trashedText = stringResource(R.string.toast_trashed)
@@ -410,7 +417,10 @@ fun ViewerScreen(
                     onVerticalDrag = ::onVerticalDrag,
                     onVerticalDragEnd = ::onVerticalDragEnd,
                     onZoomChanged = { zoomed = it },
-                    onPlayVideo = { if (!context.openInSystemViewer(item)) toast = noAppText }
+                    onPlayVideo = {
+                        videoChrome = true
+                        playingId = item.id
+                    }
                 )
             }
         }
@@ -645,11 +655,52 @@ fun ViewerScreen(
                 .align(Alignment.TopCenter)
                 .padding(top = topInset + 70.dp)
         )
+
+        // ---------------------------------------------------------------- video oynatıcı (3. aşama)
+        val video = playingId?.let { id -> items.firstOrNull { it.id == id } }
+        AnimatedVisibility(
+            visible = video != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val opened = remember { video }
+            val target = video ?: opened
+            if (target != null) {
+                VideoPlayerScreen(
+                    item = target,
+                    title = dayTitle(target.takenAtMillis, zone, locale),
+                    subtitle = remember(target.takenAtMillis) { clock(target.takenAtMillis, zone, locale) },
+                    chromeVisible = videoChrome,
+                    onChromeVisibleChange = { videoChrome = it },
+                    onClose = { playingId = null },
+                    toolbar = { glassBackdrop ->
+                        ViewerToolbar(
+                            item = target,
+                            infoOpen = false,
+                            backdrop = glassBackdrop,
+                            onShare = {
+                                if (!context.shareItems(listOf(target), context.getString(R.string.share_chooser))) {
+                                    toast = noAppText
+                                }
+                            },
+                            onFavorite = { toggleFavorite(target) },
+                            onInfo = {
+                                playingId = null
+                                animateInfo(1f)
+                            },
+                            onEdit = { toast = context.getString(R.string.coming_edit) },
+                            onDelete = { askDelete(target) }
+                        )
+                    }
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun ViewerToolbar(
+internal fun ViewerToolbar(
     item: MediaItem,
     infoOpen: Boolean,
     backdrop: com.kyant.backdrop.Backdrop,
@@ -834,7 +885,7 @@ private fun Context.findActivity(): Activity? {
 
 /** "Bugün", "Dün" veya "8 Kasım 2026" */
 @Composable
-private fun dayTitle(millis: Long, zone: ZoneId, locale: Locale): String {
+internal fun dayTitle(millis: Long, zone: ZoneId, locale: Locale): String {
     val date = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
     val today = LocalDate.now(zone)
     return when (date) {
@@ -845,5 +896,5 @@ private fun dayTitle(millis: Long, zone: ZoneId, locale: Locale): String {
 }
 
 /** "06:42" */
-private fun clock(millis: Long, zone: ZoneId, locale: Locale): String =
+internal fun clock(millis: Long, zone: ZoneId, locale: Locale): String =
     DateTimeFormatter.ofPattern("HH:mm", locale).format(Instant.ofEpochMilli(millis).atZone(zone))

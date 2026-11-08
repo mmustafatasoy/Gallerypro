@@ -11,8 +11,8 @@ iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsi
 | --- | --- | --- |
 | 1 · Temel | İskelet, izinler, MediaStore, cam bileşenleri, Kütüphane ekranı | tamam |
 | 2 · Cam ve görüntüleyici | Fotoğraf görüntüleyici, Bilgi paneli | tamam |
-| 3 · Video | Media3 oynatıcı, film şeridi | sırada |
-| 4 · Koleksiyonlar ve Düzenle | | |
+| 3 · Video | Media3 oynatıcı, film şeridi | tamam |
+| 4 · Koleksiyonlar ve Düzenle | | sırada |
 | 5 · Yapay zekâ | | |
 | 6 · Cila ve yayın | | |
 

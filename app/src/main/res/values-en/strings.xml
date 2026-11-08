@@ -82,6 +82,17 @@
     <string name="coord_east">E</string>
     <string name="coord_west">W</string>
 
+    <!-- Video player -->
+    <string name="video_play">Play</string>
+    <string name="video_pause">Pause</string>
+    <string name="video_sound_on">Turn sound on</string>
+    <string name="video_sound_off">Turn sound off</string>
+    <string name="video_speed">Playback speed</string>
+    <string name="video_seek">Seek in video</string>
+    <string name="video_seek_back">−10 s</string>
+    <string name="video_seek_forward">+10 s</string>
+    <string name="video_error">This video can\'t be played</string>
+
     <plurals name="items_count">
         <item quantity="one">%1$s item</item>
         <item quantity="other">%1$s items</item>

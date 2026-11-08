@@ -91,6 +91,17 @@
     <string name="coord_east">D</string>
     <string name="coord_west">B</string>
 
+    <!-- Video oynatıcı -->
+    <string name="video_play">Oynat</string>
+    <string name="video_pause">Duraklat</string>
+    <string name="video_sound_on">Sesi aç</string>
+    <string name="video_sound_off">Sesi kapat</string>
+    <string name="video_speed">Oynatma hızı</string>
+    <string name="video_seek">Videoda konuma git</string>
+    <string name="video_seek_back">−10 sn</string>
+    <string name="video_seek_forward">+10 sn</string>
+    <string name="video_error">Bu video oynatılamıyor</string>
+
     <plurals name="items_count">
         <item quantity="one">%1$s öğe</item>
         <item quantity="other">%1$s öğe</item>

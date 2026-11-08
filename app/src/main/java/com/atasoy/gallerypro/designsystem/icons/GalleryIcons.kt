@@ -125,6 +125,26 @@ object GalleryIcons {
         }
     }
 
+    val Pause: ImageVector by lazy {
+        icon("pause") {
+            fill(roundRect(6f, 4.5f, 4.2f, 15f, 1.3f) + roundRect(13.8f, 4.5f, 4.2f, 15f, 1.3f))
+        }
+    }
+
+    val SoundOn: ImageVector by lazy {
+        icon("soundOn") {
+            fill("M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z")
+            stroke("M15 9.2a4 4 0 0 1 0 5.6M17.8 6.8a7.5 7.5 0 0 1 0 10.4")
+        }
+    }
+
+    val SoundOff: ImageVector by lazy {
+        icon("soundOff") {
+            fill("M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z")
+            stroke("M15.5 9.5l5 5M20.5 9.5l-5 5")
+        }
+    }
+
     // ---------------------------------------------------------------- yardımcılar
 
     private class Builder(val inner: ImageVector.Builder) {
