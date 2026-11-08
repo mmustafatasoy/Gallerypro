@@ -44,10 +44,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -106,16 +106,6 @@ fun LibraryScreen(
         }
     }
 
-    // İlk açılışta en yeni fotoğrafa (en alta) git.
-    var startedAtBottom by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(content.items.size, ui.columns) {
-        if (!startedAtBottom && content.items.isNotEmpty()) {
-            val leading = leadingSpacers(content.items.size, ui.columns)
-            gridState.scrollToItem(leading + content.items.lastIndex)
-            startedAtBottom = true
-        }
-    }
-
     // Ay kartına dokununca Tümü ızgarasında o aya git.
     var pendingGridIndex by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(pendingGridIndex, ui.mode) {
@@ -133,6 +123,22 @@ fun LibraryScreen(
             val reversedIndex = content.months.asReversed().indexOfFirst { it.key == key }
             if (reversedIndex >= 0) monthsState.scrollToItem(reversedIndex)
             pendingMonthKey = null
+        }
+    }
+
+    // En yeni fotoğraf en altta. Kullanıcı en alttaysa yeni öğe gelince de orada kal;
+    // yukarı kaydırdıysa yerine dokunma.
+    var followBottom by rememberSaveable { mutableStateOf(true) }
+    LaunchedEffect(gridState) {
+        snapshotFlow { gridState.isScrollInProgress to gridState.canScrollForward }
+            .collect { (scrolling, canScrollForward) ->
+                if (scrolling) followBottom = !canScrollForward
+            }
+    }
+    LaunchedEffect(content.items.size, ui.columns, ui.mode) {
+        if (followBottom && pendingGridIndex == null && content.items.isNotEmpty() && ui.mode == LibraryMode.All) {
+            val leading = leadingSpacers(content.items.size, ui.columns)
+            gridState.scrollToItem(leading + content.items.lastIndex)
         }
     }
 
@@ -157,9 +163,10 @@ fun LibraryScreen(
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bannerSpace = if (partialAccess) 52.dp else 0.dp
+    // Son satır cam kontrollerin altına kadar uzanır: cam her zaman fotoğrafın üstünde durur.
     val listPadding = PaddingValues(
         top = topInset + 112.dp + bannerSpace,
-        bottom = bottomInset + 176.dp
+        bottom = bottomInset + 104.dp
     )
 
     // Başlığın altındaki tarih: ekranda görünen ilk satırın tarihi.
@@ -343,12 +350,13 @@ fun LibraryScreen(
         }
 
         // ---------------------------------------------------------------- alt: geçiş + kontroller
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(bottomInset + GalleryDimens.BottomFadeHeight)
-                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.85f))))
+        ProgressiveBlurEdge(
+            backdrop = backdrop,
+            height = bottomInset + GalleryDimens.BottomFadeHeight,
+            tint = Color.White,
+            fromBottom = true,
+            tintIntensity = 0.42f,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
 
         AnimatedVisibility(

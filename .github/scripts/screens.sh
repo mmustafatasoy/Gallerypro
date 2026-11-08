@@ -88,6 +88,8 @@ adb shell input tap $((W / 2)) $((H / 2))
 adb shell input tap $((W / 6)) $((H / 2 + W / 3))
 shot 06_secim 2
 
+tap_match "Vazgeç"
+sleep 1
 tap_match "Koleksiyonlar"
 shot 07_bildirim 1
 
