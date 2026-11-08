@@ -550,4 +550,3 @@ private fun Context.shareItems(items: List<MediaItem>, title: String) {
     send.setType(type).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     startActivity(Intent.createChooser(send, title))
 }
-

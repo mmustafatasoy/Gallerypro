@@ -1,0 +1,50 @@
+# Gallerypro APK derlemesi.
+# Ücretsiz planda ayda 50 dakika var; bu yüzden her commit'te değil,
+# elle başlatılınca çalışır: Pipelines › Run pipeline › custom: apk
+image: eclipse-temurin:21-jdk
+
+definitions:
+  caches:
+    androidsdk: /opt/android-sdk
+    gradledist: /opt/gradle-dist
+  steps:
+    - step: &build-apk
+        name: Testler ve debug APK
+        max-time: 30
+        caches:
+          - gradle
+          - androidsdk
+          - gradledist
+        script:
+          - export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk
+          - apt-get update -qq
+          - apt-get install -y -qq --no-install-recommends unzip curl ca-certificates python3 python3-fonttools python3-brotli > /dev/null
+          # Android komut satırı araçları (önbellekte yoksa indirilir)
+          - |
+            if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+              ZIP=$(curl -fsSL https://dl.google.com/android/repository/repository2-3.xml | grep -o 'commandlinetools-linux-[0-9]*_latest.zip' | sort -V | tail -1)
+              echo "cmdline-tools: $ZIP"
+              mkdir -p "$ANDROID_HOME/cmdline-tools"
+              curl -fsSL -o /tmp/ct.zip "https://dl.google.com/android/repository/$ZIP"
+              unzip -q /tmp/ct.zip -d "$ANDROID_HOME/cmdline-tools"
+              mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+            fi
+          - yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          # Gradle, gradle-wrapper.properties içindeki sürümle indirilir (önbellekte yoksa)
+          - GV=$(sed -n 's/.*gradle-\([0-9.]*\)-bin\.zip.*/\1/p' gradle/wrapper/gradle-wrapper.properties)
+          - |
+            if [ ! -x "/opt/gradle-dist/gradle-$GV/bin/gradle" ]; then
+              mkdir -p /opt/gradle-dist
+              curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-$GV-bin.zip"
+              unzip -q /tmp/gradle.zip -d /opt/gradle-dist
+            fi
+          # Inter yazı tipi
+          - bash scripts/fetch-fonts.sh
+          - /opt/gradle-dist/gradle-$GV/bin/gradle --no-daemon testDebugUnitTest assembleDebug
+        artifacts:
+          - app/build/outputs/apk/**/*.apk
+
+pipelines:
+  custom:
+    apk:
+      - step: *build-apk

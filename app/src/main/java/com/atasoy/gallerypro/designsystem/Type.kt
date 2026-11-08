@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.atasoy.gallerypro.R
 
-/** Inter (SIL OFL 1.1) uygulamaya gömülü. Lisans: INTER_FONT_LICENSE.txt */
+/** Inter (SIL OFL 1.1). Derlemede scripts/fetch-fonts.sh ile indirilir; lisans: assets/licenses/inter-OFL.txt */
 val InterFamily = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
     Font(R.font.inter_medium, FontWeight.Medium),
