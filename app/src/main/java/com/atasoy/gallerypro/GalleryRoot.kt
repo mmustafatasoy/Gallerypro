@@ -64,6 +64,7 @@ fun GalleryRoot(container: AppContainer) {
             }
             LibraryScreen(
                 viewModel = viewModel,
+                captions = container.captions,
                 partialAccess = access == MediaAccess.Partial,
                 onRequestMoreAccess = requestAccess
             )

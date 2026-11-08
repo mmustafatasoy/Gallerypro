@@ -8,6 +8,7 @@ import android.provider.MediaStore
 /**
  * MediaStore'dan hafif bir dizin okur: kimlik, tür, tarih, süre, boyut.
  * Piksel okunmaz; 10.000 öğe birkaç yüz milisaniyede gelir.
+ * Görüntüleyici için dosya adı, boyut, döndürme ve klasör de okunur.
  */
 class MediaStoreSource(private val context: Context) {
 
@@ -24,6 +25,10 @@ class MediaStoreSource(private val context: Context) {
             add(MediaStore.MediaColumns.WIDTH)
             add(MediaStore.MediaColumns.HEIGHT)
             add(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
+            add(MediaStore.MediaColumns.DISPLAY_NAME)
+            add(MediaStore.MediaColumns.SIZE)
+            add(MediaStore.MediaColumns.ORIENTATION)
+            add(MediaStore.MediaColumns.RELATIVE_PATH)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 add(MediaStore.MediaColumns.IS_FAVORITE)
             }
@@ -47,6 +52,10 @@ class MediaStoreSource(private val context: Context) {
             val widthCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.WIDTH)
             val heightCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.HEIGHT)
             val albumCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
+            val nameCol = c.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+            val sizeCol = c.getColumnIndex(MediaStore.MediaColumns.SIZE)
+            val orientationCol = c.getColumnIndex(MediaStore.MediaColumns.ORIENTATION)
+            val pathCol = c.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
             val favCol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 c.getColumnIndex(MediaStore.MediaColumns.IS_FAVORITE)
             } else {
@@ -71,7 +80,11 @@ class MediaStoreSource(private val context: Context) {
                     width = c.intOrZero(widthCol),
                     height = c.intOrZero(heightCol),
                     album = c.getStringOrNull(albumCol),
-                    isFavorite = favCol >= 0 && c.intOrZero(favCol) == 1
+                    isFavorite = favCol >= 0 && c.intOrZero(favCol) == 1,
+                    displayName = c.getStringOrNull(nameCol),
+                    sizeBytes = c.longOrZero(sizeCol),
+                    orientation = c.intOrZero(orientationCol),
+                    relativePath = c.getStringOrNull(pathCol)
                 )
             }
         }

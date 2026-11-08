@@ -40,6 +40,15 @@ enum class GlassTone(
         blur = GalleryDimens.GlassBlurDark,
         shadowAlpha = 0.30f,
         content = Color.White
+    ),
+
+    /** Bilgi paneli ve onay kartı gibi büyük koyu yüzeyler: rgba(22,22,28,.5), bulanıklık 40. */
+    Sheet(
+        fill = Color(0x8016161C),
+        fallbackFill = Color(0xF21C1C22),
+        blur = GalleryDimens.GlassBlurSheet,
+        shadowAlpha = 0.30f,
+        content = Color.White
     )
 }
 

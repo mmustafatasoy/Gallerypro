@@ -20,8 +20,20 @@ data class MediaItem(
     val width: Int,
     val height: Int,
     val album: String?,
-    val isFavorite: Boolean
+    val isFavorite: Boolean,
+    /** Dosya adı, ör. "IMG_20261108_064200.jpg". */
+    val displayName: String? = null,
+    /** Bayt cinsinden dosya boyutu. */
+    val sizeBytes: Long = 0L,
+    /** EXIF döndürmesi (0, 90, 180, 270). Genişlik/yükseklik döndürme öncesidir. */
+    val orientation: Int = 0,
+    /** Klasör, ör. "DCIM/Camera/". */
+    val relativePath: String? = null
 )
+
+/** Ekranda görünen genişlik ve yükseklik (döndürme uygulanmış). */
+val MediaItem.displayWidth: Int get() = if (orientation % 180 == 0) width else height
+val MediaItem.displayHeight: Int get() = if (orientation % 180 == 0) height else width
 
 fun MediaItem.contentUri(): Uri = ContentUris.withAppendedId(
     if (isVideo) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,

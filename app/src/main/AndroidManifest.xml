@@ -10,6 +10,10 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <!-- Android 14+: "sadece seçtiklerim" kısmi erişimi -->
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <!-- Bilgi panelinde fotoğrafın çekildiği yer (EXIF konumu). Kullanıcı panelden ister. -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    <!-- İsteğe bağlı "Medya yönetimi" özel erişimi: verilirse silme/favori için ayrıca sorulmaz. -->
+    <uses-permission android:name="android.permission.MANAGE_MEDIA" />
 
     <!-- Bilerek yok: INTERNET. Fotoğraflar cihazdan çıkmaz. -->
 

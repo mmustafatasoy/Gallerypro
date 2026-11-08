@@ -1,10 +1,6 @@
 package com.atasoy.gallerypro.feature.library
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
@@ -15,6 +11,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,10 +54,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atasoy.gallerypro.R
+import com.atasoy.gallerypro.data.media.CaptionStore
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LibraryFilter
-import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.contentUri
+import com.atasoy.gallerypro.data.media.shareItems
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryType
@@ -74,6 +73,7 @@ import com.atasoy.gallerypro.designsystem.GlassTextButton
 import com.atasoy.gallerypro.designsystem.GlassToast
 import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
+import com.atasoy.gallerypro.feature.viewer.ViewerScreen
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.delay
@@ -84,6 +84,7 @@ import java.util.Locale
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
+    captions: CaptionStore,
     partialAccess: Boolean,
     onRequestMoreAccess: () -> Unit
 ) {
@@ -104,6 +105,24 @@ fun LibraryScreen(
             delay(2200)
             toast = null
         }
+    }
+
+    // Açık görüntüleyicinin başladığı öğe. Kapanınca ızgara son bakılan öğeyi gösterir.
+    var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var revealId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(revealId) {
+        val id = revealId ?: return@LaunchedEffect
+        val index = content.items.indexOfFirst { it.id == id }
+        if (index >= 0 && ui.mode == LibraryMode.All) {
+            val leading = leadingSpacers(content.items.size, ui.columns)
+            val target = leading + index
+            val visible = gridState.layoutInfo.visibleItemsInfo
+            // İlk ve son görünen satırlar yarım olabilir; öğe arada değilse kaydır.
+            val shown = visible.size > 2 * ui.columns &&
+                visible[ui.columns].index <= target && visible[visible.size - 1 - ui.columns].index >= target
+            if (!shown) gridState.scrollToItem((target - ui.columns * 2).coerceAtLeast(0))
+        }
+        revealId = null
     }
 
     // Ay kartına dokununca Tümü ızgarasında o aya git.
@@ -152,7 +171,7 @@ fun LibraryScreen(
         }
     }
 
-    BackHandler(enabled = ui.selecting || ui.menuOpen || ui.mode != LibraryMode.All) {
+    BackHandler(enabled = viewerId == null && (ui.selecting || ui.menuOpen || ui.mode != LibraryMode.All)) {
         when {
             ui.menuOpen -> viewModel.closeMenu()
             ui.selecting -> viewModel.stopSelecting()
@@ -219,7 +238,7 @@ fun LibraryScreen(
                             contentPadding = listPadding,
                             selecting = ui.selecting,
                             selected = ui.selected,
-                            onOpen = { context.openInSystemViewer(it) },
+                            onOpen = { viewerId = it.id },
                             onToggle = { viewModel.toggle(it.id) },
                             onLongPress = {
                                 if (ui.selecting) viewModel.toggle(it.id) else viewModel.startSelecting(it.id)
@@ -503,6 +522,25 @@ fun LibraryScreen(
                 .align(Alignment.TopCenter)
                 .padding(top = topInset + 118.dp + bannerSpace)
         )
+
+        // ---------------------------------------------------------------- görüntüleyici
+        AnimatedVisibility(
+            visible = viewerId != null && content.items.isNotEmpty(),
+            enter = fadeIn() + scaleIn(initialScale = 0.94f),
+            exit = fadeOut() + scaleOut(targetScale = 0.94f),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val startId = remember { viewerId ?: content.items.last().id }
+            ViewerScreen(
+                items = content.items,
+                startId = startId,
+                captions = captions,
+                onClose = { lastId ->
+                    viewerId = null
+                    revealId = lastId
+                }
+            )
+        }
     }
 }
 
@@ -521,32 +559,4 @@ private fun CenterMessage(title: String, body: String?) {
             BasicText(body, style = GalleryType.Body.copy(color = GalleryColors.TextSecondary))
         }
     }
-}
-
-/** Görüntüleyici 2. aşamada geliyor; o zamana kadar sistem görüntüleyicisi açılır. */
-private fun Context.openInSystemViewer(item: MediaItem) {
-    val intent = Intent(Intent.ACTION_VIEW)
-        .setDataAndType(item.contentUri(), item.mimeType ?: if (item.isVideo) "video/*" else "image/*")
-        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    try {
-        startActivity(intent)
-    } catch (_: ActivityNotFoundException) {
-        // Uygun uygulama yoksa sessizce geç.
-    }
-}
-
-private fun Context.shareItems(items: List<MediaItem>, title: String) {
-    val uris = ArrayList<Uri>(items.map { it.contentUri() })
-    val type = when {
-        items.all { it.isVideo } -> "video/*"
-        items.none { it.isVideo } -> "image/*"
-        else -> "*/*"
-    }
-    val send = if (uris.size == 1) {
-        Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris.first())
-    } else {
-        Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-    }
-    send.setType(type).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    startActivity(Intent.createChooser(send, title))
 }

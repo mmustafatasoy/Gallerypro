@@ -46,6 +46,7 @@ object GalleryDimens {
     val HeaderHeight = 150.dp
     val BottomFadeHeight = 190.dp
 
+    val SheetCorner = 34.dp
     val CardCorner = 26.dp
     val YearCardHeight = 330.dp
     val MonthCardHeight = 250.dp
@@ -53,6 +54,7 @@ object GalleryDimens {
 
     val GlassBlurLight = 22.dp
     val GlassBlurDark = 24.dp
+    val GlassBlurSheet = 40.dp
     val LensHeight = 12.dp
     val LensAmount = 24.dp
     val ShadowRadius = 24.dp

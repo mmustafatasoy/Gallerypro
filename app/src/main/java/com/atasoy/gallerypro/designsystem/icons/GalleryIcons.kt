@@ -85,6 +85,46 @@ object GalleryIcons {
         }
     }
 
+    val Back: ImageVector by lazy {
+        icon("back") {
+            stroke("M15 5l-7 7 7 7", width = 2.2f)
+        }
+    }
+
+    val Heart: ImageVector by lazy {
+        icon("heartOutline") {
+            stroke(
+                "M12 20.5s-7.5-4.6-9.6-9.2C0.9 7.9 3.1 4.5 6.6 4.5c2.2 0 3.7 1.3 5.4 3.2" +
+                    "c1.7-1.9 3.2-3.2 5.4-3.2c3.5 0 5.7 3.4 4.2 6.8c-2.1 4.6-9.6 9.2-9.6 9.2z"
+            )
+        }
+    }
+
+    val Info: ImageVector by lazy {
+        icon("info") {
+            stroke(circle(12f, 12f, 9f) + "M12 11v6")
+            fill(circle(12f, 7.6f, 1.2f))
+        }
+    }
+
+    val Edit: ImageVector by lazy {
+        icon("edit") {
+            stroke("M4 7h9.5M18.5 7H20M4 17h3.5M12.5 17H20" + circle(16f, 7f, 2.4f) + circle(10f, 17f, 2.4f))
+        }
+    }
+
+    val Play: ImageVector by lazy {
+        icon("play") {
+            fill("M8.5 5.2v13.6c0 0.8 0.9 1.3 1.6 0.9l10.4-6.8c0.6-0.4 0.6-1.4 0-1.8L10.1 4.3c-0.7-0.4-1.6 0.1-1.6 0.9z")
+        }
+    }
+
+    val Pin: ImageVector by lazy {
+        icon("pin") {
+            stroke("M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z" + circle(12f, 10f, 2.3f), width = 2f)
+        }
+    }
+
     // ---------------------------------------------------------------- yardımcılar
 
     private class Builder(val inner: ImageVector.Builder) {

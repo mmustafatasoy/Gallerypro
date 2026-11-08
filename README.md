@@ -10,8 +10,8 @@ iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsi
 | Aşama | İçerik | Durum |
 | --- | --- | --- |
 | 1 · Temel | İskelet, izinler, MediaStore, cam bileşenleri, Kütüphane ekranı | tamam |
-| 2 · Cam ve görüntüleyici | Fotoğraf görüntüleyici, Bilgi paneli | sırada |
-| 3 · Video | Media3 oynatıcı, film şeridi | |
+| 2 · Cam ve görüntüleyici | Fotoğraf görüntüleyici, Bilgi paneli | tamam |
+| 3 · Video | Media3 oynatıcı, film şeridi | sırada |
 | 4 · Koleksiyonlar ve Düzenle | | |
 | 5 · Yapay zekâ | | |
 | 6 · Cila ve yayın | | |
@@ -22,7 +22,7 @@ iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsi
 2. Dal: `ana` (veya çalıştığın dal), Pipeline: **custom: apk** › **Run**
 3. Bitince adıma tıkla › **Artifacts** › `app-debug.apk` indir
 
-Ücretsiz planda ayda 50 dakika derleme süresi var; bir derleme yaklaşık 4–6 dakika.
+Ücretsiz planda ayda 50 dakika derleme süresi var; önbellek doluyken bir derleme yaklaşık 4–6 dakika.
 
 ## Yerelde derleme (Android Studio / terminal)
 

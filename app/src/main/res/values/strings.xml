@@ -52,6 +52,45 @@
     <string name="cd_video">Video, %1$s, %2$s</string>
     <string name="cd_selected">seçili</string>
 
+    <!-- Görüntüleyici -->
+    <string name="viewer_back">Geri</string>
+    <string name="viewer_more">Diğer seçenekler</string>
+    <string name="viewer_info">Bilgi</string>
+    <string name="viewer_edit">Düzenle</string>
+    <string name="viewer_favorite">Favorilere ekle</string>
+    <string name="viewer_unfavorite">Favorilerden çıkar</string>
+    <string name="viewer_play">Videoyu oynat</string>
+    <string name="viewer_today">Bugün</string>
+    <string name="viewer_yesterday">Dün</string>
+    <string name="viewer_delete_message">Bu fotoğraf Son Silinenler albümüne taşınacak. 30 gün içinde geri alabilirsin.</string>
+    <string name="viewer_delete_message_video">Bu video Son Silinenler albümüne taşınacak. 30 gün içinde geri alabilirsin.</string>
+    <string name="viewer_delete_photo">Fotoğrafı Sil</string>
+    <string name="viewer_delete_video">Videoyu Sil</string>
+    <string name="viewer_cancel">Vazgeç</string>
+    <string name="menu_copy">Kopyala</string>
+    <string name="menu_open_with">Farklı uygulamada aç</string>
+    <string name="menu_set_as">Duvar kağıdı yap</string>
+    <string name="menu_slideshow">Slayt gösterisi</string>
+    <string name="toast_copied">Panoya kopyalandı</string>
+    <string name="toast_trashed">Son Silinenler\'e taşındı</string>
+    <string name="toast_no_app">Bunu açacak uygulama yok</string>
+    <string name="coming_edit">Düzenleme 6. aşamada geliyor</string>
+    <string name="favorite_needs_android11">Favoriler Android 11 ve üstünde çalışır</string>
+
+    <!-- Bilgi paneli -->
+    <string name="info_caption_hint">Başlık ekle</string>
+    <string name="info_photo">Fotoğraf</string>
+    <string name="info_video">Video</string>
+    <string name="info_megapixels">%1$s MP</string>
+    <string name="info_file">Dosya</string>
+    <string name="info_open_map">Haritada aç</string>
+    <string name="info_location_permission">Çekildiği yeri göster</string>
+    <string name="info_location_allow">İzin ver</string>
+    <string name="coord_north">K</string>
+    <string name="coord_south">G</string>
+    <string name="coord_east">D</string>
+    <string name="coord_west">B</string>
+
     <plurals name="items_count">
         <item quantity="one">%1$s öğe</item>
         <item quantity="other">%1$s öğe</item>
