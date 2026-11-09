@@ -1,6 +1,7 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.1)
+# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.2)
 
-Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
+Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
+Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 
 ## Kaynaklar (tek doğru kaynak)
 - Proje dokümanı: https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9
@@ -10,11 +11,11 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 ## Şu anki durum
 | Dal | İçerik | Durum |
 | --- | --- | --- |
-| `main` | Aşama 1–4 + 5. aşama ilk adım (cihaz içi dizin + arama), sürüm 0.5.1 | GitHub Actions; Bitbucket'ta derleme #11 yeşildi (48 test) |
+| `main` | Aşama 1–4 + 5. aşama ilk adım (cihaz içi dizin + arama), sürüm 0.5.2 (hızlı release APK) | GitHub Actions yeşil (48 test) |
 | `asama-2…`, `asama-3…`, `asama-4…`, `asama-5a-arama` | Bitbucket'tan taşınan aşama dalları (geçmiş için) | — |
 
 ## Hemen yapılacak (sırayla)
-1. Kullanıcı 0.5.1'i dener. Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
+1. Kullanıcı 0.5.2'yi dener (kasma düzeldi mi?). Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
    Rapordaki yığın izinde adı geçen satırı düzelt; tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
 3. Yeni iş ayrı dalda (`asama-5b-…`) yapılır, PR ile `main`'e girer; kullanıcı birleştirir. Dalın APK'sı Releases'ta dal adıyla çıkar.
@@ -31,6 +32,9 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 - Her aşama ayrı dal + ayrı PR. Commit mesajları Türkçe.
 - Derleme GitHub Actions'ta (`.github/workflows/apk.yml`): `main` ve `asama-*` dallarına her gönderimde; depo herkese açık, dakika sınırı yok.
   APK Releases'a yüklenir: `main` → `son-surum` (https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk), dallar → dal adı.
+- Kullanıcıya verilen APK **release** türüdür (hata ayıklama kapalı, R8, `-dontobfuscate`), `release.jks` yoksa sabit
+  debug anahtarıyla imzalanır. Debug APK Compose'da belirgin kasar; performans hiçbir zaman debug APK ile değerlendirilmez.
+  Yalnızca `arm64-v8a` (defaultConfig `abiFilters`); Play Store'a AAB ile çıkarken kaldırılır.
 - Debug APK sabit anahtarla imzalanır (`scripts/debug-keystore.b64` → `~/.android/debug.keystore`, iş akışında); yeni APK eskisinin üstüne kurulur. Anahtarı değiştirme.
 - Saf mantık (CollectionsLogic, EditModel) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
   (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece GitHub Actions'ta derlenir.
@@ -100,6 +104,14 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
   Türkçe sorgu sözlükle çözülür); videolarda 2 sn'de bir anahtar kare (şimdilik videonun küçük resmi); yer adıyla arama ve
   Yerler haritası; Kişiler; Bilgi panelinde "Akıllı Etiketler" kartı.
 
+## Kasma düzeltmesi (0.5.2)
+- Asıl neden: kullanıcıya **debug** APK veriliyordu (hata ayıklanabilir uygulamada Compose ve ART çok daha yavaş).
+  Artık release APK (R8 ile küçültülmüş, hata ayıklama kapalı). Debug kurulumu (`.debug` sonekli) ayrı uygulamadır; kaldırılabilir.
+- Dizinleyici: ML Kit tek, düşük öncelikli iş parçacığında (`setExecutor`), worker `THREAD_PRIORITY_BACKGROUND`;
+  uygulama ekrandayken her fotoğraf arasında 150 ms bekler (`IndexWorker.appVisible`).
+- Hâlâ kasarsa sıradaki şüpheli: aynı anda çok sayıda cam yüzeyin (üst bulanık başlık + düğmeler + sekme çubuğu)
+  her karede bulanıklık/kırılma çizmesi. Doküman "en fazla 4 cam yüzey" diyor; sayılıp azaltılır veya kırılma kapatılır.
+
 ## Aşama 4'te bilerek ertelenenler
 - Anılar, Kişiler ve Evcil Hayvanlar, Haritada (konum dizini + MapLibre), Selfie/Hareketli/Portre türleri → 5. aşama (dizinleyici).
 - Video düzenleme (Media3 Transformer ile kırpma/süre kesme) → 6. aşama.
@@ -110,3 +122,4 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 
 ## Yedek
 Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all` tek zip, kullanıcının Google Drive'ına.
+**Her yedekte `DEVAM-NOTU.md` ayrıca dosya olarak kullanıcıya gönderilir** (kullanıcı bunu ChatGPT/Codex'e verip devam ettirebilsin).

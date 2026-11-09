@@ -11,8 +11,11 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.5.1"
+        versionCode = 8
+        versionName = "0.5.2"
+        // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
+        // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. Play Store'da AAB'ye geçince kaldırılır.
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     signingConfigs {
@@ -31,16 +34,17 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde):
-            // ML Kit'in yerel kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın.
-            ndk { abiFilters += "arm64-v8a" }
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            if (file("release.jks").exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            // Gerçek yayın anahtarı yoksa sabit debug anahtarıyla imzalanır: telefona kurulabilen, hızlı
+            // (hata ayıklama kapalı, R8 ile küçültülmüş) deneme sürümü. Yayından önce release.jks eklenir.
+            signingConfig = if (file("release.jks").exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
         }
     }

@@ -1,7 +1,9 @@
 package com.atasoy.gallerypro.data.index
 
+import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Process
 import android.util.Size
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -24,6 +26,8 @@ import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.io.Closeable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
@@ -33,10 +37,19 @@ import java.util.concurrent.TimeUnit
  */
 class MediaIndexer : Closeable {
 
+    // ML Kit tek, düşük öncelikli bir iş parçacığında çalışır; işlemcinin tamamını alıp arayüzü kasmasın.
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor { task ->
+        Thread({
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
+            task.run()
+        }, "gallery-index")
+    }
     private val labeler = ImageLabeling.getClient(
-        ImageLabelerOptions.Builder().setConfidenceThreshold(MinConfidence).build()
+        ImageLabelerOptions.Builder().setConfidenceThreshold(MinConfidence).setExecutor(executor).build()
     )
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val recognizer = TextRecognition.getClient(
+        TextRecognizerOptions.Builder().setExecutor(executor).build()
+    )
 
     /** Çalışan iş parçacığını bekletir; ana iş parçacığında çağrılmaz. */
     fun index(context: Context, item: MediaItem): IndexEntry {
@@ -82,6 +95,7 @@ class MediaIndexer : Closeable {
     override fun close() {
         runCatching { labeler.close() }
         runCatching { recognizer.close() }
+        executor.shutdown()
     }
 
     private companion object {
@@ -101,6 +115,7 @@ class MediaIndexer : Closeable {
 class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
 
     override fun doWork(): Result {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
         val context = applicationContext
         if (MediaPermissions.access(context) == MediaAccess.None) return Result.success()
         val store = (context as GalleryApp).container.index
@@ -127,6 +142,8 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
                 val batch = ArrayList<IndexEntry>(BatchSize)
                 for (item in todo) {
                     if (isStopped) break
+                    // Uygulama ekrandayken yavaş gider: kaydırma ve fotoğraf açma öncelikli.
+                    if (appVisible()) Thread.sleep(VisiblePauseMs)
                     batch += indexer.index(context, item)
                     done++
                     if (batch.size >= BatchSize) {
@@ -146,8 +163,15 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
         return Result.success()
     }
 
+    private fun appVisible(): Boolean {
+        val info = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(info)
+        return info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
+    }
+
     private companion object {
         const val BatchSize = 20
+        const val VisiblePauseMs = 150L
     }
 }
 

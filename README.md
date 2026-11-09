@@ -24,7 +24,9 @@ iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsi
 - Bir aşama dalının APK'sı: **Releases** sayfasında dalın adıyla.
 - Derleme durumu: depoda **Actions** sekmesi. Elle başlatmak için Actions › APK › Run workflow.
 
-APK sabit bir debug anahtarıyla imzalanır; yeni sürüm eskisinin üstüne kurulur.
+APK hızlı (release, R8) türdendir ve sabit bir deneme anahtarıyla imzalanır; yeni sürüm eskisinin üstüne kurulur.
+
+Kodu başka bir yapay zekâyla sürdürmek için: `AGENTS.md` (kısa kurallar) ve `DEVAM-NOTU.md` (durum ve plan).
 
 ## Yerelde derleme (Android Studio / terminal)
 
