@@ -21,6 +21,8 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 | `asama-2…`, `asama-3…`, `asama-4…`, `asama-5a-arama` | Bitbucket'tan taşınan aşama dalları (geçmiş için) | — |
 
 ## Hemen yapılacak (sırayla)
+**Uygulamanın bitişine kadar tam yol haritası (görev 1–8, ayrıntılı, İngilizce): `CODEX-ILK-MESAJ.md`.** Aşağıdaki maddeler onun özetidir; çelişirse o dosya geçerlidir.
+
 1. Kullanıcı 0.6.0'ı dener (dal APK'sı: https://github.com/mmustafatasoy/Gallerypro/releases/download/asama-5b-cumleyle-arama/Gallerypro.apk).
    Aramada "Şimdi incele" → tüm fotoğraflar yeniden incelenir (etiketi olanlara yalnızca anlam vektörü eklenir).
    Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; yığın izinde adı geçen satırı düzelt, tahminle başka dosyaya dokunma.
