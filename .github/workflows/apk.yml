@@ -50,7 +50,7 @@ jobs:
         run: mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
 
       - name: Testler ve APK
-        run: gradle --no-daemon testReleaseUnitTest assembleRelease
+        run: gradle --no-daemon testDebugUnitTest assembleRelease
 
       - name: APK adı
         run: cp app/build/outputs/apk/release/app-release.apk Gallerypro.apk

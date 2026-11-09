@@ -19,7 +19,7 @@ değilsen kullanıcıya sor (iki seçenek sun, kararı bekle).
 ## Derleme
 - GitHub Actions her gönderimde test + hızlı (release, R8) APK üretir; APK Releases'a yüklenir
   (`main` → `son-surum`). Yerelde: JDK 21, Gradle 9.7.1, `bash scripts/fetch-fonts.sh`,
-  `gradle testReleaseUnitTest assembleRelease`.
+  `gradle testDebugUnitTest assembleRelease`.
 - Saf mantık testleri: `app/src/test/` (CollectionsLogic, EditLogic, SearchEngine).
 
 ## Hata ayıklama
