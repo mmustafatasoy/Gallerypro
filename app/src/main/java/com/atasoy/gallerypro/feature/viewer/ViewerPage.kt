@@ -104,11 +104,20 @@ internal fun ViewerPage(
     }
 
     val hiRes by remember { derivedStateOf { zoom.scale > 1.6f } }
-    val hiResRequest = remember(uri) {
+    // Düzenlenince dosya değişir; sürüm anahtara girer ki eski görüntü önbellekten gelmesin.
+    val version = item.modifiedMillis
+    val fullRequest = remember(uri, version) {
+        ImageRequest.Builder(context)
+            .data(uri)
+            .memoryCacheKey("$uri@$version")
+            .build()
+    }
+    val hiResRequest = remember(uri, version) {
         ImageRequest.Builder(context)
             .data(uri)
             .size(HiResMaxPx)
             .precision(Precision.INEXACT)
+            .memoryCacheKey("$uri@$version#hi")
             .build()
     }
 
@@ -146,7 +155,7 @@ internal fun ViewerPage(
         ) {
             // Izgaradan gelen küçük resim hemen görünür; asıl görüntü üstüne yüklenir.
             AsyncImage(
-                model = MediaThumb(uri, if (item.isVideo) 1080 else 384),
+                model = MediaThumb(uri, if (item.isVideo) 1080 else 384, item.modifiedMillis),
                 contentDescription = null,
                 imageLoader = imageLoader,
                 contentScale = ContentScale.Fit,
@@ -160,7 +169,7 @@ internal fun ViewerPage(
             )
             if (!item.isVideo) {
                 AsyncImage(
-                    model = uri,
+                    model = fullRequest,
                     contentDescription = null,
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Fit,

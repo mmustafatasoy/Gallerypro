@@ -3,6 +3,7 @@ package com.atasoy.gallerypro.feature.library
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.atasoy.gallerypro.data.edit.EditStore
 import com.atasoy.gallerypro.data.media.LibraryFilter
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaRepository
@@ -44,6 +45,7 @@ data class LibraryUiState(
 
 class LibraryViewModel(
     private val repository: MediaRepository,
+    private val edits: EditStore,
     private val zone: ZoneId = ZoneId.systemDefault()
 ) : ViewModel() {
 
@@ -53,11 +55,11 @@ class LibraryViewModel(
     private val filterFlow = MutableStateFlow(LibraryFilter.All)
 
     val content: StateFlow<LibraryContent> =
-        combine(repository.items, filterFlow) { all, filter ->
+        combine(repository.items, filterFlow, edits.editedIds) { all, filter, edited ->
             if (all == null) {
                 LibraryContent(loading = true, items = emptyList(), months = emptyList(), years = emptyList())
             } else {
-                val items = all.filteredBy(filter)
+                val items = all.filteredBy(filter, edited)
                 LibraryContent(
                     loading = false,
                     items = items,

@@ -82,7 +82,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil3.compose.AsyncImage
 import com.atasoy.gallerypro.R
-import com.atasoy.gallerypro.data.media.CaptionStore
+import com.atasoy.gallerypro.data.LocalGalleryStores
+import com.atasoy.gallerypro.data.collections.CollectionsLogic
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
 import com.atasoy.gallerypro.data.media.MediaDetails
@@ -101,6 +102,7 @@ import com.atasoy.gallerypro.designsystem.GalleryMotion
 import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.GlassCapsule
 import com.atasoy.gallerypro.designsystem.GlassIconButton
+import com.atasoy.gallerypro.designsystem.GlassTextButton
 import com.atasoy.gallerypro.designsystem.GlassMenu
 import com.atasoy.gallerypro.designsystem.GlassMenuItem
 import com.atasoy.gallerypro.designsystem.GlassToast
@@ -108,6 +110,7 @@ import com.atasoy.gallerypro.designsystem.GlassTone
 import com.atasoy.gallerypro.designsystem.Glyph
 import com.atasoy.gallerypro.designsystem.glass
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
+import com.atasoy.gallerypro.feature.edit.EditScreen
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.shapes.RoundedRectangle
@@ -130,6 +133,9 @@ private const val InfoPanelFraction = 0.62f
 
 private enum class DragTarget { None, Info, Dismiss }
 
+/** Görüntüleyicinin nereden açıldığı: alt araç çubuğu ve menü buna göre değişir. */
+enum class ViewerMode { Normal, Hidden, Trash }
+
 /**
  * Tam ekran fotoğraf/video görüntüleyici (2. aşama).
  *
@@ -142,10 +148,12 @@ private enum class DragTarget { None, Info, Dismiss }
 fun ViewerScreen(
     items: List<MediaItem>,
     startId: Long,
-    captions: CaptionStore,
-    onClose: (lastId: Long?) -> Unit
+    onClose: (lastId: Long?) -> Unit,
+    mode: ViewerMode = ViewerMode.Normal
 ) {
     val context = LocalContext.current
+    val stores = LocalGalleryStores.current
+    val captions = stores.captions
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val locale = remember { Locale.getDefault() }
@@ -168,6 +176,8 @@ fun ViewerScreen(
     // Açık video oynatıcı (3. aşama) ve onun kontrollerinin görünürlüğü.
     var playingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var videoChrome by remember { mutableStateOf(true) }
+    // Açık düzenleme ekranı (4. aşama).
+    var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     var infoProgress by remember { mutableFloatStateOf(0f) }
     var dismissOffset by remember { mutableFloatStateOf(0f) }
@@ -214,7 +224,13 @@ fun ViewerScreen(
     }
 
     // ---------------------------------------------------------------- sistem çubukları
-    ViewerSystemBars(hidden = if (playingId != null) !videoChrome else !chromeVisible || slideshow)
+    ViewerSystemBars(
+        hidden = when {
+            editingId != null -> false
+            playingId != null -> !videoChrome
+            else -> !chromeVisible || slideshow
+        }
+    )
 
     // Gösterilen öğe değişirse (silme, şerit) açık video kapanır.
     LaunchedEffect(current?.id) {
@@ -254,6 +270,45 @@ fun ViewerScreen(
         // Yoksa Android'in kendi onay penceresi tek onay olur.
         val canManage = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(context)
         if (canManage) confirmDelete = true else launchTrash(item)
+    }
+
+    val restoredText = stringResource(R.string.toast_recovered)
+    val deletedForeverText = stringResource(R.string.toast_deleted_forever)
+    val hiddenText = stringResource(R.string.toast_hidden)
+    val unhiddenText = stringResource(R.string.toast_unhidden)
+    val videoEditText = stringResource(R.string.coming_video_edit)
+    val recoverLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) toast = restoredText
+    }
+    val deleteForeverLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) toast = deletedForeverText
+    }
+
+    fun recover(item: MediaItem) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val request = MediaStore.createTrashRequest(context.contentResolver, listOf(item.contentUri()), false)
+            recoverLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+        }
+    }
+
+    fun deleteForever(item: MediaItem) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val request = MediaStore.createDeleteRequest(context.contentResolver, listOf(item.contentUri()))
+            deleteForeverLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+        }
+    }
+
+    fun edit(item: MediaItem) {
+        if (item.isVideo) {
+            toast = videoEditText
+        } else {
+            playingId = null
+            editingId = item.id
+        }
     }
 
     fun toggleFavorite(item: MediaItem) {
@@ -327,7 +382,7 @@ fun ViewerScreen(
             }
         }
 
-        BackHandler {
+        BackHandler(enabled = editingId == null) {
             when {
                 confirmDelete -> confirmDelete = false
                 menuOpen -> menuOpen = false
@@ -364,7 +419,7 @@ fun ViewerScreen(
             ) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && current != null) {
                     AsyncImage(
-                        model = MediaThumb(current.contentUri(), 128),
+                        model = MediaThumb(current.contentUri(), 128, current.modifiedMillis),
                         contentDescription = null,
                         imageLoader = imageLoader,
                         contentScale = ContentScale.Crop,
@@ -509,16 +564,18 @@ fun ViewerScreen(
                         )
                     }
                 }
-                GlassIconButton(
-                    backdrop = backdrop,
-                    icon = GalleryIcons.More,
-                    contentDescription = stringResource(R.string.viewer_more),
-                    onClick = { menuOpen = !menuOpen },
-                    tone = GlassTone.Dark,
-                    size = GalleryDimens.ViewerTopButton,
-                    iconSize = 20.dp,
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                )
+                if (mode != ViewerMode.Trash) {
+                    GlassIconButton(
+                        backdrop = backdrop,
+                        icon = GalleryIcons.More,
+                        contentDescription = stringResource(R.string.viewer_more),
+                        onClick = { menuOpen = !menuOpen },
+                        tone = GlassTone.Dark,
+                        size = GalleryDimens.ViewerTopButton,
+                        iconSize = 20.dp,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                }
             }
 
             if (current.isVideo && current.durationMs > 0) {
@@ -561,18 +618,27 @@ fun ViewerScreen(
                     )
                     Spacer(Modifier.height(18.dp))
                 }
-                ViewerToolbar(
-                    item = current,
-                    infoOpen = infoOpen,
-                    backdrop = backdrop,
-                    onShare = {
-                        if (!context.shareItems(listOf(current), context.getString(R.string.share_chooser))) toast = noAppText
-                    },
-                    onFavorite = { toggleFavorite(current) },
-                    onInfo = { animateInfo(if (infoProgress > 0.5f) 0f else 1f) },
-                    onEdit = { toast = context.getString(R.string.coming_edit) },
-                    onDelete = { askDelete(current) }
-                )
+                if (mode == ViewerMode.Trash) {
+                    TrashToolbar(
+                        item = current,
+                        backdrop = backdrop,
+                        onRecover = { recover(current) },
+                        onDelete = { deleteForever(current) }
+                    )
+                } else {
+                    ViewerToolbar(
+                        item = current,
+                        infoOpen = infoOpen,
+                        backdrop = backdrop,
+                        onShare = {
+                            if (!context.shareItems(listOf(current), context.getString(R.string.share_chooser))) toast = noAppText
+                        },
+                        onFavorite = { toggleFavorite(current) },
+                        onInfo = { animateInfo(if (infoProgress > 0.5f) 0f else 1f) },
+                        onEdit = { edit(current) },
+                        onDelete = { askDelete(current) }
+                    )
+                }
             }
         }
 
@@ -604,6 +670,19 @@ fun ViewerScreen(
                         menuOpen = false
                         if (infoProgress > 0f) animateInfo(0f)
                         slideshow = true
+                    },
+                    if (mode == ViewerMode.Hidden) {
+                        GlassMenuItem(stringResource(R.string.menu_unhide), false) {
+                            menuOpen = false
+                            stores.hidden.unhide(listOf(current.id))
+                            toast = unhiddenText
+                        }
+                    } else {
+                        GlassMenuItem(stringResource(R.string.menu_hide), false) {
+                            menuOpen = false
+                            stores.hidden.hide(listOf(current.id))
+                            toast = hiddenText
+                        }
                     }
                 )
             },
@@ -675,29 +754,105 @@ fun ViewerScreen(
                     onChromeVisibleChange = { videoChrome = it },
                     onClose = { playingId = null },
                     toolbar = { glassBackdrop ->
-                        ViewerToolbar(
-                            item = target,
-                            infoOpen = false,
-                            backdrop = glassBackdrop,
-                            onShare = {
-                                if (!context.shareItems(listOf(target), context.getString(R.string.share_chooser))) {
-                                    toast = noAppText
-                                }
-                            },
-                            onFavorite = { toggleFavorite(target) },
-                            onInfo = {
-                                playingId = null
-                                animateInfo(1f)
-                            },
-                            onEdit = { toast = context.getString(R.string.coming_edit) },
-                            onDelete = { askDelete(target) }
-                        )
+                        if (mode == ViewerMode.Trash) {
+                            TrashToolbar(
+                                item = target,
+                                backdrop = glassBackdrop,
+                                onRecover = { recover(target) },
+                                onDelete = { deleteForever(target) }
+                            )
+                        } else {
+                            ViewerToolbar(
+                                item = target,
+                                infoOpen = false,
+                                backdrop = glassBackdrop,
+                                onShare = {
+                                    if (!context.shareItems(listOf(target), context.getString(R.string.share_chooser))) {
+                                        toast = noAppText
+                                    }
+                                },
+                                onFavorite = { toggleFavorite(target) },
+                                onInfo = {
+                                    playingId = null
+                                    animateInfo(1f)
+                                },
+                                onEdit = { edit(target) },
+                                onDelete = { askDelete(target) }
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // ---------------------------------------------------------------- düzenle (4. aşama)
+        val editing = editingId?.let { id -> items.firstOrNull { it.id == id } }
+        AnimatedVisibility(
+            visible = editing != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val opened = remember { editing }
+            val target = editing ?: opened
+            if (target != null) {
+                EditScreen(
+                    item = target,
+                    onClose = { message ->
+                        editingId = null
+                        if (message != null) toast = message
                     }
                 )
             }
         }
     }
 }
+
+/** Son Silinenler'de: Sil (kalıcı) · kalan gün · Kurtar. */
+@Composable
+private fun TrashToolbar(
+    item: MediaItem,
+    backdrop: com.kyant.backdrop.Backdrop,
+    onRecover: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val now = remember { System.currentTimeMillis() }
+    val days = CollectionsLogic.daysLeft(item.expiresMillis, now)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        GlassTextButton(
+            backdrop = backdrop,
+            text = stringResource(R.string.trash_delete),
+            onClick = onDelete,
+            tone = GlassTone.Dark,
+            textColor = GalleryColors.Delete,
+            height = GalleryDimens.ToolbarButton
+        )
+        if (item.expiresMillis > 0L) {
+            BasicText(
+                text = daysLeftText(days),
+                style = GalleryType.Chip.copy(color = Color.White.copy(alpha = 0.8f))
+            )
+        }
+        GlassTextButton(
+            backdrop = backdrop,
+            text = stringResource(R.string.trash_recover),
+            onClick = onRecover,
+            tone = GlassTone.Dark,
+            textColor = Color.White,
+            height = GalleryDimens.ToolbarButton
+        )
+    }
+}
+
+@Composable
+private fun daysLeftText(days: Int): String =
+    LocalContext.current.resources.getQuantityString(R.plurals.trash_days_left, days, days)
 
 @Composable
 internal fun ViewerToolbar(

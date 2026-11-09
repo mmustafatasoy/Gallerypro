@@ -27,7 +27,6 @@
     <string name="tab_library">Kütüphane</string>
     <string name="tab_collections">Koleksiyonlar</string>
     <string name="tab_search">Ara</string>
-    <string name="coming_collections">Koleksiyonlar 4. aşamada geliyor</string>
     <string name="coming_search">Yapay zekâ araması 5. aşamada geliyor</string>
 
     <!-- Seçim -->
@@ -74,7 +73,6 @@
     <string name="toast_copied">Panoya kopyalandı</string>
     <string name="toast_trashed">Son Silinenler\'e taşındı</string>
     <string name="toast_no_app">Bunu açacak uygulama yok</string>
-    <string name="coming_edit">Düzenleme 6. aşamada geliyor</string>
     <string name="favorite_needs_android11">Favoriler Android 11 ve üstünde çalışır</string>
 
     <!-- Bilgi paneli -->
@@ -102,6 +100,76 @@
     <string name="video_seek_forward">+10 sn</string>
     <string name="video_error">Bu video oynatılamıyor</string>
 
+    <!-- Koleksiyonlar ve Düzenle (4. aşama) -->
+    <string name="filter_edited">Yalnızca düzenlenenler</string>
+    <string name="collections_title">Koleksiyonlar</string>
+    <string name="collections_customize">Koleksiyonları özelleştir</string>
+    <string name="collections_customize_title">Koleksiyonları Özelleştir</string>
+    <string name="collections_done">Bitti</string>
+    <string name="collections_reorder">sırasını değiştirmek için sürükle</string>
+    <string name="section_recent_days">Son Günler</string>
+    <string name="section_pinned">Sabitlenenler</string>
+    <string name="section_albums">Albümler</string>
+    <string name="section_media_types">Medya Türleri</string>
+    <string name="section_utilities">Araçlar</string>
+    <string name="col_favorites">Favoriler</string>
+    <string name="col_videos">Videolar</string>
+    <string name="col_recently_saved">Son Kaydedilenler</string>
+    <string name="col_panoramas">Panoramalar</string>
+    <string name="col_screenshots">Ekran Görüntüleri</string>
+    <string name="col_raw">RAW</string>
+    <string name="col_hidden">Gizli</string>
+    <string name="col_trash">Son Silinenler</string>
+    <string name="col_duplicates">Kopyalar</string>
+    <string name="col_imports">İçe Aktarılanlar</string>
+    <string name="collection_empty">Burada henüz öğe yok</string>
+    <string name="trash_note">Öğeler kalıcı olarak silinmeden önce 30 gün burada kalır</string>
+    <string name="trash_album_needs_android11">Son Silinenler Android 11 ve üstünde var</string>
+    <string name="trash_delete">Sil</string>
+    <string name="trash_recover">Kurtar</string>
+    <string name="toast_recovered">Kurtarıldı</string>
+    <string name="toast_deleted_forever">Kalıcı olarak silindi</string>
+    <string name="hidden_unlock_title">Gizli albüm</string>
+    <string name="hidden_unlock_subtitle">Parmak izi veya ekran kilidiyle aç</string>
+    <string name="menu_hide">Gizle</string>
+    <string name="menu_unhide">Göster</string>
+    <string name="toast_hidden">Gizli albümüne taşındı</string>
+    <string name="toast_unhidden">Kütüphaneye geri taşındı</string>
+    <string name="coming_video_edit">Video düzenleme sonraki aşamada geliyor</string>
+    <string name="edit_cancel">Vazgeç</string>
+    <string name="edit_done">Bitti</string>
+    <string name="edit_reset">SIFIRLA</string>
+    <string name="edit_original">ORİJİNAL</string>
+    <string name="edit_tab_adjust">Ayarla</string>
+    <string name="edit_tab_filters">Filtreler</string>
+    <string name="edit_tab_crop">Kırp</string>
+    <string name="edit_tool_auto">Otomatik</string>
+    <string name="edit_tool_exposure">Pozlama</string>
+    <string name="edit_tool_brightness">Parlaklık</string>
+    <string name="edit_tool_contrast">Kontrast</string>
+    <string name="edit_tool_saturation">Doygunluk</string>
+    <string name="edit_tool_warmth">Sıcaklık</string>
+    <string name="edit_tool_vignette">Vinyet</string>
+    <string name="edit_tool_sharpness">Keskinlik</string>
+    <string name="edit_filter_original">Orijinal</string>
+    <string name="edit_filter_vivid">Canlı</string>
+    <string name="edit_filter_dramatic">Dramatik</string>
+    <string name="edit_filter_warm">Sıcak</string>
+    <string name="edit_filter_cool">Soğuk</string>
+    <string name="edit_filter_mono">Mono</string>
+    <string name="edit_filter_silver">Gümüş</string>
+    <string name="edit_filter_nostalgia">Nostalji</string>
+    <string name="edit_ratio_free">Serbest</string>
+    <string name="edit_ratio_square">Kare</string>
+    <string name="edit_straighten">DÜZELT</string>
+    <string name="edit_saving">Kaydediliyor…</string>
+    <string name="edit_saved_copy">Düzenlenmiş kopya kaydedildi</string>
+    <string name="edit_restored">Orijinale döndürüldü</string>
+    <string name="edit_failed">Kaydedilemedi</string>
+    <string name="edit_discard_message">Değişikliklerden vazgeçilsin mi?</string>
+    <string name="edit_discard">Değişiklikleri Sil</string>
+    <string name="edit_keep">Düzenlemeye Devam Et</string>
+
     <plurals name="items_count">
         <item quantity="one">%1$s öğe</item>
         <item quantity="other">%1$s öğe</item>
@@ -113,5 +181,13 @@
     <plurals name="items_trashed">
         <item quantity="one">%1$s öğe Son Silinenler\'e taşındı</item>
         <item quantity="other">%1$s öğe Son Silinenler\'e taşındı</item>
+    </plurals>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d gün</item>
+        <item quantity="other">%1$d gün</item>
+    </plurals>
+    <plurals name="albums_count">
+        <item quantity="one">%1$s albüm</item>
+        <item quantity="other">%1$s albüm</item>
     </plurals>
 </resources>

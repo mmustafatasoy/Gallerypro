@@ -18,8 +18,9 @@ import coil3.request.crossfade
 /**
  * Izgara için küçük resim isteği. Boyut kovalara yuvarlanır ki aynı kare
  * farklı sütun sayılarında önbellekten tekrar kullanılabilsin.
+ * [version] dosya değişince (düzenleme) eski önbellek kullanılmasın diye anahtara girer.
  */
-data class MediaThumb(val uri: Uri, val sizePx: Int) {
+data class MediaThumb(val uri: Uri, val sizePx: Int, val version: Long = 0L) {
     companion object {
         private val buckets = intArrayOf(128, 192, 256, 384, 512, 768, 1080, 1440)
 
@@ -56,7 +57,7 @@ class MediaThumbFetcher(
 }
 
 class MediaThumbKeyer : Keyer<MediaThumb> {
-    override fun key(data: MediaThumb, options: Options): String = "${data.uri}#${data.sizePx}"
+    override fun key(data: MediaThumb, options: Options): String = "${data.uri}#${data.sizePx}@${data.version}"
 }
 
 object GalleryImageLoader {

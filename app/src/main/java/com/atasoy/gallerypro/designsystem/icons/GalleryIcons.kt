@@ -145,6 +145,118 @@ object GalleryIcons {
         }
     }
 
+    // ---------------------------------------------------------------- koleksiyonlar (4. aşama)
+
+    val ChevronRight: ImageVector by lazy { icon("chevronRight") { stroke("M9 5l7 7-7 7", width = 2.4f) } }
+
+    val Video: ImageVector by lazy {
+        icon("video") { stroke("M3 6.5h10a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H3zM15.5 10.5l5-3v9l-5-3", width = 1.8f) }
+    }
+
+    val Download: ImageVector by lazy {
+        icon("download") { stroke("M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14", width = 1.8f) }
+    }
+
+    val Panorama: ImageVector by lazy {
+        icon("panorama") { stroke("M3 7c6 1.5 12 1.5 18 0v10c-6-1.5-12-1.5-18 0z", width = 1.8f) }
+    }
+
+    val Screenshot: ImageVector by lazy {
+        icon("screenshot") {
+            stroke("M9 2.5h6a2.5 2.5 0 0 1 2.5 2.5v14a2.5 2.5 0 0 1-2.5 2.5H9A2.5 2.5 0 0 1 6.5 19V5A2.5 2.5 0 0 1 9 2.5zM10.5 18.5h3", width = 1.8f)
+        }
+    }
+
+    val Raw: ImageVector by lazy {
+        icon("raw") {
+            stroke(
+                "M6 6h12a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 18H6a2.5 2.5 0 0 1-2.5-2.5v-7A2.5 2.5 0 0 1 6 6z" +
+                    "M7.5 15V9h2a1.5 1.5 0 0 1 0 3h-2M9.5 12l1.5 3M13 15l1.2-6 1.2 6M13.4 13h1.6",
+                width = 1.8f
+            )
+        }
+    }
+
+    val Lock: ImageVector by lazy {
+        icon("lock") {
+            stroke(
+                "M7.5 10.5h9a2.5 2.5 0 0 1 2.5 2.5v5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 18v-5a2.5 2.5 0 0 1 2.5-2.5z" +
+                    "M8 10.5V8a4 4 0 0 1 8 0v2.5",
+                width = 1.8f
+            )
+        }
+    }
+
+    val TrashOutline: ImageVector by lazy {
+        icon("trashOutline") { stroke("M4 7h16M10 3.5h4M6 7l1 13h10l1-13M10 11v6M14 11v6", width = 1.8f) }
+    }
+
+    val Duplicate: ImageVector by lazy {
+        icon("duplicate") {
+            stroke(
+                "M10.5 8h7A2.5 2.5 0 0 1 20 10.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 8 17.5v-7A2.5 2.5 0 0 1 10.5 8z" +
+                    "M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2",
+                width = 1.8f
+            )
+        }
+    }
+
+    val Grip: ImageVector by lazy { icon("grip") { stroke("M5 9h14M5 15h14", width = 2f) } }
+
+    // ---------------------------------------------------------------- düzenle (4. aşama)
+
+    val ToolAuto: ImageVector by lazy {
+        icon("toolAuto") { stroke("M4 20L15 9M14 4v3M12.5 5.5h3M19 9v3M17.5 10.5h3M19 3v2M18 4h2", width = 1.8f) }
+    }
+
+    val ToolExposure: ImageVector by lazy {
+        icon("toolExposure") {
+            stroke(
+                circle(12f, 12f, 4f) +
+                    "M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4",
+                width = 1.8f
+            )
+        }
+    }
+
+    val ToolBrightness: ImageVector by lazy {
+        icon("toolBrightness") { stroke(circle(12f, 12f, 8f) + "M12 4v16M12 8h3.5M12 12h5M12 16h3.5", width = 1.8f) }
+    }
+
+    val ToolContrast: ImageVector by lazy {
+        icon("toolContrast") { stroke(circle(12f, 12f, 8f) + "M12 4v16M8.5 6.5l-2 2M10 9.5l-4.5 4.5M10 13.5l-3 3", width = 1.8f) }
+    }
+
+    val ToolSaturation: ImageVector by lazy {
+        icon("toolSaturation") { stroke("M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5z", width = 1.8f) }
+    }
+
+    val ToolWarmth: ImageVector by lazy {
+        icon("toolWarmth") { stroke("M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0zM12 9v7", width = 1.8f) }
+    }
+
+    val ToolVignette: ImageVector by lazy {
+        icon("toolVignette") {
+            stroke(
+                "M6 5h12a2.5 2.5 0 0 1 2.5 2.5v9A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-9A2.5 2.5 0 0 1 6 5z" +
+                    "M12 8.2a5 3.8 0 1 1 0 7.6a5 3.8 0 1 1 0-7.6",
+                width = 1.8f
+            )
+        }
+    }
+
+    val ToolSharpness: ImageVector by lazy { icon("toolSharpness") { stroke("M12 4l8.5 15h-17z", width = 1.8f) } }
+
+    val TabAdjust: ImageVector by lazy {
+        icon("tabAdjust") { stroke("M4 7h9.5M18.5 7H20M4 17h3.5M12.5 17H20" + circle(16f, 7f, 2.4f) + circle(10f, 17f, 2.4f)) }
+    }
+
+    val TabFilters: ImageVector by lazy {
+        icon("tabFilters") { stroke(circle(12f, 8.5f, 5f) + circle(8.5f, 14.5f, 5f) + circle(15.5f, 14.5f, 5f), width = 1.8f) }
+    }
+
+    val TabCrop: ImageVector by lazy { icon("tabCrop") { stroke("M6 2.5V18h15.5M2.5 6H18v15.5") } }
+
     // ---------------------------------------------------------------- yardımcılar
 
     private class Builder(val inner: ImageVector.Builder) {

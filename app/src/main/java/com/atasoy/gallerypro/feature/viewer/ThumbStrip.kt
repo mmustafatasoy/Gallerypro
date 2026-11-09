@@ -111,7 +111,7 @@ internal fun ThumbStrip(
                 val uri = remember(item.id, item.isVideo) { item.contentUri() }
                 val shape = RoundedCornerShape(4.dp)
                 AsyncImage(
-                    model = MediaThumb(uri, 128),
+                    model = MediaThumb(uri, 128, item.modifiedMillis),
                     contentDescription = null,
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,

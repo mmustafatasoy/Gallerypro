@@ -26,6 +26,19 @@ object GalleryColors {
 
     val CellPlaceholder = Color(0xFFEFEFF2)
     val SelectedTabFill = Color(0x11000000)
+
+    // Koleksiyonlar
+    val GroupedFill = Color(0xFFF3F3F6)
+    val GroupedDivider = Color(0x1A000000)
+    val Chevron = Color(0xFF8A8A92)
+    val ChevronSmall = Color(0xFFA0A0A8)
+    val BadgeFill = Color(0x38FFFFFF)
+    val PinnedEmpty = Color(0xFFB4B4BC)
+
+    // Düzenle
+    val EditDoneIcon = Color(0xFF1A1400)
+    val EditToolInner = Color(0xEB1C1C20)
+    val EditDim = Color(0x73000000)
 }
 
 object GalleryDimens {
@@ -55,6 +68,28 @@ object GalleryDimens {
     val GlassBlurLight = 22.dp
     val GlassBlurDark = 24.dp
     val GlassBlurSheet = 40.dp
+    // Koleksiyonlar
+    val DayCardWidth = 158.dp
+    val DayCardHeight = 212.dp
+    val DayCardCorner = 22.dp
+    val PinnedCardHeight = 116.dp
+    val PinnedCardCorner = 20.dp
+    val PinnedBadge = 32.dp
+    val AlbumCorner = 18.dp
+    val GroupedCorner = 20.dp
+    val GroupedRowHeight = 50.dp
+    val SectionRowHeight = 56.dp
+
+    // Düzenle
+    val EditPanelHeight = 196.dp
+    val EditToolCircle = 56.dp
+    val EditToolInner = 50.dp
+    val EditTabWidth = 96.dp
+    val EditFilterWidth = 66.dp
+    val EditFilterHeight = 88.dp
+    val EditRulerHeight = 40.dp
+    val EditTickSpacing = 8.5.dp
+
     val LensHeight = 12.dp
     val LensAmount = 24.dp
     val ShadowRadius = 24.dp

@@ -173,7 +173,7 @@ private fun MediaCell(
             }
     ) {
         AsyncImage(
-            model = MediaThumb(uri, thumbPx),
+            model = MediaThumb(uri, thumbPx, item.modifiedMillis),
             contentDescription = null,
             imageLoader = imageLoader,
             contentScale = ContentScale.Crop,

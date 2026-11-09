@@ -28,7 +28,13 @@ data class MediaItem(
     /** EXIF döndürmesi (0, 90, 180, 270). Genişlik/yükseklik döndürme öncesidir. */
     val orientation: Int = 0,
     /** Klasör, ör. "DCIM/Camera/". */
-    val relativePath: String? = null
+    val relativePath: String? = null,
+    /** MediaStore'a eklenme zamanı (ms). "Son Kaydedilenler" için. */
+    val addedMillis: Long = 0L,
+    /** Son değişiklik zamanı (ms). Düzenlenince değişir; küçük resim önbelleği buna bakar. */
+    val modifiedMillis: Long = 0L,
+    /** Son Silinenler'de kalıcı silinme zamanı (ms); çöpte değilse 0. */
+    val expiresMillis: Long = 0L
 )
 
 /** Ekranda görünen genişlik ve yükseklik (döndürme uygulanmış). */
@@ -40,11 +46,13 @@ fun MediaItem.contentUri(): Uri = ContentUris.withAppendedId(
     id
 )
 
-enum class LibraryFilter { All, Favorites, Videos, Photos }
+enum class LibraryFilter { All, Favorites, Videos, Photos, Edited }
 
-fun List<MediaItem>.filteredBy(filter: LibraryFilter): List<MediaItem> = when (filter) {
+/** [edited]: Düzenle ekranında kaydedilmiş öğelerin kimlikleri. */
+fun List<MediaItem>.filteredBy(filter: LibraryFilter, edited: Set<Long> = emptySet()): List<MediaItem> = when (filter) {
     LibraryFilter.All -> this
     LibraryFilter.Favorites -> filter { it.isFavorite }
     LibraryFilter.Videos -> filter { it.isVideo }
     LibraryFilter.Photos -> filter { !it.isVideo }
+    LibraryFilter.Edited -> filter { it.id in edited }
 }

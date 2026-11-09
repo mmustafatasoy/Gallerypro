@@ -1,8 +1,10 @@
 package com.atasoy.gallerypro.data.media
 
+import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 
 /**
@@ -12,7 +14,14 @@ import android.provider.MediaStore
  */
 class MediaStoreSource(private val context: Context) {
 
-    fun queryAll(): List<MediaItem> {
+    /** Kütüphanedeki tüm öğeler (çöptekiler hariç), eskiden yeniye. */
+    fun queryAll(): List<MediaItem> = query(trashed = false)
+
+    /** Son Silinenler (Android 11+). Altında Android'in çöp kutusu yok. */
+    fun queryTrashed(): List<MediaItem> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) query(trashed = true) else emptyList()
+
+    private fun query(trashed: Boolean): List<MediaItem> {
         val collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
         val projection = buildList {
             add(MediaStore.Files.FileColumns._ID)
@@ -31,6 +40,7 @@ class MediaStoreSource(private val context: Context) {
             add(MediaStore.MediaColumns.RELATIVE_PATH)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 add(MediaStore.MediaColumns.IS_FAVORITE)
+                add(MediaStore.MediaColumns.DATE_EXPIRES)
             }
         }.toTypedArray()
 
@@ -40,8 +50,20 @@ class MediaStoreSource(private val context: Context) {
             MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString()
         )
 
-        val result = ArrayList<MediaItem>(4096)
-        context.contentResolver.query(collection, projection, selection, args, null)?.use { c ->
+        val resolver = context.contentResolver
+        val cursor = if (trashed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val queryArgs = Bundle().apply {
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, args)
+                putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
+            }
+            resolver.query(collection, projection, queryArgs, null)
+        } else {
+            resolver.query(collection, projection, selection, args, null)
+        }
+
+        val result = ArrayList<MediaItem>(if (trashed) 64 else 4096)
+        cursor?.use { c ->
             val idCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val typeCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
             val takenCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_TAKEN)
@@ -58,6 +80,11 @@ class MediaStoreSource(private val context: Context) {
             val pathCol = c.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
             val favCol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 c.getColumnIndex(MediaStore.MediaColumns.IS_FAVORITE)
+            } else {
+                -1
+            }
+            val expiresCol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                c.getColumnIndex(MediaStore.MediaColumns.DATE_EXPIRES)
             } else {
                 -1
             }
@@ -84,7 +111,10 @@ class MediaStoreSource(private val context: Context) {
                     displayName = c.getStringOrNull(nameCol),
                     sizeBytes = c.longOrZero(sizeCol),
                     orientation = c.intOrZero(orientationCol),
-                    relativePath = c.getStringOrNull(pathCol)
+                    relativePath = c.getStringOrNull(pathCol),
+                    addedMillis = added,
+                    modifiedMillis = modified,
+                    expiresMillis = if (trashed) c.longOrZero(expiresCol) * 1000L else 0L
                 )
             }
         }

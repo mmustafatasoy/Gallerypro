@@ -54,7 +54,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atasoy.gallerypro.R
-import com.atasoy.gallerypro.data.media.CaptionStore
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LibraryFilter
 import com.atasoy.gallerypro.data.media.contentUri
@@ -84,9 +83,9 @@ import java.util.Locale
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
-    captions: CaptionStore,
     partialAccess: Boolean,
-    onRequestMoreAccess: () -> Unit
+    onRequestMoreAccess: () -> Unit,
+    onOpenCollections: () -> Unit
 ) {
     val content by viewModel.content.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
@@ -404,15 +403,17 @@ fun LibraryScreen(
                     onSelect = { viewModel.setMode(LibraryMode.entries[it]) }
                 )
                 Spacer(Modifier.height(14.dp))
-                val comingCollections = stringResource(R.string.coming_collections)
                 val comingSearch = stringResource(R.string.coming_search)
                 GlassTabBar(
                     backdrop = backdrop,
                     tabs = listOf(
                         GlassTab(stringResource(R.string.tab_library), GalleryIcons.Library, selected = true) {},
-                        GlassTab(stringResource(R.string.tab_collections), GalleryIcons.Collections, selected = false) {
-                            toast = comingCollections
-                        }
+                        GlassTab(
+                            stringResource(R.string.tab_collections),
+                            GalleryIcons.Collections,
+                            selected = false,
+                            onClick = onOpenCollections
+                        )
                     ),
                     searchLabel = stringResource(R.string.tab_search),
                     onSearch = { toast = comingSearch },
@@ -508,6 +509,9 @@ fun LibraryScreen(
                 },
                 GlassMenuItem(stringResource(R.string.filter_videos), ui.filter == LibraryFilter.Videos) {
                     viewModel.setFilter(LibraryFilter.Videos)
+                },
+                GlassMenuItem(stringResource(R.string.filter_edited), ui.filter == LibraryFilter.Edited) {
+                    viewModel.setFilter(LibraryFilter.Edited)
                 }
             ),
             modifier = Modifier
@@ -534,7 +538,6 @@ fun LibraryScreen(
             ViewerScreen(
                 items = content.items,
                 startId = startId,
-                captions = captions,
                 onClose = { lastId ->
                     viewerId = null
                     revealId = lastId
