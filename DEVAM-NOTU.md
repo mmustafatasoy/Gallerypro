@@ -3,6 +3,15 @@
 Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 
+## Devralma (kullanıcı için)
+1. Önce `asama-5b-cumleyle-arama` PR'ı (#2) `main`'e birleştirilir; yoksa devralan araç bu notun eski hâlini okur.
+2. Codex'e GitHub bağlanır, `mmustafatasoy/Gallerypro` seçilir, ilk mesaj olarak şu verilir:
+
+```
+Gallerypro Android projesine devam ediyorsun. Önce depodaki AGENTS.md ve DEVAM-NOTU.md dosyalarını baştan sona oku ve yalnızca oradaki plana göre çalış. Sıradaki iş: DEVAM-NOTU'ndaki "Hemen yapılacak" listesinde henüz yapılmamış ilk madde. Ayrı bir dal aç, işi bitir, GitHub Actions yeşil olsun, DEVAM-NOTU.md'yi güncelle ve main'e PR aç. Birleştirmeyi ben yaparım. Emin olmadığın her kararda bana iki seçenek sun ve cevabımı bekle.
+```
+3. Actions kırmızıysa PR birleştirilmez. Uygulama çökerse açılıştaki hata raporu devralan araca aynen yapıştırılır.
+
 ## Kaynaklar (tek doğru kaynak)
 - Proje dokümanı: https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9
 - Tasarım tuvali (7 ekran): https://claude.ai/artifact/J9L59HCcDDZVwuod8fYSiw
