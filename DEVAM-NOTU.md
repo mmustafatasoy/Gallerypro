@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.2)
+# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5b cümleyle arama (0.6.0)
 
 Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
@@ -12,15 +12,20 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 | Dal | İçerik | Durum |
 | --- | --- | --- |
 | `main` | Aşama 1–4 + 5. aşama ilk adım (cihaz içi dizin + arama), sürüm 0.5.2 (hızlı release APK) | GitHub Actions yeşil (48 test) |
+| `asama-5b-cumleyle-arama` | Cümleyle arama (CLIP, Türkçe dahil), sürüm 0.6.0 | PR açık; kullanıcı birleştirecek |
 | `asama-2…`, `asama-3…`, `asama-4…`, `asama-5a-arama` | Bitbucket'tan taşınan aşama dalları (geçmiş için) | — |
 
 ## Hemen yapılacak (sırayla)
-1. Kullanıcı 0.5.2'yi dener (kasma düzeldi mi?). Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
-   Rapordaki yığın izinde adı geçen satırı düzelt; tahminle başka dosyaya dokunma.
+1. Kullanıcı 0.6.0'ı dener (dal APK'sı: https://github.com/mmustafatasoy/Gallerypro/releases/download/asama-5b-cumleyle-arama/Gallerypro.apk).
+   Aramada "Şimdi incele" → tüm fotoğraflar yeniden incelenir (etiketi olanlara yalnızca anlam vektörü eklenir).
+   Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; yığın izinde adı geçen satırı düzelt, tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
-3. Yeni iş ayrı dalda (`asama-5b-…`) yapılır, PR ile `main`'e girer; kullanıcı birleştirir. Dalın APK'sı Releases'ta dal adıyla çıkar.
-4. Sonra 5b: "Cümleyle arama" (MobileCLIP S0/S2 int8 + LiteRT) ve Bilgi panelindeki "Benzer Fotoğraflar". Model dosyası depoya
-   konmaz; derlemede indirilir (fetch-fonts gibi bir betik). Lisans kontrolü yayından önce. Sonra 5c: Kişiler, Anılar, Harita.
+3. Kullanıcı PR'ı birleştirince sıradaki iş **5b-2: Bilgi panelinde "Benzer Fotoğraflar"** (ayrı dal `asama-5b2-benzer`):
+   `IndexStore.vectors`'tan açık fotoğrafın vektörüne en yakın 12 öğe (`VectorMath.nearest`, kendisi hariç, eşik ~0,80),
+   yatay küçük resim şeridi; vektör yoksa kart gizli. Yeni kütüphane yok.
+4. Sonra 5c: Anılar (tarih + yer kümeleri), yer adıyla arama (EXIF konumu → çevrimdışı şehir listesi), Kişiler.
+   **Kişiler için yüz modeli lisansı önce kullanıcıya sorulur** (ML Kit yüz algılama yüzü bulur ama tanımaz; tanıma modeli
+   seçimi lisans kararıdır). Video anahtar kareleri ve "Akıllı Etiketler" kartı da 5c'de.
 
 ## Kurallar (değişmez)
 - Sürümler `gradle/libs.versions.toml` içinde; **yükseltme yok**. Yeni kütüphane sadece dokümandaki tablodan.
@@ -36,7 +41,7 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
   debug anahtarıyla imzalanır. Debug APK Compose'da belirgin kasar; performans hiçbir zaman debug APK ile değerlendirilmez.
   Yalnızca `arm64-v8a` (defaultConfig `abiFilters`); Play Store'a AAB ile çıkarken kaldırılır.
 - Debug APK sabit anahtarla imzalanır (`scripts/debug-keystore.b64` → `~/.android/debug.keystore`, iş akışında); yeni APK eskisinin üstüne kurulur. Anahtarı değiştirme.
-- Saf mantık (CollectionsLogic, EditModel) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
+- Saf mantık (CollectionsLogic, EditModel, WordPieceTokenizer) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
   (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece GitHub Actions'ta derlenir.
 
 ## Bilinen tuzaklar
@@ -119,6 +124,29 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 - Bölüm sırası, gizliler ve düzenleme ayarları SharedPreferences'ta; 5. aşamada Room/DataStore'a taşınacak.
 - Çok büyük fotoğraflar (uygulamanın bellek payını aşanlar) kaydederken yarı çözünürlüğe örneklenir.
 - Silinen fotoğrafların `files/originals` yedeklerini temizleme.
+
+## 5b: cümleyle arama (0.6.0, `asama-5b-cumleyle-arama`)
+- **Modeller**: görsel kodlayıcı OpenAI CLIP ViT-B/32 (MIT), metin kodlayıcı `sentence-transformers/clip-ViT-B-32-multilingual-v1`
+  (Apache-2.0; 50+ dil, Türkçe dahil; CLIP'in metin uzayına damıtılmış DistilBERT). İkisi de 512 boyutlu birim vektör verir.
+  MobileCLIP **kullanılmadı**: ağırlık lisansı (Apple AMLR) yalnızca araştırma içindir.
+- **Çevirme**: `scripts/models/export_clip.py` (litert-torch + ai-edge-quantizer, `dynamic_wi8_afp32` int8 ağırlık).
+  `.github/workflows/models.yml` çalıştırır, çıktıyı **`modeller` sürümüne** (Releases) yükler: `clip_image.tflite` (90 MB),
+  `clip_text.tflite` (137 MB), `clip_text_vocab.txt`, `clip_tokens_test.json`. Doğruluk: TFLite~PyTorch kosinüs 0,995 (görsel), 0,9995 (metin).
+  Betik değişirse iş akışı kendiliğinden yeniden çalışır; elle: Actions › Modeller › Run workflow.
+- **Derleme**: `apk.yml` modelleri `app/src/main/assets/models/`'e indirir (depoya girmez, `.gitignore`). Yoksa APK yine derlenir,
+  cümleyle arama kapalı kalır (`ClipAssets.available`). `.tflite` sıkıştırılmadan paketlenir, belleğe eşlenir. APK ≈ 260 MB (kullanıcı onayladı).
+- **Çalışma zamanı**: LiteRT 2.3.0 (`com.google.ai.edge.litert:litert`, `org.tensorflow.lite.Interpreter`).
+  `data/clip/ClipEncoders.kt`: `ClipImageEncoder` (ortadan kare kırp → 224 px, NHWC 0..1; normalizasyon modelin içinde),
+  `ClipTextEncoder` (ilk aramada yüklenir, son sorguyu önbellekte tutar). `WordPieceTokenizer.kt` Hugging Face ile birebir
+  (CI'da `clip_tokens_test.json` ile karşılaştırılır; 64 belirteç, büyük/küçük harf korunur).
+- **Dizin**: `IndexWorker` küçük resmi bir kez yükler; gerekiyorsa etiket + yazı, model varsa vektör çıkarır. `index.db` sürüm 2:
+  yeni `vectors` tablosu (id, modified, vec BLOB, version); etiketler korunur. `VectorVersion` artarsa vektörler yenilenir.
+  Ekrandayken öğe arası bekleme 250 ms.
+- **Arama**: `SearchEngine.semanticText` süzgeç sözcüklerini (yıl, ay, video, favori, ekran görüntüsü…) çıkarır, yazım korunur.
+  Sonuç = sözcük eşleşmeleri (önce) + `VectorMath.nearest` (en az 0,20 benzerlik ve en iyiden en çok 0,06 aşağısı, en çok 300).
+  Tarih/tür süzgeçleri anlam sonuçlarına da uygulanır. Ekranda "Cümleyle Dene" örnekleri (vektör varsa) ve kartta açıklama.
+- **Testler**: `ClipLogicTest` (belirteçleyici, vektör, sorgu metni, birleştirme).
+- Eşikler gerçek fotoğraflarla ayarlanmadı; kullanıcı "alakasız sonuç çok" derse `VectorMath.MinSimilarity`'i 0,22–0,24'e çıkar.
 
 ## Yedek
 Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all` tek zip, kullanıcının Google Drive'ına.

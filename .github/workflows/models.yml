@@ -5,7 +5,7 @@ name: Modeller
 on:
   push:
     branches: [main, "asama-*"]
-    paths: ["scripts/models/**", ".github/workflows/models.yml"]
+    paths: ["scripts/models/export_clip.py", ".github/workflows/models.yml"]
   workflow_dispatch:
 
 permissions:
@@ -18,22 +18,45 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      # Betik değişmediyse (ör. dal main'e birleşince) modeller yeniden üretilmez; APK derlemesi eski sürümü kullanır.
+      - name: Değişti mi
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HASH=$(sha256sum scripts/models/export_clip.py | cut -c1-16)
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && \
+             gh release view modeller --json body -q .body 2>/dev/null | grep -q "kaynak: $HASH"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Modeller güncel (kaynak: $HASH)."
+          fi
       - uses: actions/setup-python@v5
+        if: steps.check.outputs.skip != 'true'
         with:
           python-version: "3.11"
       - name: Araçlar
+        if: steps.check.outputs.skip != 'true'
         run: |
           python -m pip install --upgrade pip
           pip install "torch>=2.4,<2.13" --index-url https://download.pytorch.org/whl/cpu
           pip install litert-torch transformers sentence-transformers
           pip list | grep -iE "torch|litert|quantizer|transformers"
       - name: Çevir
+        if: steps.check.outputs.skip != 'true'
         run: python scripts/models/export_clip.py out
+      # Sürüm silinmez, dosyalar yerinde değiştirilir: aynı anda çalışan APK derlemesi modelsiz kalmasın.
       - name: Sürüme yükle
+        if: steps.check.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          HASH: ${{ steps.check.outputs.hash }}
         run: |
-          gh release delete modeller --yes --cleanup-tag || true
-          gh release create modeller out/* --target "$GITHUB_SHA" --latest=false \
-            --title "Modeller (cümleyle arama)" \
-            --notes "OpenAI CLIP ViT-B/32 görüntü kodlayıcısı (MIT) + sentence-transformers/clip-ViT-B-32-multilingual-v1 (Apache-2.0), LiteRT int8. APK derlemesi bunları indirir."
+          NOTES="OpenAI CLIP ViT-B/32 görüntü kodlayıcısı (MIT) + sentence-transformers/clip-ViT-B-32-multilingual-v1 (Apache-2.0), LiteRT int8. APK derlemesi bunları indirir. kaynak: $HASH"
+          if gh release view modeller > /dev/null 2>&1; then
+            gh release upload modeller out/* --clobber
+            gh release edit modeller --notes "$NOTES"
+          else
+            gh release create modeller out/* --target "$GITHUB_SHA" --latest=false \
+              --title "Modeller (cümleyle arama)" --notes "$NOTES"
+          fi
