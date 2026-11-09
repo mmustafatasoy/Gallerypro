@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_hint">Nesne, yazı, ay ya da yıl ara</string>
+    <string name="search_close">Aramayı kapat</string>
+    <string name="search_suggested">Önerilenler</string>
+    <string name="search_recent">Son Aramalar</string>
+    <string name="search_clear">Temizle</string>
+    <string name="search_no_results">“%1$s” için sonuç yok</string>
+    <string name="search_incomplete_hint">Fotoğrafların hepsi henüz incelenmedi; inceleme bitince daha çok sonuç çıkabilir.</string>
+    <string name="search_filter_all">Tümü</string>
+    <string name="search_filter_photos">Fotoğraflar</string>
+    <string name="search_filter_videos">Videolar</string>
+    <string name="search_chip_videos">Videolar</string>
+    <string name="search_chip_screenshots">Ekran Görüntüleri</string>
+    <string name="search_chip_favorites">Favoriler</string>
+    <plurals name="search_results_count">
+        <item quantity="one">%1$s sonuç</item>
+        <item quantity="other">%1$s sonuç</item>
+    </plurals>
+    <string name="index_title">Akıllı arama</string>
+    <string name="index_empty">Fotoğraflarındaki nesneler ve yazılar bu telefonda, internetsiz incelenir. Telefon şarjdayken kendiliğinden başlar.</string>
+    <string name="index_running">Fotoğraflar inceleniyor · %1$s / %2$s</string>
+    <string name="index_partial">%1$s / %2$s öğe incelendi. Telefon şarjdayken kendiliğinden devam eder.</string>
+    <plurals name="index_ready">
+        <item quantity="one">%1$s öğe incelendi. Yeni fotoğraflar şarjdayken eklenir.</item>
+        <item quantity="other">%1$s öğe incelendi. Yeni fotoğraflar şarjdayken eklenir.</item>
+    </plurals>
+    <string name="index_now">Şimdi incele</string>
+    <string name="index_queued">Başlatılıyor…</string>
+</resources>

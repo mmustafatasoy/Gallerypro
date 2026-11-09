@@ -8,7 +8,10 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -27,14 +30,18 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.atasoy.gallerypro.data.LocalGalleryStores
+import com.atasoy.gallerypro.data.index.IndexScheduler
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
 import com.atasoy.gallerypro.data.media.MediaAccess
 import com.atasoy.gallerypro.data.media.MediaPermissions
+import com.atasoy.gallerypro.designsystem.LocalSearchLauncher
 import com.atasoy.gallerypro.feature.collections.CollectionsScreen
 import com.atasoy.gallerypro.feature.collections.CollectionsViewModel
 import com.atasoy.gallerypro.feature.library.LibraryScreen
 import com.atasoy.gallerypro.feature.library.LibraryViewModel
 import com.atasoy.gallerypro.feature.permission.PermissionScreen
+import com.atasoy.gallerypro.feature.search.SearchScreen
+import com.atasoy.gallerypro.feature.search.SearchViewModel
 
 @Composable
 fun GalleryRoot(container: AppContainer) {
@@ -73,32 +80,51 @@ fun GalleryRoot(container: AppContainer) {
                     onOpenSettings = { context.openAppSettings() }
                 )
             } else {
-                LaunchedEffect(access) { container.mediaRepository.start() }
+                LaunchedEffect(access) {
+                    container.mediaRepository.start()
+                    // Yapay zekâ dizini: telefon şarjdayken ve boştayken arka planda.
+                    IndexScheduler.schedule(context)
+                }
                 val libraryViewModel: LibraryViewModel = viewModel {
                     LibraryViewModel(container.mediaRepository, container.edits)
                 }
                 val collectionsViewModel: CollectionsViewModel = viewModel {
                     CollectionsViewModel(container.mediaRepository, container.sections)
                 }
+                val searchViewModel: SearchViewModel = viewModel {
+                    SearchViewModel(container.mediaRepository, container.index, container.captions, container.searchHistory)
+                }
+                var searchOpen by rememberSaveable { mutableStateOf(false) }
+                val openSearch = remember { { searchOpen = true } }
                 // Sekmeler arasında geçerken her sekmenin kaydırma yeri ve açık ekranı korunur.
                 var tab by rememberSaveable { mutableIntStateOf(TabLibrary) }
                 val tabStates = rememberSaveableStateHolder()
-                Crossfade(targetState = tab, label = "tab") { current ->
-                    tabStates.SaveableStateProvider(current) {
-                        if (current == TabLibrary) {
-                            LibraryScreen(
-                                viewModel = libraryViewModel,
-                                partialAccess = access == MediaAccess.Partial,
-                                onRequestMoreAccess = requestAccess,
-                                onOpenCollections = { tab = TabCollections }
-                            )
-                        } else {
-                            CollectionsScreen(
-                                viewModel = collectionsViewModel,
-                                onOpenLibrary = { tab = TabLibrary }
-                            )
+                CompositionLocalProvider(LocalSearchLauncher provides openSearch) {
+                    Crossfade(targetState = tab, label = "tab") { current ->
+                        tabStates.SaveableStateProvider(current) {
+                            if (current == TabLibrary) {
+                                LibraryScreen(
+                                    viewModel = libraryViewModel,
+                                    partialAccess = access == MediaAccess.Partial,
+                                    onRequestMoreAccess = requestAccess,
+                                    onOpenCollections = { tab = TabCollections }
+                                )
+                            } else {
+                                CollectionsScreen(
+                                    viewModel = collectionsViewModel,
+                                    onOpenLibrary = { tab = TabLibrary }
+                                )
+                            }
                         }
                     }
+                }
+                AnimatedVisibility(
+                    visible = searchOpen,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    SearchScreen(searchViewModel, onClose = { searchOpen = false })
                 }
             }
             crashReport?.let { report ->

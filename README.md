@@ -13,7 +13,7 @@ iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsi
 | 2 · Cam ve görüntüleyici | Fotoğraf görüntüleyici, Bilgi paneli | tamam |
 | 3 · Video | Media3 oynatıcı, film şeridi | tamam |
 | 4 · Koleksiyonlar ve Düzenle | Koleksiyonlar sekmesi, Gizli/Son Silinenler, Düzenle ekranı | tamam (0.4.1: kararlılık + çökme raporu) |
-| 5 · Yapay zekâ | | sırada |
+| 5 · Yapay zekâ | Cihaz içi dizin (nesne + yazı) ve arama ekranı (0.5.0); sırada cümleyle arama, Kişiler | devam ediyor |
 | 6 · Cila ve yayın | | |
 
 ## APK nasıl alınır (Bitbucket Pipelines)

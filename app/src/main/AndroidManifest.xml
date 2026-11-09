@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Android 10–12 -->
     <uses-permission
@@ -17,7 +18,9 @@
     <!-- Gizli albüm parmak izi, yüz veya ekran kilidiyle açılır. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- Bilerek yok: INTERNET. Fotoğraflar cihazdan çıkmaz. -->
+    <!-- Bilerek yok: INTERNET. Fotoğraflar cihazdan çıkmaz. ML Kit'in kütüphaneleri
+         (kullanım istatistiği için) bu izni ekler; burada kaldırılır, modeller zaten uygulamanın içinde. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
 
     <application
         android:name=".GalleryApp"

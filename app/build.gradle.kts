@@ -11,8 +11,8 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.4.1"
+        versionCode = 6
+        versionName = "0.5.0"
     }
 
     signingConfigs {
@@ -87,6 +87,11 @@ dependencies {
 
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui.compose)
+
+    // 5. aşama: cihaz içi yapay zekâ (modeller APK'nın içinde, internet yok) ve arka plan dizinleme.
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.mlkit.image.labeling)
+    implementation(libs.mlkit.text.recognition)
 
     testImplementation(libs.junit)
 }

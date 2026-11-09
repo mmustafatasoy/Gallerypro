@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 4. aşama + kararlılık (0.4.1)
+# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.0)
 
 Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 
@@ -10,19 +10,17 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 ## Şu anki durum
 | Dal | İçerik | Durum |
 | --- | --- | --- |
-| `ana` | Aşama 1 + 2 (PR #1 ve #3 birleşti) | Derleme #5 yeşil |
-| `asama-3-video` | Aşama 3: cam video oynatıcı (Media3 1.11.1) | Derleme #6 yeşil. PR #4 açık. |
-| `asama-4-koleksiyonlar` | Aşama 4: Koleksiyonlar + Düzenle (`asama-3-video` üstüne) | Derleme #7 yeşil (39 test). PR #5 açık. |
-| `asama-4b-performans` | Kaydırmada kasmayı azaltma (4 üstüne) | Derleme #8 yeşil. PR #6 açık. |
-| `asama-4c-kararlilik` | Kararlılık, sürüm 0.4.1 (4b üstüne; 3, 4 ve 4b'yi içerir) | Derleme #9 yeşil (40 test). PR #7 açık. |
+| `ana` | Aşama 1–4 + kararlılık 0.4.1 (PR #7 birleşti; #4–#6 onun içinde) | Derleme #9 yeşil |
+| `asama-5a-arama` | 5. aşama ilk adım: cihaz içi dizin + arama ekranı, sürüm 0.5.0 (`ana` üstüne) | Derleme #10 yeşil (48 test). PR #8 açık. |
 
 ## Hemen yapılacak (sırayla)
-1. Kullanıcı PR'ları sırayla birleştirir: #4 → #5 → #6 → #7. Yalnızca #7'yi birleştirmek de yeter (hepsini içerir).
-   Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
+1. Kullanıcı PR #8'i birleştirir. Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
    Rapordaki yığın izinde adı geçen satırı düzelt; tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
-3. Sonra 5. aşama: dokümandaki "6. Yapay zekâ ile arama" ve "Cihaz içi ücretsiz yapay zekâ" bölümleri, yeni dal `asama-5-yapay-zeka`.
-   Room + DataStore + WorkManager + ML Kit/LiteRT bu aşamada gelir (tablodaki kütüphaneler; KSP gerekir).
+3. **Kasım derleme dakikaları bitti** (10 derleme, ~52 dk). Yeni derleme ya 1 Aralık'ta ya da kullanıcı Bitbucket'a ödeme bilgisi
+   eklerse (1.000 dk = 10 $) olur. Kullanıcıya sormadan derleme başlatma.
+4. Sonra 5b: "Cümleyle arama" (MobileCLIP S0/S2 int8 + LiteRT) ve Bilgi panelindeki "Benzer Fotoğraflar". Model dosyası depoya
+   konmaz; derlemede indirilir (fetch-fonts gibi bir betik). Lisans kontrolü yayından önce. Sonra 5c: Kişiler, Anılar, Harita.
 
 ## Kurallar (değişmez)
 - Sürümler `gradle/libs.versions.toml` içinde; **yükseltme yok**. Yeni kütüphane sadece dokümandaki tablodan.
@@ -32,7 +30,7 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 - Tüm metinler `res/values/strings.xml` (Türkçe) + `res/values-en/strings.xml`. Kodda sabit metin yok.
 - Material3 yok; sadece Compose foundation.
 - Her aşama ayrı dal + ayrı PR. Commit mesajları Türkçe.
-- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Kasım'da ~43 dk kullanıldı (9 derleme); kalan ~7 dk = en fazla 1 derleme. Bir derleme ~5–6 dk.
+- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Kasım'da 50 dk'nın tamamı kullanıldı (10 derleme). Bir derleme ~6 dk; ML Kit eklenince ~10 dk.
 - Saf mantık (CollectionsLogic, EditModel) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
   (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece Pipelines'ta derlenir.
 
@@ -80,6 +78,24 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 - Keskinlik AGSL efekti oluşturulamazsa atlanır. Yazma izni / konum izni penceresi açılamazsa kopya olarak kaydedilir;
   kaydetmeden önce Coil bellek önbelleği boşaltılır.
 - Görüntüleyicide açılışta çökmenin kesin nedeni rapor olmadan bulunamadı; rapor gelince düzeltilecek.
+
+## 5. aşama ilk adım (0.5.0, `asama-5a-arama`)
+- **Dizin** (`data/index/`): `IndexWorker` (WorkManager) MediaStore'un 640 px küçük kopyasını ML Kit ile inceler:
+  etiketler (image-labeling 17.0.9, güven ≥ 0,62, en çok 8) ve yazı (text-recognition 16.0.1, Latin). Modeller APK'da.
+  Şarjda + boştayken 6 saatte bir; aramadaki "Şimdi incele" hemen başlatır. Yeni/değişen öğeler, en yeniden eskiye;
+  20'lik gruplarla kaydeder, yarıda kalırsa devam eder. Silinenler dizinden çıkar. `IndexVersion` artarsa hepsi yenilenir.
+- **Kayıt**: Room yerine uygulamanın kendi SQLite dosyası (`IndexStore`, `index.db`, platform API; KSP/derleme riski yok).
+  Arama bellekte (10.000 öğede milisaniyeler). FTS kullanılmadı. Room'a geçiş istenirse 6. aşamada.
+- **Arama** (`SearchEngine`, saf Kotlin, `SearchEngineTest` 8 test): Türkçe sadeleştirme (`SearchText`), etiketlerin Türkçe
+  karşılıkları (`LabelDictionary`, ~250 etiket), ay/yıl/bugün/dün, video/fotoğraf/ekran görüntüsü/favori süzgeçleri,
+  başlık + albüm + OCR eşleşmesi, basit Türkçe ek kırpma ("kediler" → "kedi"). Tüm sözcükler eşleşmeli (VE).
+- **Ekran** (`feature/search/`): sekme çubuğundaki arama dairesi `LocalSearchLauncher` ile açar (GalleryRoot sağlar).
+  Altta cam arama kutusu + kapatma dairesi (klavyenin üstüne kalkar); boşken Akıllı arama kartı, öneriler, son aramalar;
+  sonuçlarda Tümü/Fotoğraflar/Videolar; dokununca görüntüleyici. Gizli öğeler çıkmaz.
+- **INTERNET izni** ML Kit kütüphaneleri eklediği için manifestte `tools:node="remove"` ile kesin olarak kaldırıldı.
+- Ertelendi (5b/5c): CLIP ile cümleyle arama ve benzer fotoğraflar; ML Kit çeviri (model indirmek internet ister, kullanılmaz;
+  Türkçe sorgu sözlükle çözülür); videolarda 2 sn'de bir anahtar kare (şimdilik videonun küçük resmi); yer adıyla arama ve
+  Yerler haritası; Kişiler; Bilgi panelinde "Akıllı Etiketler" kartı.
 
 ## Aşama 4'te bilerek ertelenenler
 - Anılar, Kişiler ve Evcil Hayvanlar, Haritada (konum dizini + MapLibre), Selfie/Hareketli/Portre türleri → 5. aşama (dizinleyici).

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_hint">Search things, text, months or years</string>
+    <string name="search_close">Close search</string>
+    <string name="search_suggested">Suggested</string>
+    <string name="search_recent">Recent Searches</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_no_results">No results for “%1$s”</string>
+    <string name="search_incomplete_hint">Not all photos have been analyzed yet; more results may appear when it finishes.</string>
+    <string name="search_filter_all">All</string>
+    <string name="search_filter_photos">Photos</string>
+    <string name="search_filter_videos">Videos</string>
+    <string name="search_chip_videos">Videos</string>
+    <string name="search_chip_screenshots">Screenshots</string>
+    <string name="search_chip_favorites">Favorites</string>
+    <plurals name="search_results_count">
+        <item quantity="one">%1$s result</item>
+        <item quantity="other">%1$s results</item>
+    </plurals>
+    <string name="index_title">Smart search</string>
+    <string name="index_empty">Things and text in your photos are recognized on this phone, without internet. It starts by itself while charging.</string>
+    <string name="index_running">Analyzing photos · %1$s of %2$s</string>
+    <string name="index_partial">%1$s of %2$s items analyzed. Continues by itself while charging.</string>
+    <plurals name="index_ready">
+        <item quantity="one">%1$s item analyzed. New photos are added while charging.</item>
+        <item quantity="other">%1$s items analyzed. New photos are added while charging.</item>
+    </plurals>
+    <string name="index_now">Analyze now</string>
+    <string name="index_queued">Starting…</string>
+</resources>

@@ -6,11 +6,13 @@ import coil3.ImageLoader
 import com.atasoy.gallerypro.data.GalleryStores
 import com.atasoy.gallerypro.data.collections.SectionPrefs
 import com.atasoy.gallerypro.data.edit.EditStore
+import com.atasoy.gallerypro.data.index.IndexStore
 import com.atasoy.gallerypro.data.media.CaptionStore
 import com.atasoy.gallerypro.data.media.GalleryImageLoader
 import com.atasoy.gallerypro.data.media.HiddenStore
 import com.atasoy.gallerypro.data.media.MediaRepository
 import com.atasoy.gallerypro.designsystem.GalleryPerformance
+import com.atasoy.gallerypro.feature.search.SearchHistory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,4 +43,6 @@ class AppContainer(context: Context) {
     val edits = EditStore(context)
     val sections = SectionPrefs(context)
     val stores = GalleryStores(captions, edits, hidden)
+    val index = IndexStore(context)
+    val searchHistory = SearchHistory(context)
 }
