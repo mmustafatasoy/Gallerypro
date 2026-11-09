@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.mlkit.image.labeling)
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.litert)
 
     testImplementation(libs.junit)
 }
