@@ -43,7 +43,7 @@ fun ProgressiveBlurEdge(
     blurRadius: Dp = GalleryDimens.GlassBlurLight,
     tintIntensity: Float = 0.72f
 ) {
-    if (isRuntimeShaderSupported()) {
+    if (isRuntimeShaderSupported() && !GalleryPerformance.reducedEffects) {
         Box(
             modifier
                 .fillMaxWidth()

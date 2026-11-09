@@ -13,7 +13,6 @@ import coil3.fetch.ImageFetchResult
 import coil3.key.Keyer
 import coil3.memory.MemoryCache
 import coil3.request.Options
-import coil3.request.crossfade
 
 /**
  * Izgara için küçük resim isteği. Boyut kovalara yuvarlanır ki aynı kare
@@ -71,7 +70,6 @@ object GalleryImageLoader {
                 .maxSizePercent(context, 0.25)
                 .build()
         }
-        .crossfade(120)
         .build()
 }
 

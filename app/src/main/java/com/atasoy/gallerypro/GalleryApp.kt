@@ -10,6 +10,7 @@ import com.atasoy.gallerypro.data.media.CaptionStore
 import com.atasoy.gallerypro.data.media.GalleryImageLoader
 import com.atasoy.gallerypro.data.media.HiddenStore
 import com.atasoy.gallerypro.data.media.MediaRepository
+import com.atasoy.gallerypro.designsystem.GalleryPerformance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,6 +22,7 @@ class GalleryApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        GalleryPerformance.init(this)
         container = AppContainer(this)
     }
 }

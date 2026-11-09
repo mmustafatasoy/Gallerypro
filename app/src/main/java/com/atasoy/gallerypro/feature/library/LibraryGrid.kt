@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,9 +38,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -139,23 +138,18 @@ private fun MediaCell(
     val imageLoader = LocalGalleryImageLoader.current
     val haptics = LocalHapticFeedback.current
     val uri = remember(item.id, item.isVideo) { item.contentUri() }
-    val inset by animateFloatAsState(
+    val context = LocalContext.current
+    // Animasyon değerleri sadece çizimde okunur: seçim animasyonu hücreyi yeniden oluşturmaz.
+    val inset = animateFloatAsState(
         targetValue = if (isSelected) 0.9f else 1f,
         animationSpec = GalleryMotion.standard(),
         label = "cellInset"
     )
-    val corner by animateDpAsState(
+    val corner = animateDpAsState(
         targetValue = if (isSelected) 6.dp else 0.dp,
         animationSpec = GalleryMotion.standard(),
         label = "cellCorner"
     )
-    val dateText = remember(item.takenAtMillis) { Formatters.longDate(item.takenAtMillis, zone, locale) }
-    val description = if (item.isVideo) {
-        stringResource(R.string.cd_video, dateText, Formatters.duration(item.durationMs))
-    } else {
-        stringResource(R.string.cd_photo, dateText)
-    }
-    val selectedText = stringResource(R.string.cd_selected)
 
     Box(
         modifier = modifier
@@ -169,7 +163,15 @@ private fun MediaCell(
                 }
             )
             .semantics {
-                contentDescription = if (isSelected) "$description, $selectedText" else description
+                // Metin sadece erişilebilirlik isteyince üretilir; kaydırırken her hücrede biçimlendirme yapılmaz.
+                val res = context.resources
+                val date = Formatters.longDate(item.takenAtMillis, zone, locale)
+                val description = if (item.isVideo) {
+                    res.getString(R.string.cd_video, date, Formatters.duration(item.durationMs))
+                } else {
+                    res.getString(R.string.cd_photo, date)
+                }
+                contentDescription = if (isSelected) "$description, ${res.getString(R.string.cd_selected)}" else description
             }
     ) {
         AsyncImage(
@@ -180,10 +182,13 @@ private fun MediaCell(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = inset
-                    scaleY = inset
+                    val s = inset.value
+                    scaleX = s
+                    scaleY = s
+                    val c = corner.value
+                    clip = c > 0.dp
+                    if (clip) shape = RoundedCornerShape(c)
                 }
-                .clip(RoundedCornerShape(corner))
         )
 
         if (showBadges && item.isVideo) {

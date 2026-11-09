@@ -70,7 +70,7 @@ fun Modifier.glass(
     effects = {
         vibrancy()
         blur(tone.blur.toPx())
-        if (refraction) {
+        if (refraction && !GalleryPerformance.reducedEffects) {
             lens(GalleryDimens.LensHeight.toPx(), GalleryDimens.LensAmount.toPx())
         }
     },
