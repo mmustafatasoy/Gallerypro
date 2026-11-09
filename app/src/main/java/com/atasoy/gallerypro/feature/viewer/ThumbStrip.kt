@@ -115,9 +115,10 @@ internal fun ThumbStrip(
                     contentDescription = null,
                     imageLoader = imageLoader,
                     contentScale = ContentScale.Crop,
+                    // Yay animasyonu hedefini biraz aşar; negatif boşluk/boyut Compose'da hata verir.
                     modifier = Modifier
-                        .padding(horizontal = margin)
-                        .size(width, ThumbHeight)
+                        .padding(horizontal = margin.coerceAtLeast(0.dp))
+                        .size(width.coerceAtLeast(1.dp), ThumbHeight)
                         .graphicsLayer { alpha = if (selected) 1f else 0.85f }
                         .clip(shape)
                         .then(

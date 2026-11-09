@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.0)
+# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.1)
 
 Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 
@@ -11,14 +11,15 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 | Dal | İçerik | Durum |
 | --- | --- | --- |
 | `ana` | Aşama 1–4 + kararlılık 0.4.1 (PR #7 birleşti; #4–#6 onun içinde) | Derleme #9 yeşil |
-| `asama-5a-arama` | 5. aşama ilk adım: cihaz içi dizin + arama ekranı, sürüm 0.5.0 (`ana` üstüne) | Derleme #10 yeşil (48 test). PR #8 açık. |
+| `asama-5a-arama` | 5. aşama ilk adım: cihaz içi dizin + arama ekranı, sürüm 0.5.1 (`ana` üstüne) | Derleme #11 yeşil (48 test). PR #8 açık. |
 
 ## Hemen yapılacak (sırayla)
 1. Kullanıcı PR #8'i birleştirir. Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
    Rapordaki yığın izinde adı geçen satırı düzelt; tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
-3. **Kasım derleme dakikaları bitti** (10 derleme, ~52 dk). Yeni derleme ya 1 Aralık'ta ya da kullanıcı Bitbucket'a ödeme bilgisi
-   eklerse (1.000 dk = 10 $) olur. Kullanıcıya sormadan derleme başlatma.
+3. **Derleme dakikaları:** ücretsiz 50 dk Kasım'da aşıldı (11 derleme, ~60 dk) ama Bitbucket derlemeyi hâlâ kabul ediyor.
+   Kullanıcı GitHub'a (Actions, ayda 2.000 dk) taşınmayı düşünüyor; önce eski hesabı için GitHub desteğine başvuracak.
+   Gereksiz derleme başlatma; her derleme ~9–10 dk.
 4. Sonra 5b: "Cümleyle arama" (MobileCLIP S0/S2 int8 + LiteRT) ve Bilgi panelindeki "Benzer Fotoğraflar". Model dosyası depoya
    konmaz; derlemede indirilir (fetch-fonts gibi bir betik). Lisans kontrolü yayından önce. Sonra 5c: Kişiler, Anılar, Harita.
 
@@ -30,7 +31,8 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 - Tüm metinler `res/values/strings.xml` (Türkçe) + `res/values-en/strings.xml`. Kodda sabit metin yok.
 - Material3 yok; sadece Compose foundation.
 - Her aşama ayrı dal + ayrı PR. Commit mesajları Türkçe.
-- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Kasım'da 50 dk'nın tamamı kullanıldı (10 derleme). Bir derleme ~6 dk; ML Kit eklenince ~10 dk.
+- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Bir derleme ML Kit'le ~9–10 dk.
+- Debug APK sabit anahtarla imzalanır (`scripts/debug-keystore.b64` → `~/.android/debug.keystore`); yeni APK eskisinin üstüne kurulur. Anahtarı değiştirme.
 - Saf mantık (CollectionsLogic, EditModel) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
   (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece Pipelines'ta derlenir.
 
@@ -93,6 +95,8 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
   Altta cam arama kutusu + kapatma dairesi (klavyenin üstüne kalkar); boşken Akıllı arama kartı, öneriler, son aramalar;
   sonuçlarda Tümü/Fotoğraflar/Videolar; dokununca görüntüleyici. Gizli öğeler çıkmaz.
 - **INTERNET izni** ML Kit kütüphaneleri eklediği için manifestte `tools:node="remove"` ile kesin olarak kaldırıldı.
+- **0.5.1:** çökme raporu (Tecno, Android 16) → `ThumbStrip`'te yay animasyonu boşluğu eksiye düşürüyordu ("Padding must be non-negative").
+  Animasyonlu Dp değerleri padding/size'a verilmeden önce `coerceAtLeast(0.dp)` ile sınırlanır.
 - Ertelendi (5b/5c): CLIP ile cümleyle arama ve benzer fotoğraflar; ML Kit çeviri (model indirmek internet ister, kullanılmaz;
   Türkçe sorgu sözlükle çözülür); videolarda 2 sn'de bir anahtar kare (şimdilik videonun küçük resmi); yer adıyla arama ve
   Yerler haritası; Kişiler; Bilgi panelinde "Akıllı Etiketler" kartı.

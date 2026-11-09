@@ -41,6 +41,8 @@ definitions:
             fi
           # Inter yazı tipi
           - bash scripts/fetch-fonts.sh
+          # Sabit debug imza anahtarı: yeni APK eskisinin üstüne kurulabilsin (gizli değildir, şifresi standart "android")
+          - mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
           - /opt/gradle-dist/gradle-$GV/bin/gradle --no-daemon testDebugUnitTest assembleDebug
         artifacts:
           - app/build/outputs/apk/**/*.apk
