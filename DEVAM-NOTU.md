@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5. aşama ilk adım (0.5.2)
+# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5b hazırlığı (0.5.2)
 
 Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
@@ -12,6 +12,7 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 | Dal | İçerik | Durum |
 | --- | --- | --- |
 | `main` | Aşama 1–4 + 5. aşama ilk adım (cihaz içi dizin + arama), sürüm 0.5.2 (hızlı release APK) | GitHub Actions yeşil (48 test) |
+| `asama-5b-cihaz-ici-arama` | Onaylı LiteRT 2.3.2 ve vektör eşleştirme temeli; anlamsal özelliklerin entegrasyonu bekliyor | Yerel 58 test + release APK başarılı; kod commit'i `ab0d264` için [APK derlemesi yeşil](https://github.com/mmustafatasoy/Gallerypro/actions/runs/42694285629) |
 | `asama-2…`, `asama-3…`, `asama-4…`, `asama-5a-arama` | Bitbucket'tan taşınan aşama dalları (geçmiş için) | — |
 
 ## Hemen yapılacak (sırayla)
@@ -111,6 +112,50 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
   uygulama ekrandayken her fotoğraf arasında 150 ms bekler (`IndexWorker.appVisible`).
 - Hâlâ kasarsa sıradaki şüpheli: aynı anda çok sayıda cam yüzeyin (üst bulanık başlık + düğmeler + sekme çubuğu)
   her karede bulanıklık/kırılma çizmesi. Doküman "en fazla 4 cam yüzey" diyor; sayılıp azaltılır veya kırılma kapatılır.
+
+## 5b hazırlığı — model erişimi bekleniyor
+- Bu devralmada yeni bir performans veya çökme raporu verilmedi. `main` ile başlangıç commit'i aynıydı;
+  mevcut 48 test yeniden çalıştırıldı ve release APK derlendi. Mevcut tasarım, arama, görüntüleyici,
+  sürüm numarası ve bağımlılık sürümleri korundu.
+- Kullanıcı yeni `com.google.ai.edge.litert:litert:2.3.2` bağımlılığını açıkça onayladı; sürümü
+  `gradle/libs.versions.toml` içinde. Başka uygulama bağımlılığı eklenmedi veya yükseltilmedi.
+- `data/semantic/EmbeddingMath.kt`: model çıktıları için normalizasyon, kosinüs benzerliği ve sınırlı
+  en iyi sonuç seçimi. Boş/sıfır/NaN/sonsuz ve boyutu uyuşmayan vektörleri eler; girdileri değiştirmez;
+  eşit puanda kimliğe göre kararlı sıralar. `EmbeddingMathTest` 10 test; toplam **58 test geçti**.
+- `testDebugUnitTest assembleRelease` ve yukarıdaki GitHub Actions kod derlemesi başarılı. Yerel APK
+  imzası doğrulandı, `INTERNET` izninin bulunmadığı kontrol edildi. Cihaz testi yapılmadı.
+- **Cümleyle arama ve Benzer Fotoğraflar henüz çalışan özellik olarak eklenmedi.** Gerçek model,
+  dizinleyici/arama/Bilgi paneli bağlantıları ve gerçek modelle doğrulama tamamlanmadı. PR açılmadı,
+  `main` dalına yazılmadı veya birleştirme yapılmadı.
+
+### Model kaynağı ve kalan işler
+- Orijinal MobileCLIP S0/S2 için kaynak ve ağırlık lisansını Apple'ın
+  `1140b8d197e4ed7d56b3a92216ded98bb1c2ac87` commit'ine sabitle. Bu sürümün
+  [`LICENSE_weights_data`](https://github.com/apple/ml-mobileclip/blob/1140b8d197e4ed7d56b3a92216ded98bb1c2ac87/LICENSE_weights_data)
+  dosyası değiştirme ve yeniden dağıtıma izin verir. Sonraki MobileCLIP2 sürümünün araştırma lisansını
+  orijinal S0/S2 lisansıyla karıştırma. İndirilen ağırlığın kökeni, özeti ve APK'ya eklenecek lisanslar
+  gerçek indirmeden sonra doğrulanmalı; model ikilisi depoya konmamalı.
+- Apple hazır INT8/TFLite çiftini sağlamıyor. Ayrı çalışma alanındaki denemede S0 görüntü ve metin
+  kodlayıcıları **rastgele ağırlıklarla**, LiteRT Torch 0.10.0 ile FP32 TFLite'a çevrildi; PyTorch/TFLite
+  çıktıları karşılaştırıldı. Bu, eğitilmiş modelin veya arama kalitesinin doğrulaması değildir.
+  Metin girdisi 77 adet `int32` token olmalı (0–49407 aralığı kayıpsız sığar); `int64` girdinin ARG_MAX
+  dönüşümü desteklenmedi. Çıktılar 512 boyutlu. Gerçek ağırlıklarla INT8 dönüşümü ve kalite kontrolü sırada.
+- S0 ön işleme: RGB, kısa kenar 256'ya bilinear ölçekleme, merkezden 256×256 kırpma, piksel/255;
+  CLIP ortalama/standart sapma normalizasyonu ekleme. Tokenizer CLIP byte-BPE; bağlam 77,
+  başlangıç 49406, bitiş 49407, dolgu 0. Aynı checkpoint'in görüntü/metin çiftini kullan.
+  Türkçe serbest cümle kalitesi henüz doğrulanmadı; token üretmek anlamsal desteği kanıtlamaz.
+- Bulut ağ politikası `docs-assets.developer.apple.com` (resmî ağırlık), `api.github.com` (PR API'si),
+  `claude.ai` (proje dokümanı) için HTTP CONNECT 403 döndürdü. Ortam ayarlarında bu alanlara erişim
+  verilmesi gerekiyor. Taslak ayar servisi de `INVALID_ARGUMENT` döndürdüğünden izin listesi buradan
+  değiştirilemedi. Bunlar geliştirme ortamının izinleridir; uygulamaya internet izni eklenmez.
+  Git okuma ve dal gönderme çalışıyor; mevcut GitHub kimlik doğrulamasını denemeden yeni token isteme.
+- Erişim açılınca önce gerçek ağırlığı indirip özet/lisansı doğrula, dönüşüm ve INT8 çıktı karşılaştırmasını
+  tamamla. Sonra ortak ve seri çalışan model çalıştırıcısını, dosya değişim zamanı + model sürümüyle
+  anahtarlanan ayrı vektör kaydını ve düşük öncelikli dizinlemeyi bağla; mevcut OCR kaydını koru.
+  Aramada eski tarih/tür/favori/ekran görüntüsü filtrelerini ve mevcut sözcük aramasını koru.
+  Benzerleri yalnızca görünür `MediaRepository.items` üzerinden seç; kaynak fotoğrafı, videoları,
+  gizli/silinmiş ve eski sürüm vektörlerini dışla. Gizli/çöp görüntüleyicisinden kütüphaneye sonuç sızdırma.
+  Gerçek model ve regresyon kontrollerinden, ardından başarılı GitHub Actions APK derlemesinden sonra PR aç.
 
 ## Aşama 4'te bilerek ertelenenler
 - Anılar, Kişiler ve Evcil Hayvanlar, Haritada (konum dizini + MapLibre), Selfie/Hareketli/Portre türleri → 5. aşama (dizinleyici).
