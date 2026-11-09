@@ -31,6 +31,9 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde):
+            // ML Kit'in yerel kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın.
+            ndk { abiFilters += "arm64-v8a" }
         }
         release {
             isMinifyEnabled = true
