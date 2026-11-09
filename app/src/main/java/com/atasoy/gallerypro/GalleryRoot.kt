@@ -9,6 +9,8 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -39,6 +42,8 @@ fun GalleryRoot(container: AppContainer) {
     var access by remember { mutableStateOf(MediaPermissions.access(context)) }
     var askedOnce by rememberSaveable { mutableStateOf(false) }
     var permanentlyDenied by remember { mutableStateOf(false) }
+    // Önceki oturum çöktüyse ayrıntısı bir kez gösterilir.
+    var crashReport by remember { mutableStateOf(CrashReporter.pending(context)) }
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -60,38 +65,46 @@ fun GalleryRoot(container: AppContainer) {
         LocalGalleryImageLoader provides container.imageLoader,
         LocalGalleryStores provides container.stores
     ) {
-        if (access == MediaAccess.None) {
-            PermissionScreen(
-                showSettings = askedOnce && permanentlyDenied,
-                onRequest = requestAccess,
-                onOpenSettings = { context.openAppSettings() }
-            )
-        } else {
-            LaunchedEffect(access) { container.mediaRepository.start() }
-            val libraryViewModel: LibraryViewModel = viewModel {
-                LibraryViewModel(container.mediaRepository, container.edits)
-            }
-            val collectionsViewModel: CollectionsViewModel = viewModel {
-                CollectionsViewModel(container.mediaRepository, container.sections)
-            }
-            // Sekmeler arasında geçerken her sekmenin kaydırma yeri ve açık ekranı korunur.
-            var tab by rememberSaveable { mutableIntStateOf(TabLibrary) }
-            val tabStates = rememberSaveableStateHolder()
-            Crossfade(targetState = tab, label = "tab") { current ->
-                tabStates.SaveableStateProvider(current) {
-                    if (current == TabLibrary) {
-                        LibraryScreen(
-                            viewModel = libraryViewModel,
-                            partialAccess = access == MediaAccess.Partial,
-                            onRequestMoreAccess = requestAccess,
-                            onOpenCollections = { tab = TabCollections }
-                        )
-                    } else {
-                        CollectionsScreen(
-                            viewModel = collectionsViewModel,
-                            onOpenLibrary = { tab = TabLibrary }
-                        )
+        Box(Modifier.fillMaxSize()) {
+            if (access == MediaAccess.None) {
+                PermissionScreen(
+                    showSettings = askedOnce && permanentlyDenied,
+                    onRequest = requestAccess,
+                    onOpenSettings = { context.openAppSettings() }
+                )
+            } else {
+                LaunchedEffect(access) { container.mediaRepository.start() }
+                val libraryViewModel: LibraryViewModel = viewModel {
+                    LibraryViewModel(container.mediaRepository, container.edits)
+                }
+                val collectionsViewModel: CollectionsViewModel = viewModel {
+                    CollectionsViewModel(container.mediaRepository, container.sections)
+                }
+                // Sekmeler arasında geçerken her sekmenin kaydırma yeri ve açık ekranı korunur.
+                var tab by rememberSaveable { mutableIntStateOf(TabLibrary) }
+                val tabStates = rememberSaveableStateHolder()
+                Crossfade(targetState = tab, label = "tab") { current ->
+                    tabStates.SaveableStateProvider(current) {
+                        if (current == TabLibrary) {
+                            LibraryScreen(
+                                viewModel = libraryViewModel,
+                                partialAccess = access == MediaAccess.Partial,
+                                onRequestMoreAccess = requestAccess,
+                                onOpenCollections = { tab = TabCollections }
+                            )
+                        } else {
+                            CollectionsScreen(
+                                viewModel = collectionsViewModel,
+                                onOpenLibrary = { tab = TabLibrary }
+                            )
+                        }
                     }
+                }
+            }
+            crashReport?.let { report ->
+                CrashReportSheet(report) {
+                    CrashReporter.clear(context)
+                    crashReport = null
                 }
             }
         }

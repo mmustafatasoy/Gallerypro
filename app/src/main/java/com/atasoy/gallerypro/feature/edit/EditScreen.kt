@@ -155,6 +155,8 @@ fun EditScreen(
 
     fun runSave(inPlace: Boolean) {
         saving = true
+        // Tam çözünürlüklü görüntüye yer açmak için önbellekteki küçük resimler bırakılır.
+        imageLoader.memoryCache?.clear()
         scope.launch {
             val result = EditSaver.save(context, item, params, edits, inPlace)
             imageLoader.memoryCache?.clear()
@@ -180,8 +182,12 @@ fun EditScreen(
     fun saveInPlace() {
         val uri = item.contentUri()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val request = MediaStore.createWriteRequest(context.contentResolver, listOf(uri))
-            writeLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+            // İzin penceresi açılamazsa (bazı üretici sürümleri) kopya olarak kaydedilir.
+            val launched = runCatching {
+                val request = MediaStore.createWriteRequest(context.contentResolver, listOf(uri))
+                writeLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+            }.isSuccess
+            if (!launched) runSave(inPlace = false)
         } else {
             scope.launch {
                 val denied = withContext(Dispatchers.IO) {
@@ -190,14 +196,17 @@ fun EditScreen(
                         null
                     } catch (e: RecoverableSecurityException) {
                         e
-                    } catch (e: SecurityException) {
+                    } catch (e: Exception) {
                         null
                     }
                 }
                 if (denied == null) {
                     runSave(inPlace = true)
                 } else {
-                    writeLauncher.launch(IntentSenderRequest.Builder(denied.userAction.actionIntent.intentSender).build())
+                    val launched = runCatching {
+                        writeLauncher.launch(IntentSenderRequest.Builder(denied.userAction.actionIntent.intentSender).build())
+                    }.isSuccess
+                    if (!launched) runSave(inPlace = false)
                 }
             }
         }
@@ -221,7 +230,7 @@ fun EditScreen(
         }
         // Konum izni olmadan okunan orijinalde konum silinir; yedek eksik kalmasın diye önce iste.
         if (!EditSaver.hasLocationAccess(context) && !edits.hasBackup(item.id)) {
-            locationLauncher.launch(Manifest.permission.ACCESS_MEDIA_LOCATION)
+            if (runCatching { locationLauncher.launch(Manifest.permission.ACCESS_MEDIA_LOCATION) }.isFailure) proceed(false)
         } else {
             proceed(EditSaver.hasLocationAccess(context))
         }

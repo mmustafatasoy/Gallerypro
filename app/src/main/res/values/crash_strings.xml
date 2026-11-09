@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="crash_title">Uygulama beklenmedik şekilde kapandı</string>
+    <string name="crash_message">Hatanın ayrıntıları aşağıda. Düzeltilebilmesi için Paylaş ile gönderebilirsin; rapor yalnızca sen paylaşırsan cihazdan çıkar.</string>
+    <string name="crash_share">Paylaş</string>
+    <string name="crash_close">Kapat</string>
+</resources>

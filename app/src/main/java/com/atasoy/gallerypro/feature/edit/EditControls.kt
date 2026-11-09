@@ -146,7 +146,7 @@ internal fun RulerSlider(
                     onHorizontalDrag = { pointer, dx ->
                         pointer.consume()
                         // Cetvelin tamamı tüm aralığa denk gelir.
-                        accumulated += dx / size.width * span
+                        if (size.width > 0) accumulated += dx / size.width * span
                         val steps = accumulated.toInt()
                         if (steps != 0) {
                             accumulated -= steps
@@ -157,6 +157,8 @@ internal fun RulerSlider(
             }
     ) {
         val w = size.width
+        // Panel geçişlerinde genişlik bir an 0 olabilir; çizecek yer yoksa çizme.
+        if (w < 8.dp.toPx() || size.height <= 0f) return@Canvas
         val tick = GalleryDimens.EditTickSpacing.toPx()
         val tickTop = 13.dp.toPx()
         val tickHeight = 14.dp.toPx()
@@ -164,7 +166,7 @@ internal fun RulerSlider(
         var x = 0f
         while (x <= w) {
             val edge = minOf(x, w - x)
-            val alpha = 0.5f * (edge / fade).coerceIn(0f, 1f)
+            val alpha = if (fade > 0f) 0.5f * (edge / fade).coerceIn(0f, 1f) else 0f
             drawRect(Color.White.copy(alpha = alpha), Offset(x, tickTop), Size(1f, tickHeight))
             x += tick
         }
@@ -178,7 +180,7 @@ internal fun RulerSlider(
         val thumbX = (value - range.first) / span * w
         drawRoundRect(
             GalleryColors.EditAccent,
-            Offset((thumbX - thumbW / 2f).coerceIn(0f, w - thumbW), 0f),
+            Offset((thumbX - thumbW / 2f).coerceIn(0f, (w - thumbW).coerceAtLeast(0f)), 0f),
             Size(thumbW, size.height),
             cornerRadius = CornerRadius(3.dp.toPx())
         )

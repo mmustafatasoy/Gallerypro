@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 4. aşama
+# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 4. aşama + kararlılık (0.4.1)
 
 Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 
@@ -13,9 +13,13 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 | `ana` | Aşama 1 + 2 (PR #1 ve #3 birleşti) | Derleme #5 yeşil |
 | `asama-3-video` | Aşama 3: cam video oynatıcı (Media3 1.11.1) | Derleme #6 yeşil. PR #4 açık. |
 | `asama-4-koleksiyonlar` | Aşama 4: Koleksiyonlar + Düzenle (`asama-3-video` üstüne) | Derleme #7 yeşil (39 test). PR #5 açık. |
+| `asama-4b-performans` | Kaydırmada kasmayı azaltma (4 üstüne) | Derleme #8 yeşil. PR #6 açık. |
+| `asama-4c-kararlilik` | Kararlılık, sürüm 0.4.1 (4b üstüne; 3, 4 ve 4b'yi içerir) | Derleme #9 yeşil (40 test). PR #7 açık. |
 
 ## Hemen yapılacak (sırayla)
-1. Kullanıcı önce PR #4'ü, sonra 4. aşama PR'ını birleştirir (sıra önemli değil; 4. aşama 3'ü de içerir).
+1. Kullanıcı PR'ları sırayla birleştirir: #4 → #5 → #6 → #7. Yalnızca #7'yi birleştirmek de yeter (hepsini içerir).
+   Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
+   Rapordaki yığın izinde adı geçen satırı düzelt; tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
 3. Sonra 5. aşama: dokümandaki "6. Yapay zekâ ile arama" ve "Cihaz içi ücretsiz yapay zekâ" bölümleri, yeni dal `asama-5-yapay-zeka`.
    Room + DataStore + WorkManager + ML Kit/LiteRT bu aşamada gelir (tablodaki kütüphaneler; KSP gerekir).
@@ -28,7 +32,7 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 - Tüm metinler `res/values/strings.xml` (Türkçe) + `res/values-en/strings.xml`. Kodda sabit metin yok.
 - Material3 yok; sadece Compose foundation.
 - Her aşama ayrı dal + ayrı PR. Commit mesajları Türkçe.
-- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Kasım'da ~32 dk kullanıldı (7 derleme). Bir derleme ~5–6 dk.
+- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Kasım'da ~43 dk kullanıldı (9 derleme); kalan ~7 dk = en fazla 1 derleme. Bir derleme ~5–6 dk.
 - Saf mantık (CollectionsLogic, EditModel) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
   (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece Pipelines'ta derlenir.
 
@@ -65,7 +69,17 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
   ayarlar `EditStore`'da. Tekrar açınca yedekten + ayarlarla başlar. SIFIRLA + Bitti yedeği geri yazar.
   HEIC/RAW/GIF veya konum izni yoksa orijinale dokunulmaz, yanına `_duzenlendi.jpg` kopya eklenir. EXIF (tarih, kamera, konum) korunur.
 - Kütüphane "⋯" menüsünde "Yalnızca düzenlenenler".
-- Testler: `CollectionsLogicTest` (9), `EditLogicTest` (11) → toplam 39 birim testi.
+- Testler: `CollectionsLogicTest` (9), `EditLogicTest` (12) → toplam 40 birim testi.
+
+## Kararlılık (0.4.1, `asama-4c-kararlilik`)
+- **Çökme raporu** (`CrashReporter.kt`): yakalanmayan hata `files/crash.txt`'ye yazılır, bir sonraki açılışta
+  `GalleryRoot` üstünde gösterilir (Paylaş / Kapat). İnternet yok; rapor yalnızca kullanıcı paylaşırsa çıkar.
+- **Kırpma**: `CropMath` artık hiç `coerceIn` hatası fırlatmaz (`sanitize` + `within`); oran kilitliyken küçük kutuyu
+  kenarda taşımak uygulamayı kapatıyordu. Test: `crop_neverThrowsOnBrokenRects`.
+- **Cetvel**: genişlik 0 iken saydamlık NaN → `Color.copy` hata veriyordu; dar alanda çizim atlanır.
+- Keskinlik AGSL efekti oluşturulamazsa atlanır. Yazma izni / konum izni penceresi açılamazsa kopya olarak kaydedilir;
+  kaydetmeden önce Coil bellek önbelleği boşaltılır.
+- Görüntüleyicide açılışta çökmenin kesin nedeni rapor olmadan bulunamadı; rapor gelince düzeltilecek.
 
 ## Aşama 4'te bilerek ertelenenler
 - Anılar, Kişiler ve Evcil Hayvanlar, Haritada (konum dizini + MapLibre), Selfie/Hareketli/Portre türleri → 5. aşama (dizinleyici).

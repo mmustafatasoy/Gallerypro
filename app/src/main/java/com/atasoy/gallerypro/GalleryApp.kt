@@ -22,6 +22,7 @@ class GalleryApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashReporter.install(this)
         GalleryPerformance.init(this)
         container = AppContainer(this)
     }

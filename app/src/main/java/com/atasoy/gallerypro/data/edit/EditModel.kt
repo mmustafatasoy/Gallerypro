@@ -5,7 +5,6 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -314,9 +313,43 @@ object CropMath {
 
     /** Dikdörtgeni taşı; çerçeveden çıkmaz. */
     fun move(rect: CropRect, dx: Float, dy: Float): CropRect {
-        val x = dx.coerceIn(-rect.left, 1f - rect.right)
-        val y = dy.coerceIn(-rect.top, 1f - rect.bottom)
-        return CropRect(rect.left + x, rect.top + y, rect.right + x, rect.bottom + y)
+        val r = sanitize(rect)
+        val x = dx.within(-r.left, 1f - r.right)
+        val y = dy.within(-r.top, 1f - r.bottom)
+        return sanitize(CropRect(r.left + x, r.top + y, r.right + x, r.bottom + y))
+    }
+
+    /**
+     * coerceIn gibi, ama sınırlar ters düşerse (kayan nokta hatası) veya NaN gelirse
+     * hata fırlatmaz. Kırpma sürüklenirken uygulamanın kapanmasını önler.
+     */
+    private fun Float.within(lo: Float, hi: Float): Float = when {
+        isNaN() || lo.isNaN() || hi.isNaN() -> 0f
+        lo > hi -> (lo + hi) / 2f
+        else -> coerceIn(lo, hi)
+    }
+
+    /** NaN, ters ya da çerçeve dışına taşmış dikdörtgeni geçerli hâle getirir. */
+    fun sanitize(rect: CropRect): CropRect {
+        fun unit(v: Float, fallback: Float) = if (v.isNaN()) fallback else v.coerceIn(0f, 1f)
+        var l = unit(rect.left, 0f)
+        var t = unit(rect.top, 0f)
+        var r = unit(rect.right, 1f)
+        var b = unit(rect.bottom, 1f)
+        if (l > r) l = r.also { r = l }
+        if (t > b) t = b.also { b = t }
+        val half = MinSize / 2f
+        if (r - l < MinSize) {
+            val c = ((l + r) / 2f).coerceIn(half, 1f - half)
+            l = (c - half).coerceAtLeast(0f)
+            r = (c + half).coerceAtMost(1f)
+        }
+        if (b - t < MinSize) {
+            val c = ((t + b) / 2f).coerceIn(half, 1f - half)
+            t = (c - half).coerceAtLeast(0f)
+            b = (c + half).coerceAtMost(1f)
+        }
+        return CropRect(l, t, r, b)
     }
 
     /**
@@ -332,15 +365,18 @@ object CropMath {
         frameW: Float,
         frameH: Float
     ): CropRect {
+        val start = sanitize(rect)
         val movesLeft = corner == 0 || corner == 3
         val movesTop = corner == 0 || corner == 1
-        var left = rect.left
-        var top = rect.top
-        var right = rect.right
-        var bottom = rect.bottom
-        if (movesLeft) left = (left + dx).coerceIn(0f, right - MinSize) else right = (right + dx).coerceIn(left + MinSize, 1f)
-        if (movesTop) top = (top + dy).coerceIn(0f, bottom - MinSize) else bottom = (bottom + dy).coerceIn(top + MinSize, 1f)
-        if (ratio == null || frameW <= 0f || frameH <= 0f) return CropRect(left, top, right, bottom)
+        var left = start.left
+        var top = start.top
+        var right = start.right
+        var bottom = start.bottom
+        if (movesLeft) left = (left + dx).within(0f, right - MinSize) else right = (right + dx).within(left + MinSize, 1f)
+        if (movesTop) top = (top + dy).within(0f, bottom - MinSize) else bottom = (bottom + dy).within(top + MinSize, 1f)
+        if (ratio == null || ratio.isNaN() || ratio <= 0f || frameW <= 0f || frameH <= 0f) {
+            return sanitize(CropRect(left, top, right, bottom))
+        }
 
         // Oranı koru: normalleştirilmiş genişlik/yükseklik oranı = ratio * frameH / frameW.
         val k = ratio * frameH / frameW
@@ -348,8 +384,8 @@ object CropMath {
         var h = bottom - top
         if (w / h > k) w = h * k else h = w / k
         // Karşı köşeye sabitle ve çerçeveye sığdır.
-        val anchorX = if (movesLeft) rect.right else rect.left
-        val anchorY = if (movesTop) rect.bottom else rect.top
+        val anchorX = if (movesLeft) start.right else start.left
+        val anchorY = if (movesTop) start.bottom else start.top
         val maxW = if (movesLeft) anchorX else 1f - anchorX
         val maxH = if (movesTop) anchorY else 1f - anchorY
         if (w > maxW) {
@@ -371,9 +407,12 @@ object CropMath {
                 h = w / k
             }
         }
-        val l = if (movesLeft) anchorX - w else anchorX
-        val t = if (movesTop) anchorY - h else anchorY
-        return CropRect(l, t, l + w, t + h)
+        // En küçük boyut çerçeveye sığmayabilir; yine de dışarı taşmasın.
+        w = w.within(0f, 1f)
+        h = h.within(0f, 1f)
+        val l = (if (movesLeft) anchorX - w else anchorX).within(0f, 1f - w)
+        val t = (if (movesTop) anchorY - h else anchorY).within(0f, 1f - h)
+        return sanitize(CropRect(l, t, l + w, t + h))
     }
 
     /** Kırpılmış çıktının piksel boyutu. */
@@ -384,11 +423,5 @@ object CropMath {
     }
 
     /** Çerçeve oranı değişince (fotoğraf farklı boyutta açıldı) dikdörtgeni sınırlar. */
-    fun clamp(rect: CropRect): CropRect {
-        val l = rect.left.coerceIn(0f, 1f - MinSize)
-        val t = rect.top.coerceIn(0f, 1f - MinSize)
-        val r = rect.right.coerceIn(l + MinSize, 1f)
-        val b = rect.bottom.coerceIn(t + MinSize, 1f)
-        return CropRect(min(l, r), min(t, b), r, b)
-    }
+    fun clamp(rect: CropRect): CropRect = sanitize(rect)
 }

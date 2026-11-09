@@ -165,4 +165,33 @@ class EditLogicTest {
         assertEquals(CropMath.MinSize, tiny.width, eps)
         assertEquals(1000 to 500, CropMath.outputSize(CropRect(0f, 0f, 0.5f, 0.25f), 2000, 2000))
     }
+
+    @Test
+    fun crop_neverThrowsOnBrokenRects() {
+        val broken = listOf(
+            CropRect(-0.05f, 0f, 1f, 1f),
+            CropRect(0f, 0f, 1.0000001f, 1f),
+            CropRect(0.95f, 0.95f, 0.96f, 0.96f),
+            CropRect(0.8f, 0.2f, 0.3f, 0.1f),
+            CropRect(Float.NaN, 0f, 1f, Float.NaN)
+        )
+        for (rect in broken) {
+            for (d in listOf(-2f, -0.3f, 0f, 0.3f, 2f, Float.NaN, Float.POSITIVE_INFINITY)) {
+                val moved = CropMath.move(rect, d, d)
+                assertValid(moved)
+                for (corner in 0..3) {
+                    assertValid(CropMath.dragCorner(rect, corner, d, d, null, 4000f, 3000f))
+                    assertValid(CropMath.dragCorner(rect, corner, d, -d, 9f / 16f, 4000f, 3000f))
+                    assertValid(CropMath.dragCorner(rect, corner, -d, d, 1f, 3000f, 4000f))
+                }
+            }
+            assertValid(CropMath.clamp(rect))
+        }
+    }
+
+    private fun assertValid(r: CropRect) {
+        assertFalse(r.left.isNaN() || r.top.isNaN() || r.right.isNaN() || r.bottom.isNaN())
+        assertTrue("$r", r.left >= 0f && r.top >= 0f && r.right <= 1f && r.bottom <= 1f)
+        assertTrue("$r", r.right > r.left && r.bottom > r.top)
+    }
 }

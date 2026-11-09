@@ -64,7 +64,7 @@ internal fun EditPreview(
     val colorFilter = remember(params.filter, params.adjust, params.auto) { colorFilterFor(params) }
     val sharpness = params.value(AdjustTool.Sharpness)
     val sharpenEffect = remember(sharpness) {
-        if (sharpness != 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) SharpenEffect.create(sharpness / 100f) else null
+        if (sharpness != 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) runCatching { SharpenEffect.create(sharpness / 100f) }.getOrNull() else null
     }
 
     BoxWithConstraints(modifier) {
