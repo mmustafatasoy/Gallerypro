@@ -16,13 +16,15 @@ iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsi
 | 5 · Yapay zekâ | Cihaz içi dizin (nesne + yazı) ve arama ekranı (0.5.0); sırada cümleyle arama, Kişiler | devam ediyor |
 | 6 · Cila ve yayın | | |
 
-## APK nasıl alınır (Bitbucket Pipelines)
+## APK nasıl alınır (GitHub Actions)
 
-1. Sol menü › **Pipelines** › **Run pipeline**
-2. Dal: `ana` (veya çalıştığın dal), Pipeline: **custom: apk** › **Run**
-3. Bitince adıma tıkla › **Artifacts** › `app-debug.apk` indir
+`main` dalına ve `asama-…` dallarına her gönderimde GitHub APK'yı kendisi derler (depo herkese açık olduğu için ücretsiz, dakika sınırı yok).
 
-Ücretsiz planda ayda 50 dakika derleme süresi var; önbellek doluyken bir derleme yaklaşık 4–6 dakika.
+- **Son sürüm, doğrudan indirme:** https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk
+- Bir aşama dalının APK'sı: **Releases** sayfasında dalın adıyla.
+- Derleme durumu: depoda **Actions** sekmesi. Elle başlatmak için Actions › APK › Run workflow.
+
+APK sabit bir debug anahtarıyla imzalanır; yeni sürüm eskisinin üstüne kurulur.
 
 ## Yerelde derleme (Android Studio / terminal)
 
@@ -43,4 +45,4 @@ Yazı tipi: Inter (SIL Open Font License 1.1). Lisans metni derlemede `app/src/m
 
 ## Geçmiş
 
-1. aşama önce GitHub'da (`mmustafatasoy/Gallerypro`) yapıldı; orada derleme yeşildi ve emülatör ekran görüntüleriyle kontrol edildi. GitHub hesabı askıya alınınca proje buraya taşındı.
+1. aşama GitHub'da yapıldı. Hesap bir süre askıya alınınca 2.–5. aşamalar Bitbucket'ta (`mmaapps/mmustafatasoy`) sürdü; hesap açılınca tüm geçmiş ve dallarla buraya geri taşındı (9 Kasım 2026).

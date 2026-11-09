@@ -5,21 +5,19 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 ## Kaynaklar (tek doğru kaynak)
 - Proje dokümanı: https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9
 - Tasarım tuvali (7 ekran): https://claude.ai/artifact/J9L59HCcDDZVwuod8fYSiw
-- Depo: https://bitbucket.org/mmaapps/mmustafatasoy (ana dal: `ana`)
+- Depo: https://github.com/mmustafatasoy/Gallerypro (ana dal: `main`). Bitbucket'taki `mmaapps/mmustafatasoy` eski kopyadır; artık kullanılmaz.
 
 ## Şu anki durum
 | Dal | İçerik | Durum |
 | --- | --- | --- |
-| `ana` | Aşama 1–4 + kararlılık 0.4.1 (PR #7 birleşti; #4–#6 onun içinde) | Derleme #9 yeşil |
-| `asama-5a-arama` | 5. aşama ilk adım: cihaz içi dizin + arama ekranı, sürüm 0.5.1 (`ana` üstüne) | Derleme #11 yeşil (48 test). PR #8 açık. |
+| `main` | Aşama 1–4 + 5. aşama ilk adım (cihaz içi dizin + arama), sürüm 0.5.1 | GitHub Actions; Bitbucket'ta derleme #11 yeşildi (48 test) |
+| `asama-2…`, `asama-3…`, `asama-4…`, `asama-5a-arama` | Bitbucket'tan taşınan aşama dalları (geçmiş için) | — |
 
 ## Hemen yapılacak (sırayla)
-1. Kullanıcı PR #8'i birleştirir. Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
+1. Kullanıcı 0.5.1'i dener. Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; kullanıcı "Paylaş" ile gönderir.
    Rapordaki yığın izinde adı geçen satırı düzelt; tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
-3. **Derleme dakikaları:** ücretsiz 50 dk Kasım'da aşıldı (11 derleme, ~60 dk) ama Bitbucket derlemeyi hâlâ kabul ediyor.
-   Kullanıcı GitHub'a (Actions, ayda 2.000 dk) taşınmayı düşünüyor; önce eski hesabı için GitHub desteğine başvuracak.
-   Gereksiz derleme başlatma; her derleme ~9–10 dk.
+3. Yeni iş ayrı dalda (`asama-5b-…`) yapılır, PR ile `main`'e girer; kullanıcı birleştirir. Dalın APK'sı Releases'ta dal adıyla çıkar.
 4. Sonra 5b: "Cümleyle arama" (MobileCLIP S0/S2 int8 + LiteRT) ve Bilgi panelindeki "Benzer Fotoğraflar". Model dosyası depoya
    konmaz; derlemede indirilir (fetch-fonts gibi bir betik). Lisans kontrolü yayından önce. Sonra 5c: Kişiler, Anılar, Harita.
 
@@ -31,10 +29,11 @@ Bu projeyi Claude yazdı. Devralan araç **yalnızca aşağıdakileri** yapar; p
 - Tüm metinler `res/values/strings.xml` (Türkçe) + `res/values-en/strings.xml`. Kodda sabit metin yok.
 - Material3 yok; sadece Compose foundation.
 - Her aşama ayrı dal + ayrı PR. Commit mesajları Türkçe.
-- Pipelines ücretsiz planda ayda 50 dk; yalnızca elle (`custom: apk`). Bir derleme ML Kit'le ~9–10 dk.
-- Debug APK sabit anahtarla imzalanır (`scripts/debug-keystore.b64` → `~/.android/debug.keystore`); yeni APK eskisinin üstüne kurulur. Anahtarı değiştirme.
+- Derleme GitHub Actions'ta (`.github/workflows/apk.yml`): `main` ve `asama-*` dallarına her gönderimde; depo herkese açık, dakika sınırı yok.
+  APK Releases'a yüklenir: `main` → `son-surum` (https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk), dallar → dal adı.
+- Debug APK sabit anahtarla imzalanır (`scripts/debug-keystore.b64` → `~/.android/debug.keystore`, iş akışında); yeni APK eskisinin üstüne kurulur. Anahtarı değiştirme.
 - Saf mantık (CollectionsLogic, EditModel) yerelde Gradle'ın kendi Kotlin derleyicisiyle derlenip test edilebilir
-  (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece Pipelines'ta derlenir.
+  (`/opt/gradle/lib/kotlin-compiler-embeddable-*.jar`, android/compose/junit için küçük taslaklarla). Android kodu sadece GitHub Actions'ta derlenir.
 
 ## Bilinen tuzaklar
 - `android.media.ExifInterface`'te `TAG_LENS_MODEL`, `TAG_PHOTOGRAPHIC_SENSITIVITY`, parametresiz `getLatLong()` yok → `"LensModel"`, `"ISOSpeedRatings"`, `getLatLong(FloatArray)`.

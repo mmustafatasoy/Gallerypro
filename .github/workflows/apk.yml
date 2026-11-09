@@ -1,0 +1,73 @@
+# Gallerypro APK derlemesi (GitHub Actions).
+# main ve asama-* dallarına her gönderimde çalışır; elle de başlatılabilir (Actions › APK › Run workflow).
+# Depo herkese açık olduğu için derleme dakikası ücretsiz ve sınırsızdır.
+name: APK
+
+on:
+  push:
+    branches: [main, "asama-*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Testler ve debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gradle sürümü
+        id: gradle
+        run: echo "version=$(sed -n 's/.*gradle-\([0-9.]*\)-bin\.zip.*/\1/p' gradle/wrapper/gradle-wrapper.properties)" >> "$GITHUB_OUTPUT"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.gradle.outputs.version }}
+
+      - name: Android lisansları
+        run: bash scripts/accept-android-licenses.sh
+
+      - name: Inter yazı tipi
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends python3-fonttools python3-brotli > /dev/null
+          bash scripts/fetch-fonts.sh
+
+      # Sabit debug imza anahtarı: yeni APK eskisinin üstüne kurulabilsin (gizli değildir, şifresi standart "android").
+      - name: Debug imza anahtarı
+        run: mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
+
+      - name: Testler ve APK
+        run: gradle --no-daemon testDebugUnitTest assembleDebug
+
+      - name: APK adı
+        run: cp app/build/outputs/apk/debug/app-debug.apk Gallerypro.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gallerypro-apk
+          path: Gallerypro.apk
+
+      # Telefondan tek dokunuşla indirmek için: main → "son-surum", aşama dalları → dal adıyla bir ön sürüm.
+      - name: İndirme bağlantısı (Releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then TAG=son-surum; else TAG="$GITHUB_REF_NAME"; fi
+          VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" Gallerypro.apk --target "$GITHUB_SHA" --prerelease \
+            --title "Gallerypro $VERSION ($GITHUB_REF_NAME)" \
+            --notes "Debug APK. Derleme: $GITHUB_SHA. Doğrudan indirme: https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Gallerypro.apk"
