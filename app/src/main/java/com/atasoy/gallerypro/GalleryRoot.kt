@@ -92,7 +92,13 @@ fun GalleryRoot(container: AppContainer) {
                     CollectionsViewModel(container.mediaRepository, container.sections)
                 }
                 val searchViewModel: SearchViewModel = viewModel {
-                    SearchViewModel(container.mediaRepository, container.index, container.captions, container.searchHistory)
+                    SearchViewModel(
+                        container.mediaRepository,
+                        container.index,
+                        container.captions,
+                        container.searchHistory,
+                        container.clipText
+                    )
                 }
                 var searchOpen by rememberSaveable { mutableStateOf(false) }
                 val openSearch = remember { { searchOpen = true } }

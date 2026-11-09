@@ -49,6 +49,20 @@ jobs:
       - name: Debug imza anahtarı
         run: mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
 
+      # Cümleyle arama (CLIP) modelleri depoda değil, "modeller" sürümündedir (Modeller iş akışı üretir).
+      # Yoksa APK yine derlenir; uygulamada cümleyle arama kapalı kalır.
+      - name: Cümleyle arama modelleri
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p app/src/main/assets/models app/src/test/resources/clip
+          if gh release download modeller -D app/src/main/assets/models -p "clip_image.tflite" -p "clip_text.tflite" -p "clip_text_vocab.txt" --clobber; then
+            gh release download modeller -D app/src/test/resources/clip -p "clip_tokens_test.json" --clobber || true
+            ls -la app/src/main/assets/models
+          else
+            echo "::warning::Modeller henüz yok; APK cümleyle arama olmadan derleniyor."
+          fi
+
       - name: Testler ve APK
         run: gradle --no-daemon testDebugUnitTest assembleRelease
 

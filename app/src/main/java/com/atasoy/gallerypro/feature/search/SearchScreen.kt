@@ -117,6 +117,8 @@ fun SearchScreen(viewModel: SearchViewModel, onClose: () -> Unit) {
     val status by viewModel.status.collectAsStateWithLifecycle()
     val indexed by viewModel.indexedCount.collectAsStateWithLifecycle()
     val mediaCount by viewModel.mediaCount.collectAsStateWithLifecycle()
+    val vectorCount by viewModel.vectorCount.collectAsStateWithLifecycle()
+    val semantic = remember { viewModel.semanticAvailable }
 
     // Yazı alanı yerel durumla çalışır (hızlı yazarken harf kaybolmasın); arama ViewModel'de.
     var text by rememberSaveable { mutableStateOf(viewModel.query.value) }
@@ -166,6 +168,8 @@ fun SearchScreen(viewModel: SearchViewModel, onClose: () -> Unit) {
                     indexed = indexed,
                     mediaCount = mediaCount,
                     requested = requested,
+                    semantic = semantic,
+                    sentences = vectorCount > 0,
                     suggestions = suggestions.map { LabelDictionary.display(it, turkishUi) },
                     recent = recent,
                     onIndexNow = {
@@ -236,7 +240,7 @@ fun SearchScreen(viewModel: SearchViewModel, onClose: () -> Unit) {
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                     if (text.isEmpty()) {
                         BasicText(
-                            stringResource(R.string.search_hint),
+                            stringResource(if (semantic) R.string.search_hint_semantic else R.string.search_hint),
                             style = GalleryType.Body.copy(color = GalleryColors.TextTertiary),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -318,6 +322,8 @@ private fun EmptyState(
     indexed: Int,
     mediaCount: Int,
     requested: Boolean,
+    semantic: Boolean,
+    sentences: Boolean,
     suggestions: List<String>,
     recent: List<String>,
     onIndexNow: () -> Unit,
@@ -330,6 +336,12 @@ private fun EmptyState(
         stringResource(R.string.search_chip_screenshots),
         stringResource(R.string.search_chip_favorites)
     ) + suggestions
+    val examples = listOf(
+        stringResource(R.string.search_sentence_1),
+        stringResource(R.string.search_sentence_2),
+        stringResource(R.string.search_sentence_3),
+        stringResource(R.string.search_sentence_4)
+    )
     LazyColumn(
         contentPadding = PaddingValues(top = topInset + 12.dp, bottom = bottomSpace + 12.dp)
     ) {
@@ -341,34 +353,17 @@ private fun EmptyState(
             )
         }
         item {
-            IndexCard(status, indexed, mediaCount, requested, locale, onIndexNow)
+            IndexCard(status, indexed, mediaCount, requested, semantic, locale, onIndexNow)
+        }
+        if (sentences) {
+            item {
+                SectionHeader(stringResource(R.string.search_sentences))
+                ChipRow(examples, locale, onPick)
+            }
         }
         item {
             SectionHeader(stringResource(R.string.search_suggested))
-            FlowRow(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = GalleryDimens.ScreenPadding),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                chips.forEach { chip ->
-                    Box(
-                        Modifier
-                            .height(36.dp)
-                            .clip(CircleShape)
-                            .background(GalleryColors.GroupedFill)
-                            .clickable { onPick(chip) }
-                            .padding(horizontal = 14.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        BasicText(
-                            SearchText.capitalize(chip, locale),
-                            style = GalleryType.Chip.copy(color = GalleryColors.TextPrimary)
-                        )
-                    }
-                }
-            }
+            ChipRow(chips, locale, onPick)
         }
         if (recent.isNotEmpty()) {
             item {
@@ -408,6 +403,35 @@ private fun EmptyState(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChipRow(chips: List<String>, locale: Locale, onPick: (String) -> Unit) {
+    FlowRow(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = GalleryDimens.ScreenPadding),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        chips.forEach { chip ->
+            Box(
+                Modifier
+                    .height(36.dp)
+                    .clip(CircleShape)
+                    .background(GalleryColors.GroupedFill)
+                    .clickable { onPick(chip) }
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BasicText(
+                    SearchText.capitalize(chip, locale),
+                    style = GalleryType.Chip.copy(color = GalleryColors.TextPrimary)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SectionHeader(title: String) {
     BasicText(
@@ -424,6 +448,7 @@ private fun IndexCard(
     indexed: Int,
     mediaCount: Int,
     requested: Boolean,
+    semantic: Boolean,
     locale: Locale,
     onIndexNow: () -> Unit
 ) {
@@ -452,6 +477,13 @@ private fun IndexCard(
         )
         Spacer(Modifier.height(4.dp))
         BasicText(body, style = GalleryType.Body.copy(color = GalleryColors.TextSecondary))
+        if (semantic) {
+            Spacer(Modifier.height(6.dp))
+            BasicText(
+                stringResource(R.string.index_semantic),
+                style = GalleryType.Subtitle
+            )
+        }
         if (status.running || (total > 0 && !complete)) {
             Spacer(Modifier.height(12.dp))
             val fraction = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f

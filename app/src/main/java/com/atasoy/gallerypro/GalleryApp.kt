@@ -5,6 +5,7 @@ import android.content.Context
 import coil3.ImageLoader
 import com.atasoy.gallerypro.data.GalleryStores
 import com.atasoy.gallerypro.data.collections.SectionPrefs
+import com.atasoy.gallerypro.data.clip.ClipTextEncoder
 import com.atasoy.gallerypro.data.edit.EditStore
 import com.atasoy.gallerypro.data.index.IndexStore
 import com.atasoy.gallerypro.data.media.CaptionStore
@@ -45,4 +46,7 @@ class AppContainer(context: Context) {
     val stores = GalleryStores(captions, edits, hidden)
     val index = IndexStore(context)
     val searchHistory = SearchHistory(context)
+
+    /** Cümleyle arama metin modeli; ilk aramada yüklenir. */
+    val clipText by lazy { ClipTextEncoder(context.applicationContext) }
 }

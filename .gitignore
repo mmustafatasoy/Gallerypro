@@ -6,6 +6,9 @@ build/
 # Derlemede indirilir: scripts/fetch-fonts.sh
 app/src/main/res/font/
 app/src/main/assets/licenses/
+# Derlemede indirilir: GitHub "modeller" sürümü (scripts/models/export_clip.py)
+app/src/main/assets/models/
+app/src/test/resources/clip/
 gradle/wrapper/gradle-wrapper.jar
 
 # Yerel ayarlar (SDK yolu vb.)
