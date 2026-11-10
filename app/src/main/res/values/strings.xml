@@ -220,4 +220,10 @@
         <item quantity="one">%1$s albüm</item>
         <item quantity="other">%1$s albüm</item>
     </plurals>
+    <string name="preview_add_album">Albüme ekle</string>
+    <string name="preview_select_album">Albüm seç</string>
+    <string name="preview_no_albums">Kopyalanabilecek albüm bulunamadı</string>
+    <string name="preview_copying">Kopyalanıyor…</string>
+    <string name="preview_copied">Albüme kopyalandı</string>
+    <string name="preview_failed">Albüme kopyalanamadı</string>
 </resources>

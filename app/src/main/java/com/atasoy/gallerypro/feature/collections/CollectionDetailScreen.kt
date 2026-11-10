@@ -55,6 +55,7 @@ import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import com.atasoy.gallerypro.feature.library.ColumnSteps
 import com.atasoy.gallerypro.feature.library.LibraryGrid
+import com.atasoy.gallerypro.feature.library.LongPressPreview
 import com.atasoy.gallerypro.feature.library.leadingSpacers
 import com.atasoy.gallerypro.feature.viewer.ViewerMode
 import com.atasoy.gallerypro.feature.viewer.ViewerScreen
@@ -82,6 +83,8 @@ internal fun CollectionDetailScreen(
     val gridState = rememberLazyGridState()
     var columns by rememberSaveable { mutableIntStateOf(3) }
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var previewItem by remember { mutableStateOf<MediaItem?>(null) }
+    val collectionsContent by viewModel.content.collectAsStateWithLifecycle()
     var startSlideshow by rememberSaveable { mutableStateOf(false) }
     var scrolledToEnd by rememberSaveable { mutableStateOf(false) }
 
@@ -130,7 +133,12 @@ internal fun CollectionDetailScreen(
                     selected = emptySet(),
                     onOpen = { startSlideshow = false; viewerId = it.id },
                     onToggle = {},
-                    onLongPress = { startSlideshow = false; viewerId = it.id },
+                    onLongPress = {
+                        if (isTrash || collectionKey == CollectionKeys.Hidden) {
+                            startSlideshow = false
+                            viewerId = it.id
+                        } else previewItem = it
+                    },
                     onZoomIn = {
                         val i = ColumnSteps.indexOf(columns).coerceAtLeast(0)
                         columns = ColumnSteps[(i - 1).coerceAtLeast(0)]
@@ -173,6 +181,10 @@ internal fun CollectionDetailScreen(
             tintIntensity = 0.3f,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        previewItem?.let { chosen ->
+            LongPressPreview(chosen, collectionsContent.albums, backdrop, onDismiss = { previewItem = null })
+        }
 
         AnimatedVisibility(
             visible = viewerId != null && !list.isNullOrEmpty(),

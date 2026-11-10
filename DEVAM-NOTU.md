@@ -187,3 +187,12 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - `ViewerScreen`'in diğer çağrıları, varsayılan `startSlideshow = false` ile değişmeden çalışır.
 - Yeni saf hesap mantığı eklenmedi; mevcut JVM testleri ve GitHub Actions APK derlemesi kontrol edilmelidir.
 - **Sıradaki iş:** 7b Uzun basınca önizleme + Albüme ekle. PR #9 mimari/kaynak tablosu esas alınır.
+ 
+## Aşama 7b — Uzun basınca önizleme ve Albüme ekle (0.8.3)
+
+- `asama-7b-onizleme`: PR #9'un kod yapısı ve kaynak tablosuna uygun ayrı dal.
+- `LibraryGrid` mevcut `combinedClickable(onLongClick)` kullanılarak Kütüphane ve normal koleksiyonlarda ortak büyük önizleme + cam işlem menüsüne bağlandı (Paylaş, Favori, Albüme ekle, Gizle, Sil). Seçim modu ve Gizli/Çöp davranışı korundu.
+- `CollectionsLogic.albums` mevcut sonucu kullanılır, ikinci MediaStore sorgusu yok. `MediaStore` `IS_PENDING` ile `Dispatchers.IO` üzerinden kopya yazılır; orijinal taşınmaz. Yarım kopya hata durumunda silinir. Kopya menüsü sistemin izin verdiği albüm köklerini gösterir.
+- `DeleteCard`, `ManageMedia` ve MediaStore sistem istekleri yeniden kullanıldı. `AlbumCopyLogicTest` eklendi.
+- Her başarılı APK iş akışından sonra ZIP kaynak yedeği, fontlar, Gradle wrapper, Git geçmişi bundle, `DEVAM-NOTU.md` ve SHA-256 Releases'a eklenir. CLIP modelleri ayrı `modeller` release'inden erişilir.
+- Sıradaki iş: **7c Kopyaları birleştir**. Kullanıcı onayı olmadan main'e birleştirme yok.

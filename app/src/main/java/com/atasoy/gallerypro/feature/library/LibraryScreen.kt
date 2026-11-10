@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atasoy.gallerypro.R
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LibraryFilter
+import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.ManageMedia
 import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.shareItems
@@ -114,6 +115,8 @@ fun LibraryScreen(
 
     // Açık görüntüleyicinin başladığı öğe. Kapanınca ızgara son bakılan öğeyi gösterir.
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var previewItem by remember { mutableStateOf<MediaItem?>(null) }
+    val albums by viewModel.albums.collectAsStateWithLifecycle()
     var revealId by remember { mutableStateOf<Long?>(null) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -250,7 +253,7 @@ fun LibraryScreen(
                             onOpen = { viewerId = it.id },
                             onToggle = { viewModel.toggle(it.id) },
                             onLongPress = {
-                                if (ui.selecting) viewModel.toggle(it.id) else viewModel.startSelecting(it.id)
+                                if (ui.selecting) viewModel.toggle(it.id) else previewItem = it
                             },
                             onZoomIn = viewModel::zoomIn,
                             onZoomOut = viewModel::zoomOut
@@ -600,6 +603,10 @@ fun LibraryScreen(
                 },
                 onCancel = { confirmDelete = false }
             )
+        }
+
+        previewItem?.let { chosen ->
+            LongPressPreview(chosen, albums, backdrop, onDismiss = { previewItem = null })
         }
 
         // ---------------------------------------------------------------- ayarlar
