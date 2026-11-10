@@ -240,4 +240,20 @@
         <item quantity="one">Delete %1$d duplicate</item>
         <item quantity="other">Delete %1$d duplicates</item>
     </plurals>
+    <!-- JPEG EXIF date/location editing: 7d -->
+    <string name="metadata_adjust">Adjust</string>
+    <string name="metadata_title">Date &amp; Location</string>
+    <string name="metadata_date">Date and time taken</string>
+    <string name="metadata_date_hint">2026-11-10 15:30</string>
+    <string name="metadata_latitude">Latitude</string>
+    <string name="metadata_longitude">Longitude</string>
+    <string name="metadata_coordinate_hint">36.9000</string>
+    <string name="metadata_remove_location">Remove location information</string>
+    <string name="metadata_remove_selected">✓ Location will be removed (tap to undo)</string>
+    <string name="metadata_backup_note">JPEG photos only. A full backup of the original is made before changes. Blank location fields preserve existing coordinates.</string>
+    <string name="metadata_invalid">Invalid date or coordinates. Date: YYYY-MM-DD HH:mm; latitude -90…90, longitude -180…180.</string>
+    <string name="metadata_failed">Unable to save EXIF. The original backup is retained.</string>
+    <string name="metadata_permission_required">Photo location access is required to safely preserve existing location data.</string>
+    <string name="metadata_saved">Date and location information saved.</string>
+    <string name="metadata_saving">Saving…</string>
 </resources>

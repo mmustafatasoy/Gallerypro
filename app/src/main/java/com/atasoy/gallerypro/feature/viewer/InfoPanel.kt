@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.atasoy.gallerypro.R
+import com.atasoy.gallerypro.data.edit.MetadataEditLogic
 import com.atasoy.gallerypro.data.index.IndexEntry
 import com.atasoy.gallerypro.data.index.LabelDictionary
 import com.atasoy.gallerypro.data.index.SearchText
@@ -93,6 +94,8 @@ internal fun InfoPanelContent(
     details: MediaDetails?,
     caption: String,
     onCaptionChange: (String) -> Unit,
+    dateMillis: Long,
+    onAdjustMetadata: (() -> Unit)?,
     onRequestLocation: () -> Unit,
     onOpenMap: (Double, Double) -> Unit,
     place: PlaceEntry?,
@@ -146,11 +149,28 @@ internal fun InfoPanelContent(
         ) {
             CaptionField(caption, onCaptionChange)
 
-            BasicText(
-                text = remember(item.takenAtMillis) { fullDate(item.takenAtMillis, zone, locale) },
-                style = GalleryType.Body.copy(color = Color.White.copy(alpha = 0.82f), fontSize = 14.sp),
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 14.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BasicText(
+                    text = remember(dateMillis, zone, locale) { fullDate(dateMillis, zone, locale) },
+                    style = GalleryType.Body.copy(color = Color.White.copy(alpha = 0.82f), fontSize = 14.sp),
+                    modifier = Modifier.weight(1f)
+                )
+                if (onAdjustMetadata != null && MetadataEditLogic.isSupported(item.mimeType, item.isVideo)) {
+                    BasicText(
+                        stringResource(R.string.metadata_adjust),
+                        style = GalleryType.Chip.copy(color = LinkBlue, fontWeight = FontWeight.Medium),
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(role = Role.Button, onClick = onAdjustMetadata)
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    )
+                }
+            }
 
             CameraCard(item, details, locale)
 
