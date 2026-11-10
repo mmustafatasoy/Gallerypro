@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 9 Kasım 2026, 5b cümleyle arama (0.6.0)
+# Devam notu (devralan yapay zekâ için) — 10 Kasım 2026, 0.8.0 (görev 1–5 ve 7 bitti)
 
 Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
@@ -7,6 +7,21 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 1. PR #2 (`asama-5b-cumleyle-arama`, 0.6.0) `main`'e birleştirildi (bu notu `main`'de okuyorsan birleşmiştir). Yeni işler her zaman güncel `main`'den dal açılarak başlar.
 2. Codex'e GitHub bağlanır, `mmustafatasoy/Gallerypro` seçilir, ilk mesaj olarak `CODEX-ILK-MESAJ.md` içeriği (İngilizce) verilir.
 3. Actions kırmızıysa PR birleştirilmez. Uygulama çökerse açılıştaki hata raporu devralan araca aynen yapıştırılır.
+
+## 10 Kasım 2026: 0.8.0'a kadar yapılanlar (Claude)
+`CODEX-ILK-MESAJ.md` görevlerinden 1, 2, 3, 4, 5, 7 ve 8'in kod kısmı bitti, hepsi `main`'de:
+- 0.6.1 Bilgi panelinde Akıllı Etiketler (dokununca arama) ve Benzer Fotoğraflar (`VectorMath.similar`, ≥0,80).
+- 0.6.2 Videolar 3 kareden (`FrameLabels.merge`, `VectorMath.mean`, `VideoIndexVersion`/`VideoVectorVersion` = 2).
+- 0.7.0 Yerler: GeoNames cities5000 (CC BY 4.0) derlemede indirilir (`scripts/places/build_cities.py`), `CityIndex` (60 km),
+  `index.db` sürüm 3 `places` tablosu, şehir/il/ülke ile arama, Koleksiyonlar › Yerler, konum izni kartı.
+- 0.7.1 Anılar (`data/memories/MemoryBuilder`): Bu Gün, geziler, yılın özeti; Koleksiyonlar › Anılar.
+- 0.8.0 Ayarlar (Kütüphane ⋯): sürüm, Yeniden incele, tam cam efektleri anahtarı (`GalleryPerformance`), gizlilik,
+  lisanslar; silinen fotoğrafların düzenleme yedekleri temizlenir. Play: `.github/workflows/aab.yml` (elle),
+  `:modeller` kurulum-anı asset pack (yalnızca `-PaabBuild=true`), yayın anahtarı Secrets'tan.
+
+**Kalan (kullanıcı kararı bekliyor):** görev 6 Kişiler (yüz modeli lisansı), görev 8'in kararları (uygulama adı, ikon,
+gerçek yayın anahtarı → Secrets: RELEASE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD). AAB iş akışı
+henüz hiç çalıştırılmadı; ilk çalıştırmada hata verirse yalnızca hata veren satır düzeltilir.
 
 ## Kaynaklar (tek doğru kaynak)
 - Proje dokümanı: https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9
