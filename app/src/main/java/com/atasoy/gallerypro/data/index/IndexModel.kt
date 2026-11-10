@@ -20,6 +20,21 @@ data class IndexEntry(
 /** Dizinleyici değişince artırılır; eski sürümdeki kayıtlar sırayla yeniden işlenir. */
 const val IndexVersion = 1
 
+/** Videolar için ayrı sürüm: 2 = tek küçük resim yerine 3 kare. Fotoğraflar yeniden işlenmez. */
+const val VideoIndexVersion = 2
+
+/** Birden çok karenin (video) etiketlerini birleştirir: her etiketin en yüksek güveni, çoktan aza. Saf Kotlin. */
+object FrameLabels {
+    fun merge(frames: List<List<Pair<String, Float>>>, limit: Int): List<String> {
+        val best = LinkedHashMap<String, Float>()
+        for (frame in frames) for ((label, confidence) in frame) {
+            val old = best[label]
+            if (old == null || confidence > old) best[label] = confidence
+        }
+        return best.entries.sortedByDescending { it.value }.take(limit).map { it.key }
+    }
+}
+
 /** Arama ekranındaki durum kartı için. */
 @Immutable
 data class IndexStatus(
