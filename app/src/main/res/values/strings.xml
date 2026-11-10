@@ -304,5 +304,5 @@
     <string name="updates_later">Sonra</string>
     <string name="updates_download_failed">APK indirilemedi veya SHA-256 kontrolü başarısız.</string>
     <string name="updates_privacy">Yalnızca GitHub sürüm bilgileri kontrol edilir. Fotoğraf ve yüz verilerin gönderilmez. Google Play sürümünde bu sistem kapalıdır.</string>
-    <string name="updates_unknown_sources">Android kurulum izni isterse bu uygulamaya bir defalık izin verip tekrar Kuruluma Geç'e bas.</string>
+    <string name="updates_unknown_sources">Android kurulum izni isterse bu uygulamaya izin verip Kuruluma Geç düğmesine tekrar bas.</string>
 </resources>
