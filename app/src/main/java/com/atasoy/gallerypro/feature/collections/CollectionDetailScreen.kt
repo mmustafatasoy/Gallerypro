@@ -1,12 +1,19 @@
 package com.atasoy.gallerypro.feature.collections
 
+import android.app.Activity
+import android.os.Build
+import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +24,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -43,20 +51,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atasoy.gallerypro.R
 import com.atasoy.gallerypro.data.collections.Album
 import com.atasoy.gallerypro.data.collections.CollectionKeys
+import com.atasoy.gallerypro.data.collections.DuplicateReviewGroup
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.MediaItem
+import com.atasoy.gallerypro.data.media.ManageMedia
+import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.memories.MemoryBuilder
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.GlassIconButton
 import com.atasoy.gallerypro.designsystem.GlassTextButton
+import com.atasoy.gallerypro.designsystem.GlassToast
 import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import com.atasoy.gallerypro.feature.library.ColumnSteps
 import com.atasoy.gallerypro.feature.library.LibraryGrid
 import com.atasoy.gallerypro.feature.library.LongPressPreview
 import com.atasoy.gallerypro.feature.library.leadingSpacers
+import com.atasoy.gallerypro.feature.viewer.DeleteCard
 import com.atasoy.gallerypro.feature.viewer.ViewerMode
 import com.atasoy.gallerypro.feature.viewer.ViewerScreen
 import com.kyant.backdrop.Backdrop
@@ -84,18 +97,34 @@ internal fun CollectionDetailScreen(
     var columns by rememberSaveable { mutableIntStateOf(3) }
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
     var previewItem by remember { mutableStateOf<MediaItem?>(null) }
+    var pendingMerge by remember { mutableStateOf<DuplicateReviewGroup?>(null) }
+    var mergeNotice by remember { mutableStateOf<String?>(null) }
     val collectionsContent by viewModel.content.collectAsStateWithLifecycle()
     var startSlideshow by rememberSaveable { mutableStateOf(false) }
     var scrolledToEnd by rememberSaveable { mutableStateOf(false) }
 
     val isTrash = collectionKey == CollectionKeys.Trash
+    val isDuplicates = collectionKey == CollectionKeys.Duplicates
     val mode = when (collectionKey) {
         CollectionKeys.Trash -> ViewerMode.Trash
         CollectionKeys.Hidden -> ViewerMode.Hidden
         else -> ViewerMode.Normal
     }
 
-    BackHandler(enabled = viewerId == null, onBack = onBack)
+    val mergedText = stringResource(R.string.duplicates_moved_to_trash)
+    val changedText = stringResource(R.string.duplicates_group_changed)
+    val needsAndroid11 = stringResource(R.string.trash_needs_android11)
+    val trashLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        pendingMerge = null
+        if (result.resultCode == Activity.RESULT_OK) {
+            mergeNotice = mergedText
+            viewModel.refreshMedia()
+        }
+    }
+    BackHandler(enabled = viewerId == null && pendingMerge == null && previewItem == null, onBack = onBack)
+    BackHandler(enabled = pendingMerge != null) { pendingMerge = null }
 
     // İlk açılışta en alttan (en yeni) başla.
     val list = items
@@ -123,6 +152,15 @@ internal fun CollectionDetailScreen(
             when {
                 list == null -> Unit
                 isTrash && !trashSupported -> CenterMessage(stringResource(R.string.trash_album_needs_android11))
+                isDuplicates -> DuplicateGroupsContent(
+                    viewModel = viewModel,
+                    backdrop = backdrop,
+                    candidates = list.orEmpty(),
+                    topInset = topInset,
+                    bottomInset = bottomInset,
+                    onOpen = { startSlideshow = false; viewerId = it.id },
+                    onReview = { pendingMerge = it }
+                )
                 list.isEmpty() -> CenterMessage(stringResource(R.string.collection_empty))
                 else -> LibraryGrid(
                     items = list,
@@ -185,6 +223,68 @@ internal fun CollectionDetailScreen(
         previewItem?.let { chosen ->
             LongPressPreview(chosen, collectionsContent.albums, backdrop, onDismiss = { previewItem = null })
         }
+
+        pendingMerge?.let { proposed ->
+            Box(Modifier.fillMaxSize()
+                .background(GalleryColors.PreviewScrim)
+                .clickable { pendingMerge = null }
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(horizontal = GalleryDimens.ScreenPadding, vertical = GalleryDimens.CardSpacing)
+            ) {
+                DeleteCard(
+                    message = context.resources.getQuantityString(
+                        R.plurals.duplicates_merge_message,
+                        proposed.discard.size, proposed.discard.size
+                    ),
+                    action = context.resources.getQuantityString(
+                        R.plurals.duplicates_merge_action,
+                        proposed.discard.size, proposed.discard.size
+                    ),
+                    backdrop = backdrop,
+                    showAccessHint = !ManageMedia.granted(context) && ManageMedia.supported,
+                    onGrantAccess = {
+                        pendingMerge = null
+                        ManageMedia.request(context)
+                    },
+                    onConfirm = {
+                        val current = viewModel.duplicateGroups.value.firstOrNull {
+                            it.keep.id == proposed.keep.id
+                        }
+                        val sameCandidates = current?.discard?.map { it.id }?.toSet() ==
+                            proposed.discard.map { it.id }.toSet()
+                        pendingMerge = null
+                        if (current == null || !sameCandidates) {
+                            mergeNotice = changedText
+                        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                            mergeNotice = needsAndroid11
+                        } else {
+                            runCatching {
+                                val request = MediaStore.createTrashRequest(
+                                    context.contentResolver,
+                                    proposed.discard.map { it.contentUri() },
+                                    true
+                                )
+                                trashLauncher.launch(
+                                    IntentSenderRequest.Builder(request.intentSender).build()
+                                )
+                            }.onFailure { mergeNotice = changedText }
+                        }
+                    },
+                    onCancel = { pendingMerge = null }
+                )
+            }
+        }
+
+        GlassToast(
+            backdrop = backdrop,
+            message = mergeNotice,
+            modifier = Modifier.align(Alignment.TopCenter)
+                .padding(top = topInset + GalleryDimens.TopButton)
+        )
 
         AnimatedVisibility(
             visible = viewerId != null && !list.isNullOrEmpty(),

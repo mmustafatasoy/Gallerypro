@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.atasoy.gallerypro.data.collections.CollectionsContent
 import com.atasoy.gallerypro.data.collections.CollectionsLogic
+import com.atasoy.gallerypro.data.collections.DuplicateReviewGroup
+import com.atasoy.gallerypro.data.collections.DuplicateReviewLogic
 import com.atasoy.gallerypro.data.collections.SectionPrefs
 import com.atasoy.gallerypro.data.collections.SectionSetting
 import com.atasoy.gallerypro.data.index.IndexStore
@@ -53,6 +55,16 @@ class CollectionsViewModel(
         }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Yalnızca güncel CLIP ile doğrulanan kopya grupları; ana iş parçacığını bloke etmez. */
+    val duplicateGroups: StateFlow<List<DuplicateReviewGroup>> =
+        combine(repository.items, index.vectors) { items, vectors ->
+            DuplicateReviewLogic.groups(items.orEmpty(), vectors)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun refreshMedia() = repository.refresh()
 
     val sections: StateFlow<List<SectionSetting>> = sectionPrefs.sections
 

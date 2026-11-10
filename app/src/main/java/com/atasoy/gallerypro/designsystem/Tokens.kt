@@ -45,6 +45,7 @@ object GalleryColors {
 
 object GalleryDimens {
     val PreviewHeight = 420.dp
+    val DuplicateThumb = 104.dp
     val PreviewAlbumListHeight = 380.dp
     val ScreenPadding = 16.dp
     val TitleStartPadding = 20.dp

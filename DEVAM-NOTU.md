@@ -196,3 +196,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - `DeleteCard`, `ManageMedia` ve MediaStore sistem istekleri yeniden kullanıldı. `AlbumCopyLogicTest` eklendi.
 - Her başarılı APK iş akışından sonra ZIP kaynak yedeği, fontlar, Gradle wrapper, Git geçmişi bundle, `DEVAM-NOTU.md` ve SHA-256 Releases'a eklenir. CLIP modelleri ayrı `modeller` release'inden erişilir.
 - Sıradaki iş: **7c Kopyaları birleştir**. Kullanıcı onayı olmadan main'e birleştirme yok.
+
+## Aşama 7c — Kopya Fotoğrafları Birleştirme (0.8.4, `asama-7c-kopyalar`)
+
+- PR #11 / 7b, başarılı CI ve tam kaynak ZIP yedeğinden sonra kullanıcı onayıyla `main`'e birleştirildi (commit `5096b743d490a1f16acc38490b31675373180336`).
+- 7c, **ayrı dal + ayrı PR** olarak başlatıldı. PR #9'un kod yapısı ve "NEREDEN NE ALINIR" kaynak tablosuna uyulur; yeni mimari, veritabanı, Worker, kütüphane veya oynatıcı yok.
+- Mevcut `CollectionsLogic.duplicates` adaylarından `DuplicateReviewLogic` ile, değişmemiş fotoğrafların **CLIP görsel kosinüsü ≥0,97** olanları güvenli ve birbirleriyle uyumlu gruplar hâlinde gösterilir; dizinlenmeyen veya eski vektörler toplu silmeye önerilmez. Sadece fotoğraflar; videolar bu otomatik incelemeye girmez.
+- Gruplar `Kopyalar` ekranında yan yana küçük resimlerle gösterilir. En yüksek çözünürlükteki görsel `Koru` olarak işaretlenir (eşitlikte favori, dosya boyutu, tarih); diğerleri yalnızca **DeleteCard** onayıyla `MediaStore.createTrashRequest` üzerinden Son Silinenler'e taşınır. Onay öncesi gruptaki medya kimlikleri tekrar kontrol edilir; işlem otomatik çalışmaz.
+- `CollectionsViewModel` mevcut `MediaRepository.items` + `IndexStore.vectors` akışını arka plan `Dispatchers.Default` üzerinde birleştirir; kullanıcıya ait veriler cihaz dışına çıkmaz. `DuplicateReviewLogicTest` saf JVM testleri eklendi.
+- GitHub Actions başarılı olduğunda otomatik kaynak ZIP + SHA-256 aynı sürümün Releases sayfasına yüklenir. ZIP'de Git geçmişi `.bundle` dosyası da vardır.
+- Sıradaki aşama **7d Tarih/konum düzenle**. Kullanıcı onayı, yeşil CI ve ZIP yedeği olmadan `main` ile birleştirilmez.
