@@ -2,19 +2,33 @@
 # Gerçek yayın anahtarı GitHub Secrets'tan gelir: RELEASE_KEYSTORE_B64 (release.jks'in base64'ü),
 # KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD. Yoksa AAB sabit deneme anahtarıyla imzalanır (Play kabul etmez).
 # Modeller ayrı kurulum-anı paketinde (Play Asset Delivery); temel indirme ~40 MB kalır.
-name: AAB
+name: Play AAB
 
 on:
+  push:
+    branches: ["asama-play-*"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "İmzalı AAB'yi GitHub Releases'a ekle (Play'e kendiliğinden yüklemez)"
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: write
+
+concurrency:
+  group: play-aab-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   bundle:
     name: Play paketi (AAB)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
+    env:
+      PLAY_SIGNED_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,25 +54,60 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends python3-fonttools python3-brotli > /dev/null
           bash scripts/fetch-fonts.sh
 
-      - name: Yayın anahtarı
+      - name: Yükleme anahtarı güvenlik kontrolü
         env:
           RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -n "$RELEASE_KEYSTORE_B64" ]; then
-            echo "$RELEASE_KEYSTORE_B64" | base64 -d > app/release.jks && echo "Yayın anahtarı hazır."
+          set -euo pipefail
+          if [ "$PLAY_SIGNED_RELEASE" = "true" ]; then
+            if [ "$GITHUB_REF_NAME" != "main" ]; then
+              echo "::error::İmzalı yükleme AAB'si yalnızca main dalından hazırlanır."
+              exit 1
+            fi
+            for key in RELEASE_KEYSTORE_B64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+              if [ -z "${!key:-}" ]; then
+                echo "::error::$key GitHub Secret'ı eksik; deneme anahtarıyla yayın AAB'si üretilmez."
+                exit 1
+              fi
+            done
+            printf '%s' "$RELEASE_KEYSTORE_B64" | base64 -d > app/release.jks
+            test -s app/release.jks
+            echo "Gerçek yükleme anahtarı kontrol edildi."
           else
-            mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
-            echo "::warning::RELEASE_KEYSTORE_B64 yok; AAB deneme anahtarıyla imzalanıyor."
+            mkdir -p ~/.android
+            base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
+            echo "::notice::TEST AAB'si: Deneme anahtarıyla imzalanır. Play'e YÜKLEMEYİN."
           fi
 
       - name: Cümleyle arama modelleri (asset pack)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p modeller/src/main/assets/models
+          set -euo pipefail
+          mkdir -p modeller/src/main/assets/models app/src/main/assets/licenses app/src/test/resources/clip
           gh release download modeller -D modeller/src/main/assets/models -p "clip_image.tflite" -p "clip_text.tflite" -p "clip_text_vocab.txt" --clobber
-          mkdir -p app/src/main/assets/licenses && cp scripts/models/NOTICE.txt app/src/main/assets/licenses/clip-models.txt
-          ls -la modeller/src/main/assets/models
+          gh release download modeller -D app/src/test/resources/clip -p "clip_tokens_test.json" --clobber || true
+          cp scripts/models/NOTICE.txt app/src/main/assets/licenses/clip-models.txt
+          test -s modeller/src/main/assets/models/clip_image.tflite
+          test -s modeller/src/main/assets/models/clip_text.tflite
+          test -s modeller/src/main/assets/models/clip_text_vocab.txt
+
+      - name: YuNet ve SFace FP32 modelini AAB'ye ekle
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/face app/src/main/assets/licenses
+          MODEL_BASE="https://huggingface.co/opencv/opencv_zoo/resolve/main/models"
+          LICENSE_BASE="https://raw.githubusercontent.com/opencv/opencv_zoo/main/models"
+          curl -fL --retry 3 --connect-timeout 30 "$MODEL_BASE/face_detection_yunet/face_detection_yunet_2023mar.onnx?download=true" -o app/src/main/assets/face/face_detection_yunet_2023mar.onnx
+          curl -fL --retry 3 --connect-timeout 30 "$MODEL_BASE/face_recognition_sface/face_recognition_sface_2021dec.onnx?download=true" -o app/src/main/assets/face/face_recognition_sface_2021dec.onnx
+          test "$(stat -c%s app/src/main/assets/face/face_detection_yunet_2023mar.onnx)" -gt 150000
+          test "$(stat -c%s app/src/main/assets/face/face_recognition_sface_2021dec.onnx)" -gt 30000000
+          curl -fL --retry 3 "$LICENSE_BASE/face_recognition_sface/LICENSE" -o app/src/main/assets/licenses/sface-apache-2.0.txt
+          curl -fL --retry 3 "$LICENSE_BASE/face_detection_yunet/LICENSE" -o app/src/main/assets/licenses/yunet-mit.txt
+          sha256sum app/src/main/assets/face/*.onnx
 
       - name: Yer adları (GeoNames)
         run: |
@@ -74,24 +123,51 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle --no-daemon -PaabBuild=true bundleRelease
+        run: gradle --no-daemon -PaabBuild=true testDebugUnitTest bundleRelease
 
-      - name: Paket adı
+      - name: AAB paketini ve tüm modelleri doğrula
         run: |
+          set -euo pipefail
           cp app/build/outputs/bundle/release/app-release.aab Gallerypro.aab
-          ls -la Gallerypro.aab
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('Gallerypro.aab') as z:
+              names = set(z.namelist())
+              required = [
+                  'base/assets/face/face_detection_yunet_2023mar.onnx',
+                  'base/assets/face/face_recognition_sface_2021dec.onnx',
+                  'base/assets/licenses/sface-apache-2.0.txt',
+                  'base/assets/licenses/yunet-mit.txt',
+              ]
+              for name in required:
+                  assert name in names, f'AAB eksik: {name}'
+              assert any(x.endswith('assets/models/clip_image.tflite') for x in names), 'CLIP görüntü modeli eksik'
+              assert any(x.endswith('assets/models/clip_text.tflite') for x in names), 'CLIP metin modeli eksik'
+              for name in required[:2]:
+                  print(name, z.getinfo(name).file_size, 'bayt')
+              print('AAB: FP32 yüz modelleri, lisanslar ve CLIP install-time paketi doğrulandı.')
+          PY
+          jarsigner -verify Gallerypro.aab >/dev/null
+          sha256sum Gallerypro.aab > Gallerypro.aab.sha256
 
-      - uses: actions/upload-artifact@v4
+      - name: TEST AAB — sadece Actions içinde (Google Play'e YÜKLEMEYİN)
+        if: env.PLAY_SIGNED_RELEASE != 'true'
+        uses: actions/upload-artifact@v4
         with:
-          name: Gallerypro-aab
-          path: Gallerypro.aab
+          name: Gallerypro-AAB-TEST-PLAYE-YUKLEMEYIN
+          path: |
+            Gallerypro.aab
+            Gallerypro.aab.sha256
+          retention-days: 14
 
-      - name: İndirme bağlantısı (Releases)
+      - name: Yükleme anahtarlı AAB — GitHub Release (Play'e otomatik gönderilmez)
+        if: env.PLAY_SIGNED_RELEASE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
-          gh release delete play-aab --yes --cleanup-tag || true
-          gh release create play-aab Gallerypro.aab --target "$GITHUB_SHA" --prerelease \
-            --title "Play paketi $VERSION" \
-            --notes "Play Console'a yüklenecek AAB (modeller kurulum-anı paketinde). Derleme: $GITHUB_SHA"
+          TAG="play-upload-v$VERSION-$GITHUB_RUN_NUMBER"
+          gh release create "$TAG" Gallerypro.aab Gallerypro.aab.sha256 --target "$GITHUB_SHA" --prerelease \
+            --title "Play Console yükleme paketi $VERSION" \
+            --notes "Yükleme anahtarıyla imzalandı. Play Console'a otomatik yüklenmedi. Ticari SFace model hakları, gizlilik, ekran görüntüleri ve izin beyanları yayın öncesinde kontrol edilmeli."
