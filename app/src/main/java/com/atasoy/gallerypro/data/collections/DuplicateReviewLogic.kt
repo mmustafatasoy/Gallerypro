@@ -47,8 +47,8 @@ object DuplicateReviewLogic {
                 compareByDescending<MediaItem> { it.width.toLong() * it.height }
                     .thenByDescending { it.isFavorite }
                     .thenByDescending { it.sizeBytes }
-                    .thenByDescending { it.takenAtMillis }
-                    .thenByDescending { it.id }
+                    .thenBy { it.takenAtMillis }
+                    .thenBy { it.id }
             ).toList()
 
         val assigned = HashSet<Long>()
