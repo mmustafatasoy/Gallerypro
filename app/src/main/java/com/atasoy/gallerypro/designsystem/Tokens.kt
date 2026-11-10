@@ -31,6 +31,7 @@ object GalleryColors {
     val GroupedFill = Color(0xFFF3F3F6)
     val GroupedDivider = Color(0x1A000000)
     val Chevron = Color(0xFF8A8A92)
+    val SwitchOn = Color(0xFF34C759)
     val ChevronSmall = Color(0xFFA0A0A8)
     val BadgeFill = Color(0x38FFFFFF)
     val PinnedEmpty = Color(0xFFB4B4BC)

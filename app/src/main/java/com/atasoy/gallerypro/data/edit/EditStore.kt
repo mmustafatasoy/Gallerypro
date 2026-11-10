@@ -47,5 +47,30 @@ class EditStore(context: Context) {
         _editedIds.update { it - id }
     }
 
+    /**
+     * Artık var olmayan (silinmiş) fotoğrafların yedeklerini ve ayarlarını temizler; kazanılan bayt sayısını döner.
+     * Disk okur; arka planda çağrılır. [alive] gizlenenler dahil tüm canlı öğe kimlikleri.
+     */
+    fun pruneOrphans(alive: Set<Long>): Long {
+        var freed = 0L
+        val gone = HashSet<Long>()
+        dir.listFiles()?.forEach { file ->
+            val id = file.name.toLongOrNull() ?: return@forEach
+            if (id !in alive) {
+                freed += file.length()
+                if (file.delete()) gone += id
+            }
+        }
+        for (key in prefs.all.keys) {
+            val id = key.toLongOrNull() ?: continue
+            if (id !in alive) gone += id
+        }
+        if (gone.isNotEmpty()) {
+            prefs.edit { gone.forEach { remove(it.toString()) } }
+            _editedIds.update { it - gone }
+        }
+        return freed
+    }
+
     private fun load(): Set<Long> = prefs.all.keys.mapNotNullTo(HashSet()) { it.toLongOrNull() }
 }
