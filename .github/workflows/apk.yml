@@ -73,6 +73,27 @@ jobs:
 
       # Yerler (fotoğrafın çekildiği şehir): GeoNames şehir listesi (CC BY 4.0), depoya konmaz.
       # İndirilemezse APK yine derlenir; uygulamada yer adları kapalı kalır.
+      # Kişiler için resmi OpenCV Zoo modelleri. Model ağırlıkları Git'e eklenmez.
+      # GitHub Actions Android derlemesinde APK assets/face içine paketlenir.
+      - name: Yüz modelleri YuNet ve SFace FP32
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/face app/src/main/assets/licenses
+          BASE="https://raw.githubusercontent.com/opencv/opencv_zoo/main/models"
+          curl -fL --retry 3 --connect-timeout 30 \
+            "$BASE/face_detection_yunet/face_detection_yunet_2023mar.onnx" \
+            -o app/src/main/assets/face/face_detection_yunet_2023mar.onnx
+          curl -fL --retry 3 --connect-timeout 30 \
+            "$BASE/face_recognition_sface/face_recognition_sface_2021dec.onnx" \
+            -o app/src/main/assets/face/face_recognition_sface_2021dec.onnx
+          test "$(stat -c%s app/src/main/assets/face/face_detection_yunet_2023mar.onnx)" -gt 150000
+          test "$(stat -c%s app/src/main/assets/face/face_recognition_sface_2021dec.onnx)" -gt 30000000
+          curl -fL --retry 3 "$BASE/face_recognition_sface/LICENSE" \
+            -o app/src/main/assets/licenses/sface-apache-2.0.txt
+          curl -fL --retry 3 "$BASE/face_detection_yunet/LICENSE" \
+            -o app/src/main/assets/licenses/yunet-mit.txt
+          sha256sum app/src/main/assets/face/*.onnx
+
       - name: Yer adları (GeoNames)
         run: |
           mkdir -p /tmp/geo app/src/main/assets/places app/src/main/assets/licenses
