@@ -1,0 +1,8 @@
+Gallerypro — yer adları / place names
+
+Şehir ve il adları GeoNames verisindendir (https://www.geonames.org).
+City and region names contain data from GeoNames (https://www.geonames.org).
+
+Licensed under the Creative Commons Attribution 4.0 License (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+Changes: reduced to name, first-level region, country code and coordinates (cities with population ≥ 5000).

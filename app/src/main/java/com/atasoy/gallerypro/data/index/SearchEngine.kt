@@ -2,6 +2,8 @@ package com.atasoy.gallerypro.data.index
 
 import com.atasoy.gallerypro.data.collections.MediaKinds
 import com.atasoy.gallerypro.data.media.MediaItem
+import com.atasoy.gallerypro.data.places.PlaceEntry
+import com.atasoy.gallerypro.data.places.PlaceNames
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.math.max
@@ -16,7 +18,9 @@ class SearchDoc(
     val labels: String,
     val caption: String,
     val album: String,
-    val text: String
+    val text: String,
+    /** Çekildiği şehir, il ve ülke (Türkçe + İngilizce adı). */
+    val place: String = " "
 )
 
 enum class SearchKind { Any, Photos, Videos }
@@ -50,8 +54,10 @@ object SearchEngine {
     fun prepare(
         items: List<MediaItem>,
         index: Map<Long, IndexEntry>,
-        captions: Map<Long, String>
+        captions: Map<Long, String>,
+        places: Map<Long, PlaceEntry> = emptyMap()
     ): List<SearchDoc> {
+        val placeCache = HashMap<String, String>()
         val labelCache = HashMap<String, String>()
         fun labelWords(label: String): String = labelCache.getOrPut(label) {
             buildString {
@@ -66,7 +72,10 @@ object SearchEngine {
                 labels = " " + entry?.labels.orEmpty().joinToString(" ") { labelWords(it) },
                 caption = " " + SearchText.normalize(captions[item.id].orEmpty()),
                 album = " " + SearchText.normalize(item.album.orEmpty()),
-                text = " " + SearchText.normalize(entry?.text.orEmpty()).take(MaxText)
+                text = " " + SearchText.normalize(entry?.text.orEmpty()).take(MaxText),
+                place = places[item.id]?.takeIf { it.hasPlace }?.let { p ->
+                    placeCache.getOrPut(p.groupKey + "|" + p.city) { " " + SearchText.normalize(PlaceNames.searchable(p)) }
+                } ?: " "
             )
         }
     }
@@ -231,6 +240,7 @@ object SearchEngine {
         if (doc.labels.contains(prefix)) best = 3f
         if (doc.caption.contains(prefix)) best = max(best, 3f)
         if (best == 0f && doc.album.contains(prefix)) best = 2f
+        if (best == 0f && doc.place.contains(prefix)) best = 2f
         if (best == 0f && doc.text.contains(prefix)) best = 1f
         return best
     }

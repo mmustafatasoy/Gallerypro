@@ -7,7 +7,7 @@ import java.time.ZoneId
 import java.util.Locale
 
 /** Koleksiyonlar ekranının bölümleri; kullanıcı sırasını değiştirip gizleyebilir. */
-enum class SectionId { RecentDays, Pinned, Albums, MediaTypes, Utilities }
+enum class SectionId { RecentDays, Pinned, Albums, MediaTypes, Utilities, Places }
 
 @Immutable
 data class SectionSetting(val id: SectionId, val visible: Boolean)
@@ -336,7 +336,10 @@ object CollectionsLogic {
 /** Bölüm sırası ve görünürlüğü: "RecentDays,-Pinned,..." ("-" gizli demek). */
 object SectionOrder {
 
-    val Default: List<SectionSetting> = SectionId.entries.map { SectionSetting(it, true) }
+    /** Yeni kurulumdaki sıra; sonradan eklenen bölümler de burada yerini alır. */
+    val Default: List<SectionSetting> = listOf(
+        SectionId.RecentDays, SectionId.Pinned, SectionId.Albums, SectionId.Places, SectionId.MediaTypes, SectionId.Utilities
+    ).map { SectionSetting(it, true) }
 
     fun encode(list: List<SectionSetting>): String =
         list.joinToString(",") { (if (it.visible) "" else "-") + it.id.name }
@@ -352,8 +355,8 @@ object SectionOrder {
             val id = SectionId.entries.firstOrNull { it.name == name } ?: continue
             if (seen.add(id)) result += SectionSetting(id, visible)
         }
-        for (id in SectionId.entries) {
-            if (id !in seen) result += SectionSetting(id, true)
+        for (setting in Default) {
+            if (setting.id !in seen) result += SectionSetting(setting.id, true)
         }
         return result
     }

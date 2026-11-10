@@ -8,6 +8,8 @@ app/src/main/res/font/
 app/src/main/assets/licenses/
 # Derlemede indirilir: GitHub "modeller" sürümü (scripts/models/export_clip.py)
 app/src/main/assets/models/
+# Derlemede indirilir: GeoNames şehir listesi (scripts/places/build_cities.py)
+app/src/main/assets/places/
 app/src/test/resources/clip/
 gradle/wrapper/gradle-wrapper.jar
 

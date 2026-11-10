@@ -1,10 +1,13 @@
 package com.atasoy.gallerypro.feature.collections
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
@@ -23,8 +26,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -86,11 +89,15 @@ import com.atasoy.gallerypro.data.collections.SectionId
 import com.atasoy.gallerypro.data.collections.SectionOrder
 import com.atasoy.gallerypro.data.collections.SectionSetting
 import com.atasoy.gallerypro.data.collections.Summary
+import com.atasoy.gallerypro.data.index.IndexScheduler
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
+import com.atasoy.gallerypro.data.media.MediaDetailsReader
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaThumb
 import com.atasoy.gallerypro.data.media.contentUri
+import com.atasoy.gallerypro.data.places.PlaceGroup
+import com.atasoy.gallerypro.data.places.PlacesLogic
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryType
@@ -108,18 +115,17 @@ import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.shapes.RoundedRectangle
-import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /**
- * Koleksiyonlar sekmesi (4. aşama). Bölümler: Son Günler, Sabitlenenler, Albümler,
+ * Koleksiyonlar sekmesi. Bölümler: Son Günler, Sabitlenenler, Albümler, Yerler,
  * Medya Türleri, Araçlar. "⋯" ile sıraları ve görünürlükleri değiştirilir.
- * Anılar ile Kişiler ve Evcil Hayvanlar yapay zekâ dizinlemesiyle (5. aşama) eklenecek.
  */
 @Composable
 fun CollectionsScreen(
@@ -128,7 +134,14 @@ fun CollectionsScreen(
 ) {
     val content by viewModel.content.collectAsStateWithLifecycle()
     val sections by viewModel.sections.collectAsStateWithLifecycle()
+    val places by viewModel.places.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    // Yerler için fotoğrafların konumu gerekir (Android konumu izinsiz gizler).
+    var locationGranted by remember { mutableStateOf(MediaDetailsReader.hasLocationPermission(context)) }
+    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        locationGranted = granted
+        if (granted) IndexScheduler.runNow(context)
+    }
     val locale = remember { Locale.getDefault() }
     val zone = remember { ZoneId.systemDefault() }
     val backdrop = rememberLayerBackdrop()
@@ -224,6 +237,21 @@ fun CollectionsScreen(
                                         topPadding = top,
                                         onOpenAll = { push(CollectionKeys.AllAlbums) },
                                         onOpen = { push(CollectionKeys.album(it.path)) }
+                                    )
+                                }
+                            }
+                            SectionId.Places -> if (places.isNotEmpty() || !locationGranted) {
+                                first = false
+                                item(key = setting.id.name) {
+                                    PlacesSection(
+                                        places = places,
+                                        locale = locale,
+                                        topPadding = top,
+                                        showPermission = !locationGranted,
+                                        onAllow = {
+                                            runCatching { locationLauncher.launch(Manifest.permission.ACCESS_MEDIA_LOCATION) }
+                                        },
+                                        onOpen = { push(PlacesLogic.collectionKey(it.key)) }
                                     )
                                 }
                             }
@@ -361,7 +389,7 @@ fun CollectionsScreen(
                         CollectionDetailScreen(
                             viewModel = viewModel,
                             collectionKey = entry,
-                            title = collectionTitle(entry, content, now, zone, locale),
+                            title = collectionTitle(entry, content, places, now, zone, locale),
                             onBack = ::pop
                         )
                     }
@@ -459,6 +487,71 @@ private fun DayCard(cover: MediaItem, title: String, count: String, onClick: () 
                 overflow = TextOverflow.Ellipsis
             )
             BasicText(count, style = GalleryType.Duration.copy(color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium))
+        }
+    }
+}
+
+/** Fotoğrafların çekildiği iller/eyaletler; en son gidilen önce. İzin yoksa izin kartı. */
+@Composable
+private fun PlacesSection(
+    places: List<PlaceGroup>,
+    locale: Locale,
+    topPadding: Dp,
+    showPermission: Boolean,
+    onAllow: () -> Unit,
+    onOpen: (PlaceGroup) -> Unit
+) {
+    val context = LocalContext.current
+    Column {
+        SectionHeader(stringResource(R.string.section_places), topPadding, null)
+        if (places.isNotEmpty()) {
+            LazyRow(
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(places, key = { it.key }) { place ->
+                    DayCard(
+                        cover = place.cover,
+                        title = place.title,
+                        count = context.resources.getQuantityString(
+                            R.plurals.items_count,
+                            place.count,
+                            Formatters.count(place.count, locale)
+                        ),
+                        onClick = { onOpen(place) }
+                    )
+                }
+            }
+        }
+        if (showPermission) {
+            Row(
+                Modifier
+                    .padding(horizontal = 20.dp)
+                    .padding(top = if (places.isEmpty()) 0.dp else 10.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(GalleryDimens.GroupedCorner))
+                    .background(GalleryColors.GroupedFill)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Glyph(GalleryIcons.Pin, GalleryColors.Accent, size = 20.dp)
+                Spacer(Modifier.width(12.dp))
+                BasicText(
+                    stringResource(R.string.places_permission),
+                    style = GalleryType.Body.copy(fontSize = 14.sp, color = GalleryColors.TextSecondary),
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(10.dp))
+                BasicText(
+                    stringResource(R.string.places_allow),
+                    style = GalleryType.Button.copy(color = Color.White),
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(GalleryColors.Accent)
+                        .clickable(role = Role.Button, onClick = onAllow)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+            }
         }
     }
 }
@@ -734,6 +827,7 @@ private fun sectionTitle(id: SectionId): String = stringResource(
         SectionId.Albums -> R.string.section_albums
         SectionId.MediaTypes -> R.string.section_media_types
         SectionId.Utilities -> R.string.section_utilities
+        SectionId.Places -> R.string.section_places
     }
 )
 
@@ -884,7 +978,17 @@ internal fun dayLabel(epochDay: Long, now: Long, zone: ZoneId, locale: Locale, t
 }
 
 @Composable
-private fun collectionTitle(key: String, content: CollectionsContent, now: Long, zone: ZoneId, locale: Locale): String {
+private fun collectionTitle(
+    key: String,
+    content: CollectionsContent,
+    places: List<PlaceGroup>,
+    now: Long,
+    zone: ZoneId,
+    locale: Locale
+): String {
+    PlacesLogic.groupOf(key)?.let { group ->
+        return places.firstOrNull { it.key == group }?.title ?: group.substringBefore('|')
+    }
     CollectionKeys.dayOf(key)?.let { day ->
         return dayLabel(day, now, zone, locale, stringResource(R.string.viewer_today), stringResource(R.string.viewer_yesterday))
     }

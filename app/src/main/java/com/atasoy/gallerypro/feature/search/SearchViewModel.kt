@@ -74,8 +74,8 @@ class SearchViewModel(
     val query: StateFlow<String> = _query.asStateFlow()
 
     private val docs: StateFlow<List<SearchDoc>?> =
-        combine(repository.items, index.entries, captions.captions) { items, entries, caps ->
-            if (items == null) null else SearchEngine.prepare(items, entries, caps)
+        combine(repository.items, index.entries, captions.captions, index.places) { items, entries, caps, places ->
+            if (items == null) null else SearchEngine.prepare(items, entries, caps, places)
         }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

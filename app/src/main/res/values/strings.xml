@@ -115,6 +115,9 @@
     <string name="section_albums">Albümler</string>
     <string name="section_media_types">Medya Türleri</string>
     <string name="section_utilities">Araçlar</string>
+    <string name="section_places">Yerler</string>
+    <string name="places_permission">Fotoğrafların çekildiği yerleri görmek için konum bilgisine izin ver. Konum telefondan çıkmaz.</string>
+    <string name="places_allow">İzin ver</string>
     <string name="col_favorites">Favoriler</string>
     <string name="col_videos">Videolar</string>
     <string name="col_recently_saved">Son Kaydedilenler</string>
