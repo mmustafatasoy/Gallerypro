@@ -79,18 +79,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p app/src/main/assets/face app/src/main/assets/licenses
-          BASE="https://raw.githubusercontent.com/opencv/opencv_zoo/main/models"
+          # Github raw LFS pointer dosyası (131 bayt) döndürür.
+          # Hugging Face'deki resmi opencv/opencv_zoo aynası gerçek ONNX ağırlıklarını verir.
+          BASE="https://huggingface.co/opencv/opencv_zoo/resolve/main/models"
           curl -fL --retry 3 --connect-timeout 30 \
-            "$BASE/face_detection_yunet/face_detection_yunet_2023mar.onnx" \
+            "$BASE/face_detection_yunet/face_detection_yunet_2023mar.onnx?download=true" \
             -o app/src/main/assets/face/face_detection_yunet_2023mar.onnx
           curl -fL --retry 3 --connect-timeout 30 \
-            "$BASE/face_recognition_sface/face_recognition_sface_2021dec.onnx" \
+            "$BASE/face_recognition_sface/face_recognition_sface_2021dec.onnx?download=true" \
             -o app/src/main/assets/face/face_recognition_sface_2021dec.onnx
           test "$(stat -c%s app/src/main/assets/face/face_detection_yunet_2023mar.onnx)" -gt 150000
           test "$(stat -c%s app/src/main/assets/face/face_recognition_sface_2021dec.onnx)" -gt 30000000
-          curl -fL --retry 3 "$BASE/face_recognition_sface/LICENSE" \
+          LICENSE_BASE="https://raw.githubusercontent.com/opencv/opencv_zoo/main/models"
+          curl -fL --retry 3 "$LICENSE_BASE/face_recognition_sface/LICENSE" \
             -o app/src/main/assets/licenses/sface-apache-2.0.txt
-          curl -fL --retry 3 "$BASE/face_detection_yunet/LICENSE" \
+          curl -fL --retry 3 "$LICENSE_BASE/face_detection_yunet/LICENSE" \
             -o app/src/main/assets/licenses/yunet-mit.txt
           sha256sum app/src/main/assets/face/*.onnx
 
