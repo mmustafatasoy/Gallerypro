@@ -45,6 +45,16 @@ Gradle sürümü `gradle/wrapper/gradle-wrapper.properties` içindedir (9.7.1).
 
 Mağaza metinleri, gizlilik politikası ve yayımlama kontrol listesi `play/` klasöründedir. SFace yüz modelinin ticari dağıtım hakları ve mağaza görselleri tamamlanmadan genel yayın yapılmamalıdır.
 
+## Uygulama içi güncelleme ve özel Termux imzası (0.9.4)
+
+GitHub doğrudan APK artık `direct` kanalındadır: internet yalnızca yeni sürümü denetlemek ve APK indirmek için kullanılır. Uygulama açılınca güncellemeleri kontrol eder; Ayarlar > Uygulama Güncellemesi ile elle de bakılabilir. Android kurulum onayı zorunludur, sessiz kurulum yapılmaz.
+
+Play Store için `release` AAB internetsiz ve APK yükleme izni olmadan kalır. Play güncellemeleri Play Store'a aittir.
+
+Termux: `pkg install openjdk-17 coreutils`; ardından kaynak depoda `bash scripts/termux/gallerypro-imza-olustur.sh`. Kullanıcının oluşturduğu şifre ve keystore sadece GitHub Actions Secrets'ta saklanır: RELEASE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS=gallerypro, KEY_PASSWORD.
+
+**ÖNEMLİ:** 0.9.3 ve önceki APK'lar ortak test anahtarıyla imzalanmıştır. Yeni özel anahtar farklıysa Android eski kurulumu yerinde güncellemez. Yedek almadan eski uygulamayı silme.
+
 ## Teknoloji
 
 Kotlin, Jetpack Compose, AGP 9.3.2, Kotlin 2.4.10, cam efekti için [Kyant Backdrop](https://github.com/Kyant0/AndroidLiquidGlass), küçük resimler için Coil 3. Tüm sürümler `gradle/libs.versions.toml` içinde.
