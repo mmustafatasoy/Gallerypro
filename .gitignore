@@ -39,3 +39,4 @@ output-metadata.json
 google-services.json
 
 *.hprof
+modeller/src/main/assets/models/

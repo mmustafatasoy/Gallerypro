@@ -1,0 +1,97 @@
+# Play Store paketi (AAB). Elle başlatılır: Actions › AAB › Run workflow.
+# Gerçek yayın anahtarı GitHub Secrets'tan gelir: RELEASE_KEYSTORE_B64 (release.jks'in base64'ü),
+# KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD. Yoksa AAB sabit deneme anahtarıyla imzalanır (Play kabul etmez).
+# Modeller ayrı kurulum-anı paketinde (Play Asset Delivery); temel indirme ~40 MB kalır.
+name: AAB
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    name: Play paketi (AAB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gradle sürümü
+        id: gradle
+        run: echo "version=$(sed -n 's/.*gradle-\([0-9.]*\)-bin\.zip.*/\1/p' gradle/wrapper/gradle-wrapper.properties)" >> "$GITHUB_OUTPUT"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.gradle.outputs.version }}
+
+      - name: Android lisansları
+        run: bash scripts/accept-android-licenses.sh
+
+      - name: Inter yazı tipi
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends python3-fonttools python3-brotli > /dev/null
+          bash scripts/fetch-fonts.sh
+
+      - name: Yayın anahtarı
+        env:
+          RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$RELEASE_KEYSTORE_B64" ]; then
+            echo "$RELEASE_KEYSTORE_B64" | base64 -d > app/release.jks && echo "Yayın anahtarı hazır."
+          else
+            mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
+            echo "::warning::RELEASE_KEYSTORE_B64 yok; AAB deneme anahtarıyla imzalanıyor."
+          fi
+
+      - name: Cümleyle arama modelleri (asset pack)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p modeller/src/main/assets/models
+          gh release download modeller -D modeller/src/main/assets/models -p "clip_image.tflite" -p "clip_text.tflite" -p "clip_text_vocab.txt" --clobber
+          mkdir -p app/src/main/assets/licenses && cp scripts/models/NOTICE.txt app/src/main/assets/licenses/clip-models.txt
+          ls -la modeller/src/main/assets/models
+
+      - name: Yer adları (GeoNames)
+        run: |
+          mkdir -p /tmp/geo app/src/main/assets/places app/src/main/assets/licenses
+          curl -sSfL --retry 3 https://download.geonames.org/export/dump/cities5000.zip -o /tmp/geo/cities.zip
+          curl -sSfL --retry 3 https://download.geonames.org/export/dump/admin1CodesASCII.txt -o /tmp/geo/admin1.txt
+          unzip -o -q /tmp/geo/cities.zip -d /tmp/geo
+          python3 scripts/places/build_cities.py /tmp/geo/cities5000.txt /tmp/geo/admin1.txt app/src/main/assets/places/cities.tsv
+          cp scripts/places/NOTICE.txt app/src/main/assets/licenses/geonames.txt
+
+      - name: AAB
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle --no-daemon -PaabBuild=true bundleRelease
+
+      - name: Paket adı
+        run: |
+          cp app/build/outputs/bundle/release/app-release.aab Gallerypro.aab
+          ls -la Gallerypro.aab
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gallerypro-aab
+          path: Gallerypro.aab
+
+      - name: İndirme bağlantısı (Releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          gh release delete play-aab --yes --cleanup-tag || true
+          gh release create play-aab Gallerypro.aab --target "$GITHUB_SHA" --prerelease \
+            --title "Play paketi $VERSION" \
+            --notes "Play Console'a yüklenecek AAB (modeller kurulum-anı paketinde). Derleme: $GITHUB_SHA"
