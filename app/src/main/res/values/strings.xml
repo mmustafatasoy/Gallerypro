@@ -118,6 +118,9 @@
     <string name="section_places">Yerler</string>
     <string name="places_permission">Fotoğrafların çekildiği yerleri görmek için konum bilgisine izin ver. Konum telefondan çıkmaz.</string>
     <string name="places_allow">İzin ver</string>
+    <string name="section_memories">Anılar</string>
+    <string name="memory_on_this_day">Bu Gün</string>
+    <string name="memory_year">%1$d Özeti</string>
     <string name="col_favorites">Favoriler</string>
     <string name="col_videos">Videolar</string>
     <string name="col_recently_saved">Son Kaydedilenler</string>
