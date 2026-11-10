@@ -34,3 +34,10 @@
 - Data safety: https://support.google.com/googleplay/android-developer/answer/10144311
 - Kapalı test: https://support.google.com/googleplay/android-developer/answer/14151465
 - Asset packs: https://developer.android.com/guide/playcore/asset-delivery
+
+## Doğrudan APK self-update (0.9.4)
+- [x] Sadece `direct` kanalında INTERNET + REQUEST_INSTALL_PACKAGES; Play `release` AAB bunları içermez.
+- [x] Güncelleme manifesti, SHA-256, sertifika ve Android onaylı kurulum akışı.
+- [ ] Termux'ta gerçek özel anahtar oluşturuldu ve 4 GitHub Secrets eklendi.
+- [ ] Eski deneme imzalı APK'daki özel veriler yeni imzaya geçişten önce yedeklendi.
+- [ ] Gerçek cihazda iki ardışık aynı imzalı APK ile güncelleme testi yapıldı.
