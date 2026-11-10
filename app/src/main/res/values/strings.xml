@@ -226,4 +226,27 @@
     <string name="preview_copying">Kopyalanıyor…</string>
     <string name="preview_copied">Albüme kopyalandı</string>
     <string name="preview_failed">Albüme kopyalanamadı</string>
+    <!-- Kopyalar 7c: CLIP ile doğrulanmış gruplar; her zaman silme onayı -->
+    <string name="duplicates_no_verified">Henüz doğrulanmış kopya grubu yok. Fotoğrafların incelenmesi tamamlandıktan sonra tekrar kontrol et.</string>
+    <string name="duplicates_keep">Koru</string>
+    <string name="duplicates_candidate">Kopya</string>
+    <string name="duplicates_keep_dimensions">Korunacak fotoğraf: %1$d × %2$d piksel</string>
+    <string name="duplicates_moved_to_trash">Kopyalar Son Silinenler klasörüne taşındı</string>
+    <string name="duplicates_group_changed">Fotoğraflar değişmiş; kopyaları yeniden kontrol et.</string>
+    <plurals name="duplicates_group_count">
+        <item quantity="one">%1$d fotoğraf</item>
+        <item quantity="other">%1$d benzer fotoğraf</item>
+    </plurals>
+    <plurals name="duplicates_combine_action">
+        <item quantity="one">%1$d kopyayı birleştir</item>
+        <item quantity="other">%1$d kopyayı birleştir</item>
+    </plurals>
+    <plurals name="duplicates_merge_message">
+        <item quantity="one">%1$d kopya Son Silinenler albümüne taşınacak. En yüksek çözünürlüklü fotoğraf korunacak. Onaylıyor musun?</item>
+        <item quantity="other">%1$d kopya Son Silinenler albümüne taşınacak. En yüksek çözünürlüklü fotoğraf korunacak. Onaylıyor musun?</item>
+    </plurals>
+    <plurals name="duplicates_merge_action">
+        <item quantity="one">%1$d kopyayı sil</item>
+        <item quantity="other">%1$d kopyayı sil</item>
+    </plurals>
 </resources>

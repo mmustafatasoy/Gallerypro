@@ -11,8 +11,8 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 17
-        versionName = "0.8.3"
+        versionCode = 18
+        versionName = "0.8.4"
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
         // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. AAB'de (Play) Play kendisi böler;
         // -PaabBuild=true ile derlenirken süzgeç uygulanmaz.

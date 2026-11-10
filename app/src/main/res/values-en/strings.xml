@@ -217,4 +217,27 @@
     <string name="preview_copying">Copying…</string>
     <string name="preview_copied">Copied to album</string>
     <string name="preview_failed">Couldn\'t copy to album</string>
+    <!-- Duplicate review 7c: CLIP-verified groups, deletion only after confirmation -->
+    <string name="duplicates_no_verified">No verified duplicate groups yet. Finish indexing your photos and check again.</string>
+    <string name="duplicates_keep">Keep</string>
+    <string name="duplicates_candidate">Duplicate</string>
+    <string name="duplicates_keep_dimensions">Photo to keep: %1$d × %2$d pixels</string>
+    <string name="duplicates_moved_to_trash">Duplicates moved to Recently Deleted</string>
+    <string name="duplicates_group_changed">Photos changed. Review duplicates again.</string>
+    <plurals name="duplicates_group_count">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d similar photos</item>
+    </plurals>
+    <plurals name="duplicates_combine_action">
+        <item quantity="one">Merge %1$d duplicate</item>
+        <item quantity="other">Merge %1$d duplicates</item>
+    </plurals>
+    <plurals name="duplicates_merge_message">
+        <item quantity="one">%1$d duplicate will be moved to Recently Deleted. The highest-resolution photo will be kept. Continue?</item>
+        <item quantity="other">%1$d duplicates will be moved to Recently Deleted. The highest-resolution photo will be kept. Continue?</item>
+    </plurals>
+    <plurals name="duplicates_merge_action">
+        <item quantity="one">Delete %1$d duplicate</item>
+        <item quantity="other">Delete %1$d duplicates</item>
+    </plurals>
 </resources>
