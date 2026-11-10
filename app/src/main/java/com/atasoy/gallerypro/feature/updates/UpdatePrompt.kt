@@ -52,7 +52,7 @@ private sealed interface UiState {
 }
 
 @Composable
-fun UpdatePrompt(
+internal fun UpdatePrompt(
     initial: UpdateInfo?,
     onDismiss: () -> Unit
 ) {
