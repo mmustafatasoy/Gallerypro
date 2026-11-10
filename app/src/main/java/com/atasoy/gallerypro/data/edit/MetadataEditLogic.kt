@@ -1,6 +1,8 @@
 package com.atasoy.gallerypro.data.edit
 
 import java.time.Instant
+import kotlin.math.abs
+import kotlin.math.roundToLong
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -23,6 +25,15 @@ object MetadataEditLogic {
 
     fun isSupported(mime: String?, video: Boolean): Boolean =
         !video && mime?.lowercase(Locale.ROOT) == "image/jpeg"
+
+    /** Android framework ExifInterface için GPS koordinatı: derece/dakika/saniye rasyonelleri. */
+    fun toGpsDms(value: Double): String {
+        val totalTicks = (abs(value) * 3_600_000_0.0).roundToLong()
+        val degrees = totalTicks / 36_000_000L
+        val minutes = (totalTicks % 36_000_000L) / 600_000L
+        val seconds = totalTicks % 600_000L
+        return "${degrees}/1,${minutes}/1,${seconds}/10000"
+    }
 
     fun formatDate(millis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
         Instant.ofEpochMilli(millis).atZone(zone).format(displayFormat)
