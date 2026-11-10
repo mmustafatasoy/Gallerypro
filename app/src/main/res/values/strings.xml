@@ -65,7 +65,7 @@
     <string name="viewer_delete_message_video">Bu video Son Silinenler albümüne taşınacak. 30 gün içinde geri alabilirsin.</string>
     <string name="viewer_delete_photo">Fotoğrafı Sil</string>
     <string name="viewer_delete_video">Videoyu Sil</string>
-    <string name="delete_access_hint">Android'in ek onay penceresini kapat (Medya yönetimi izni)</string>
+    <string name="delete_access_hint">Android\'in ek onay penceresini kapat (Medya yönetimi izni)</string>
     <plurals name="delete_selected_message">
         <item quantity="one">Bu öğe Son Silinenler albümüne taşınacak. 30 gün içinde geri alabilirsin.</item>
         <item quantity="other">Bu %1$d öğe Son Silinenler albümüne taşınacak. 30 gün içinde geri alabilirsin.</item>
