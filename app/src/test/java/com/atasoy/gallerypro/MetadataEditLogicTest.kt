@@ -39,6 +39,12 @@ class MetadataEditLogicTest {
         assertTrue(value.removeLocation)
     }
 
+    @Test fun gpsDmsIsCorrectForSignedCoordinates() {
+        assertEquals("36/1,54/1,0/10000", MetadataEditLogic.toGpsDms(36.9))
+        assertEquals("30/1,43/1,480000/10000", MetadataEditLogic.toGpsDms(-30.73))
+        assertEquals("0/1,0/1,0/10000", MetadataEditLogic.toGpsDms(0.0))
+    }
+
     @Test fun invalidValuesAreRejectedWithoutWrite() {
         assertNull(MetadataEditLogic.parse("2026-02-30 12:00", "", "", false))
         assertNull(MetadataEditLogic.parse("2026-11-10 25:00", "", "", false))
