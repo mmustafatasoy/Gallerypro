@@ -11,14 +11,22 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.7.1"
+        versionCode = 14
+        versionName = "0.8.0"
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
-        // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. Play Store'da AAB'ye geçince kaldırılır.
-        ndk { abiFilters += "arm64-v8a" }
+        // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. AAB'de (Play) Play kendisi böler;
+        // -PaabBuild=true ile derlenirken süzgeç uygulanmaz.
+        if (project.findProperty("aabBuild") != "true") ndk { abiFilters += "arm64-v8a" }
     }
 
+    // Play Store (AAB): modeller ayrı kurulum-anı paketi (:modeller). APK derlemesinde paket yok sayılır,
+    // modeller doğrudan app/src/main/assets/models/ altındadır.
+    if (project.findProperty("aabBuild") == "true") assetPacks += ":modeller"
+
+
     signingConfigs {
+        // Gerçek yayın anahtarı: GitHub Secrets'tan (RELEASE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
+        // iş akışı release.jks dosyasını yazar. Depoda anahtar yoktur.
         create("release") {
             val keystore = file("release.jks")
             if (keystore.exists()) {
@@ -56,6 +64,8 @@ android {
 
     buildFeatures {
         compose = true
+        // Ayarlar ekranındaki sürüm yazısı için.
+        buildConfig = true
     }
 
     // Cümleyle arama modelleri sıkıştırılmadan paketlenir: telefonda doğrudan belleğe eşlenir.

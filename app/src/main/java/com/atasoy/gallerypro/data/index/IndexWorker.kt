@@ -180,6 +180,11 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
         val alive = HashSet<Long>(items.size * 2)
         items.forEach { alive += it.id }
         store.remove((known.keys + knownVectors.keys + knownPlaces.keys).filter { it !in alive })
+        // Silinen fotoğrafların düzenleme yedekleri de temizlenir; Son Silinenler'dekiler (geri alınabilir) korunur.
+        runCatching {
+            val trashedIds = MediaStoreSource(context).queryTrashed().mapTo(HashSet()) { it.id }
+            (context as GalleryApp).container.edits.pruneOrphans(alive + trashedIds)
+        }
 
         // Yer adları: konum izni ve APK'da şehir listesi varsa. İzin sonradan verilirse o zaman okunur.
         val cities = if (MediaDetailsReader.hasLocationPermission(context)) CityIndex.load(context) else null

@@ -72,6 +72,7 @@ import com.atasoy.gallerypro.designsystem.GlassTextButton
 import com.atasoy.gallerypro.designsystem.GlassToast
 import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
+import com.atasoy.gallerypro.feature.settings.SettingsScreen
 import com.atasoy.gallerypro.feature.viewer.ViewerScreen
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -109,6 +110,7 @@ fun LibraryScreen(
     // Açık görüntüleyicinin başladığı öğe. Kapanınca ızgara son bakılan öğeyi gösterir.
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
     var revealId by remember { mutableStateOf<Long?>(null) }
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(revealId) {
         val id = revealId ?: return@LaunchedEffect
         val index = content.items.indexOfFirst { it.id == id }
@@ -170,7 +172,7 @@ fun LibraryScreen(
         }
     }
 
-    BackHandler(enabled = viewerId == null && (ui.selecting || ui.menuOpen || ui.mode != LibraryMode.All)) {
+    BackHandler(enabled = viewerId == null && !settingsOpen && (ui.selecting || ui.menuOpen || ui.mode != LibraryMode.All)) {
         when {
             ui.menuOpen -> viewModel.closeMenu()
             ui.selecting -> viewModel.stopSelecting()
@@ -512,6 +514,10 @@ fun LibraryScreen(
                 },
                 GlassMenuItem(stringResource(R.string.filter_edited), ui.filter == LibraryFilter.Edited) {
                     viewModel.setFilter(LibraryFilter.Edited)
+                },
+                GlassMenuItem(stringResource(R.string.settings_title), false) {
+                    viewModel.closeMenu()
+                    settingsOpen = true
                 }
             ),
             modifier = Modifier
@@ -543,6 +549,16 @@ fun LibraryScreen(
                     revealId = lastId
                 }
             )
+        }
+
+        // ---------------------------------------------------------------- ayarlar
+        AnimatedVisibility(
+            visible = settingsOpen,
+            enter = fadeIn() + scaleIn(initialScale = 0.96f),
+            exit = fadeOut() + scaleOut(targetScale = 0.96f),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            SettingsScreen(onClose = { settingsOpen = false })
         }
     }
 }
