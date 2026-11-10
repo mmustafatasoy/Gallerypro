@@ -102,6 +102,8 @@ internal fun VideoTrimScreen(
     var exportJob by remember { mutableStateOf<Job?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var playing by remember { mutableStateOf(false) }
+    // Ekran kapanınca iptal edilen export sonradan video oynatıcısını tekrar açmasın.
+    var screenDisposed by remember { mutableStateOf(false) }
 
     val saveFailed = stringResource(R.string.video_trim_error)
     val selectRange = stringResource(R.string.video_trim_select_range)
@@ -116,6 +118,7 @@ internal fun VideoTrimScreen(
         player.prepare()
         player.pause()
         onDispose {
+            screenDisposed = true
             exportJob?.cancel()
             player.stop()
             player.clearMediaItems()
@@ -125,7 +128,7 @@ internal fun VideoTrimScreen(
     LaunchedEffect(player) {
         while (isActive) {
             val current = rangeNow
-            if (current != null) {
+            if (current != null && !saving) {
                 val pos = player.currentPosition
                 previewMs = pos
                 if (player.isPlaying && pos >= current.endMs) {
@@ -149,9 +152,8 @@ internal fun VideoTrimScreen(
 
     fun cancelOrClose() {
         if (saving) {
+            // İş gerçekten durup geçici dosyalar temizlenene kadar ikinci export başlatılamaz.
             exportJob?.cancel()
-            exportJob = null
-            saving = false
         } else {
             onClose()
         }
@@ -164,24 +166,41 @@ internal fun VideoTrimScreen(
             error = selectRange
             return
         }
-        player.pause()
         saving = true
         error = null
+
+        // Önizleme duraklatılmış olsa bile ExoPlayer dekoderi bellekte tutuyordu.
+        // Transformer'ın aynı videoda ikinci dekoder açması düşük bellekli cihazlarda risk.
+        // Export sırasında tek dekoder çalışsın, başarısız/iptal işleminde önizlemeyi geri kur.
+        player.pause()
+        player.stop()
+        player.clearMediaItems()
+        playing = false
+
         exportJob = scope.launch {
+            var published = false
             try {
                 if (VideoTrimExporter.export(context, item, chosen)) {
+                    published = true
                     saving = false
                     onSaved()
                 } else {
-                    saving = false
                     error = saveFailed
                 }
             } catch (_: CancellationException) {
-                saving = false
+                // Kullanıcının iptali: exporter geçici MP4'ü NonCancellable cleanup ile siler.
             } catch (_: Exception) {
-                saving = false
                 error = saveFailed
             } finally {
+                if (!published && !screenDisposed) {
+                    runCatching {
+                        player.setMediaItem(PlayerMediaItem.fromUri(item.contentUri()))
+                        player.prepare()
+                        player.seekTo(chosen.startMs)
+                        player.pause()
+                    }.onFailure { error = saveFailed }
+                }
+                saving = false
                 exportJob = null
             }
         }

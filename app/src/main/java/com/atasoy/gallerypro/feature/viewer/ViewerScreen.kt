@@ -58,6 +58,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -191,9 +192,21 @@ fun ViewerScreen(
     // Açık düzenleme ekranı (4. aşama).
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var trimId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Eski PlayerSurface ve DisposableEffect kapandıktan sonra tek ExoPlayer'ı kırpmaya devret.
+    var pendingTrimId by remember { mutableStateOf<Long?>(null) }
     var metadataId by rememberSaveable { mutableStateOf<Long?>(null) }
     var metadataRevision by remember { mutableIntStateOf(0) }
     var metadataDates by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
+
+    LaunchedEffect(pendingTrimId) {
+        val requestId = pendingTrimId ?: return@LaunchedEffect
+        // Bir kare bırakarak önceki video ekranının ExoPlayer sahipliğini bırakmasını sağla.
+        withFrameNanos { }
+        if (pendingTrimId == requestId && playingId == null) {
+            trimId = requestId
+            pendingTrimId = null
+        }
+    }
 
     var infoProgress by remember { mutableFloatStateOf(0f) }
     var dismissOffset by remember { mutableFloatStateOf(0f) }
@@ -324,7 +337,11 @@ fun ViewerScreen(
 
     fun edit(item: MediaItem) {
         playingId = null
-        if (item.isVideo) trimId = item.id else editingId = item.id
+        if (item.isVideo) {
+            pendingTrimId = item.id
+        } else {
+            editingId = item.id
+        }
     }
 
     fun toggleFavorite(item: MediaItem) {
@@ -398,7 +415,7 @@ fun ViewerScreen(
             }
         }
 
-        BackHandler(enabled = editingId == null && metadataId == null && trimId == null) {
+        BackHandler(enabled = editingId == null && metadataId == null && trimId == null && pendingTrimId == null) {
             when {
                 confirmDelete -> confirmDelete = false
                 menuOpen -> menuOpen = false
@@ -798,7 +815,7 @@ fun ViewerScreen(
         ) {
             val opened = remember { video }
             val target = video ?: opened
-            if (target != null && trimId == null) {
+            if (target != null && trimId == null && pendingTrimId == null) {
                 VideoPlayerScreen(
                     item = target,
                     title = dayTitle(target.takenAtMillis, zone, locale),

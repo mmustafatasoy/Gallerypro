@@ -227,3 +227,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Foundation Compose, cihaz içi çalışma, internetsiz yapı, Türkçe/İngilizce string kaynakları korunur. İşlem sırasında uygulama açık kalmalıdır, cihazın kodek destekleri dışa aktarmayı etkileyebilir.
 - Başarılı GitHub Actions test + APK + ZIP + SHA-256 doğrulamasından sonra kullanıcı talimatına uygun şekilde ayrı PR, ardından `main` dalına birleştirme. Gerçek Android 16 telefon kurulumu ve video dışa aktarma testleri ayrıca yapılmalıdır.
 - **Sıradaki karar:** Görev 6 Kişiler/yüz tanıma için lisanslı yüz modeli veya görev 8 Google Play için isim, ikon ve imza anahtarı kullanıcı tarafından seçilir. İzin almadan başlamayın.
+
+## Video kırpma kararlılık düzeltmesi — 0.8.7 (`duzeltme-video-kirpma-kararlilik`)
+
+- Kullanıcı, 0.8.6'da video kırpma sırasında uygulamanın kapandığını bildirdi. Cihazın gerçek hata yığını henüz sağlanmadığı için kesin kök neden olarak iddia edilmez.
+- Kod incelemesinde iki somut eşzamanlılık/bellek riski bulundu: Eski `VideoPlayerScreen` ile `VideoTrimScreen` **aynı `SharedVideoPlayer`** örneğinin `DisposableEffect` işlemlerini aynı geçişte çalıştırıyordu; ayrıca kırpma dışa aktarılırken ExoPlayer dekoderi yalnızca duraklatılmış olarak açık kalıyordu.
+- Video ekranından kırpmaya geçerken `pendingTrimId` ile eski oynatıcıyı hemen kompozisyondan çıkarıp bir sonraki karede kırpma ekranını açma; aynı ExoPlayer'a aynı anda dokunan iki sahip kalmaz.
+- Dışa aktarma öncesi ExoPlayer stop + clear; Transformer tek başına çalışır. Hata/iptalde önizleme yeniden hazırlanır. İptalde çıktı temizlenmeden ikinci dışa aktarma başlatılamaz.
+- Yeni model, kütüphane, internet izni veya tasarım değişikliği yapılmadı; 0.8.7 `versionCode 21`. GitHub Actions testleri ve ZIP/sha doğrulanır, sonra kullanıcı talimatıyla main'e birleştirilir.
+- **Kişiler / yüz tanıma:** Kullanıcı istedi. Ancak `CODEX-ILK-MESAJ.md` görev 6 gereği yüz-gömme modelinin lisansı kullanıcı tarafından seçilmeden koduna başlanmaz. Onaydan sonra ayrı dal/PR.
+- Kesin çökme kök nedeni için kullanıcı uygulamayı yeniden açınca çıkan `CrashReportSheet` raporunun metnini paylaşabilir. Android 16 cihaz kurulumu ve gerçek kırpma testi ayrıca gereklidir.
