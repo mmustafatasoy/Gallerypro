@@ -68,8 +68,24 @@ object MetadataExifWriter {
                         "GPSDateStamp", "GPSTimeStamp", "GPSProcessingMethod"
                     ).forEach { exif.setAttribute(it, null) }
                 }
-                update.latitude != null && update.longitude != null ->
-                    exif.setLatLong(update.latitude, update.longitude)
+                update.latitude != null && update.longitude != null -> {
+                    exif.setAttribute(
+                        ExifInterface.TAG_GPS_LATITUDE,
+                        MetadataEditLogic.toGpsDms(update.latitude)
+                    )
+                    exif.setAttribute(
+                        ExifInterface.TAG_GPS_LATITUDE_REF,
+                        if (update.latitude < 0.0) "S" else "N"
+                    )
+                    exif.setAttribute(
+                        ExifInterface.TAG_GPS_LONGITUDE,
+                        MetadataEditLogic.toGpsDms(update.longitude)
+                    )
+                    exif.setAttribute(
+                        ExifInterface.TAG_GPS_LONGITUDE_REF,
+                        if (update.longitude < 0.0) "W" else "E"
+                    )
+                }
             }
             exif.saveAttributes()
 
