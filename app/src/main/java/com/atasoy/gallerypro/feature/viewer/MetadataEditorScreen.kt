@@ -174,11 +174,13 @@ internal fun MetadataEditorScreen(
 
     BackHandler { if (!saving) onClose() }
 
-    Box(
-        Modifier.fillMaxSize()
-            .background(GalleryColors.DarkBackground)
-            .layerBackdrop(backdrop)
-    ) {
+    // Kaynak arka plan ile cam etkileşimleri ayrı kardeş katmanlarda olmalı.
+    Box(Modifier.fillMaxSize().background(GalleryColors.DarkBackground)) {
+        Box(
+            Modifier.fillMaxSize()
+                .layerBackdrop(backdrop)
+                .background(GalleryColors.DarkBackground)
+        )
         Column(
             Modifier.fillMaxSize()
                 .statusBarsPadding()

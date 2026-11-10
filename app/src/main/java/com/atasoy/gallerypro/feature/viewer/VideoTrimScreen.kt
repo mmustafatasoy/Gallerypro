@@ -215,10 +215,14 @@ internal fun VideoTrimScreen(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(GalleryColors.DarkBackground)
-            .layerBackdrop(backdrop)
-    ) {
+    // GLASS CRASH DÜZELTMESİ: layerBackdrop glass kullanan Column'un
+    // atası olamaz. RenderThread'in kendini tekrar çizen katman döngüsünü önle.
+    Box(modifier = Modifier.fillMaxSize().background(GalleryColors.DarkBackground)) {
+        Box(
+            Modifier.fillMaxSize()
+                .layerBackdrop(backdrop)
+                .background(GalleryColors.DarkBackground)
+        )
         Column(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
                 .padding(horizontal = GalleryDimens.ScreenPadding),
