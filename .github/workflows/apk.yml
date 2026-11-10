@@ -51,6 +51,32 @@ jobs:
       - name: Debug imza anahtarı
         run: mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
 
+      # Termux'ta oluşturulan özel anahtar 4 Secret ile gönderilir. Eksikse kesin hata.
+      - name: Özel imza anahtarı doğrulama
+        env:
+          RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          count=0
+          for k in RELEASE_KEYSTORE_B64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -n "${!k:-}" ]; then count=$((count + 1)); fi
+          done
+          if [ "$count" -gt 0 ] && [ "$count" -ne 4 ]; then
+            echo "::error::Dört yayın imza Secret'ından biri eksik."
+            exit 1
+          fi
+          if [ "$count" -eq 4 ]; then
+            printf '%s' "$RELEASE_KEYSTORE_B64" | base64 -d > app/release.jks
+            test -s app/release.jks
+            echo "SIGN_MODE=private" >> "$GITHUB_ENV"
+          else
+            echo "SIGN_MODE=test" >> "$GITHUB_ENV"
+            echo "::warning::Test imzası, özel yayın anahtarı henüz eklenmedi."
+          fi
+
       # Cümleyle arama (CLIP) modelleri depoda değil, "modeller" sürümündedir (Modeller iş akışı üretir).
       # Yoksa APK yine derlenir; uygulamada cümleyle arama kapalı kalır.
       - name: Cümleyle arama modelleri
@@ -111,8 +137,12 @@ jobs:
             echo "::warning::GeoNames indirilemedi; APK yer adları olmadan derleniyor."
           fi
 
-      - name: Testler ve APK
-        run: gradle --no-daemon testDebugUnitTest assembleRelease
+      - name: Testler ve güncellenebilir doğrudan APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle --no-daemon testDebugUnitTest assembleDirect
 
       - name: Test özeti
         if: always()
@@ -130,13 +160,47 @@ jobs:
           print(f"test: {total}, hata: {failed}, atlanan: {skipped}")
           PY
 
-      - name: APK adı
-        run: cp app/build/outputs/apk/release/app-release.apk Gallerypro.apk
+      - name: APK adı, imza ve otomatik güncelleme manifesti
+        run: |
+          set -euo pipefail
+          cp app/build/outputs/apk/direct/app-direct.apk Gallerypro.apk
+          APK_SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n1)"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name aapt | sort -V | tail -n1)"
+          test -x "$APK_SIGNER"
+          test -x "$AAPT"
+          "$APK_SIGNER" verify --print-certs Gallerypro.apk > /tmp/gallerypro-cert.txt
+          export CERT_HASH="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' /tmp/gallerypro-cert.txt | head -n1)"
+          test "${#CERT_HASH}" -eq 64
+          "$AAPT" dump permissions Gallerypro.apk | grep -F 'android.permission.INTERNET'
+          "$AAPT" dump permissions Gallerypro.apk | grep -F 'android.permission.REQUEST_INSTALL_PACKAGES'
+          export CODE="$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts)"
+          export VERSION="$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)"
+          test -n "$CODE"
+          test -n "$VERSION"
+          python3 - <<'PY'
+          import os, json, hashlib
+          from pathlib import Path
+          apk=Path('Gallerypro.apk')
+          update={
+            'packageName': 'com.atasoy.gallerypro',
+            'versionCode': int(os.environ['CODE']),
+            'versionName': os.environ['VERSION'],
+            'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
+            'signerSha256': os.environ['CERT_HASH'].lower(),
+            'sizeBytes': apk.stat().st_size,
+            'signMode': os.environ['SIGN_MODE']
+          }
+          Path('Gallerypro-update.json').write_text(
+            json.dumps(update, indent=2, ensure_ascii=False)+'\n', encoding='utf-8')
+          print('Güncelleme paketi:', update['versionName'], update['signMode'])
+          PY
 
       - uses: actions/upload-artifact@v4
         with:
           name: Gallerypro-apk
-          path: Gallerypro.apk
+          path: |
+            Gallerypro.apk
+            Gallerypro-update.json
 
       # Telefondan tek dokunuşla indirmek için: main → "son-surum", aşama dalları → dal adıyla bir ön sürüm.
       - name: İndirme bağlantısı (Releases)
@@ -146,9 +210,9 @@ jobs:
           if [ "$GITHUB_REF_NAME" = "main" ]; then TAG=son-surum; else TAG="$GITHUB_REF_NAME"; fi
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
           gh release delete "$TAG" --yes --cleanup-tag || true
-          gh release create "$TAG" Gallerypro.apk --target "$GITHUB_SHA" --prerelease \
+          gh release create "$TAG" Gallerypro.apk Gallerypro-update.json --target "$GITHUB_SHA" --prerelease \
             --title "Gallerypro $VERSION ($GITHUB_REF_NAME)" \
-            --notes "Hızlı (release) APK, sabit deneme anahtarıyla imzalı. Derleme: $GITHUB_SHA. Doğrudan indirme: https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Gallerypro.apk"
+            --notes "Güncellenebilir doğrudan APK. İmza: $SIGN_MODE. Özel anahtar eklenmediyse test amaçlıdır. Derleme: $GITHUB_SHA."
       
       # Her başarılı aşamada indirilebilir tam kaynak ZIP'i ve SHA-256 doğrulaması.
       - name: Tam kaynak ZIP yedeği

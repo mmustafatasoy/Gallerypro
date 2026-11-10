@@ -275,3 +275,14 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Bilinçli sınır: HEIC/RAW/GIF için bölgesel decoder desteği garanti olmadığından mevcut akış kalır; bazı fotoğraflarda MediaStore boyutu ham dosyayla uyuşmazsa yalnızca önizleme gösterilir.
 - Yayın öncesi **gerçek 48/108/200 MP JPEG**, döndürülmüş çekim, panorama, düşük RAM, hızlı yakınlaştırma ve sayfalama testleri yapılmalı. GitHub Actions başarılı test + APK + tam kaynak ZIP + SHA-256 doğrulamadan main'e birleştirme yapılmaz.
 - Sıradaki ertelenenler: video pinch-to-zoom, Samsung hareketli fotoğraf video bölümü, ızgaradan açılış animasyonu (bunların kapsamına bu aşamada girilmez).
+
+## Aşama 9b — Termux imza ve uygulama içi güncelleme (0.9.4)
+
+- Kullanıcı isteği: GalleryPro'yu Termux'ta özel anahtarla imzalamak; her sürümde siteden APK indirmek yerine uygulama içinden güncellemek.
+- Yeni doğrudan APK kanalı: Gradle `direct` (release gibi küçültülür, özel imza varsa kullanılır). `app/src/direct/AndroidManifest.xml` yalnızca doğrudan APK'ya INTERNET ve REQUEST_INSTALL_PACKAGES ekler. Play AAB `release` internetsiz, güncelleme Play Store üzerinden. Fotoğraf/yüz verileri dışarı gönderilmez; yalnızca GitHub güncelleme sürüm bilgisi kontrol edilir.
+- Uygulama açılınca 12 saat aralıklarla yeni sürüm kontrol edilir. Ayarlar > Uygulama Güncellemesi > Yeni sürümü kontrol et. Github `son-surum/Gallerypro-update.json` sürüm numarası, paket, APK SHA-256 ve imza SHA-256 tutar. Yalnızca daha yeni ve aynı imzalı paket indirilir.
+- Android DownloadManager 300+ MB dosyayı uygulama arka plandayken indirebilir; indirme tamamlandığında APK'nın hash, boyut, sürüm, paket ve sertifikası doğrulanır. Son kurulum yalnızca Android'in kullanıcı onay ekranıyla yapılır; sessiz kurulum yoktur.
+- `scripts/termux/gallerypro-imza-olustur.sh` kullanıcının Termux'unda RSA 4096 / PKCS12 kişisel imza üretir. Anahtar ve şifre hiçbir zaman Git deposuna veya sohbete gönderilmez. GitHub Actions Secrets: RELEASE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD. Dört Secret'ın bir bölümü eksikse CI fail; hiçbiri yoksa test anahtarıyla yalnızca deneysel APK devam eder.
+- `apk.yml` artık assembleDirect yapar, her APK için `Gallerypro-update.json` sertifika/sha/versiyon üretir ve kaynak ZIP'i eskisi gibi Releases'a ekler.
+- **Geçiş riski:** Önceki APK'lar açık deneme anahtarıyla imzalı; yeni özel anahtara geçilince Android mevcut uygulamayı yerinde güncelleyemeyebilir. Gizli albüm, kişi isimleri, edit yedekleri gibi özel verilerin kaybını önlemek için eski uygulama kaldırılmadan yedekleme stratejisi gerekli. Google Play farklı imzalı olabilir.
+- 0.9.4 versionCode 26. Yeni sürümün gerçek güncelleme deneyimi artan versionCode'lu iki ayrı APK ve Android cihaz testiyle doğrulanmalıdır. Saf UpdatePolicyTest eklendi. Yeni kütüphane yok, Motion Glass değişmedi.

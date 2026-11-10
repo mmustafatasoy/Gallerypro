@@ -11,8 +11,8 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 25
-        versionName = "0.9.3"
+        versionCode = 26
+        versionName = "0.9.4"
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
         // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. AAB'de (Play) Play kendisi böler;
         // -PaabBuild=true ile derlenirken süzgeç uygulanmaz.
@@ -42,8 +42,11 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            buildConfigField("boolean", "SELF_UPDATE_ENABLED", "false")
         }
         release {
+            // Play AAB bu derleme türünü kullanır: INTERNET veya APK kurulum izni yok.
+            buildConfigField("boolean", "SELF_UPDATE_ENABLED", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -54,6 +57,12 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+        }
+        // GitHub/Termux doğrudan APK sürümü: sadece bu varyant ağ ve sistem kurulum izni alır.
+        // Play AAB için kullandığımız release manifesti ve gizlilik şartları değişmez.
+        create("direct") {
+            initWith(getByName("release"))
+            buildConfigField("boolean", "SELF_UPDATE_ENABLED", "true")
         }
     }
 

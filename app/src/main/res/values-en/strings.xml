@@ -282,4 +282,20 @@
     <string name="people_unnamed">Unnamed Person</string>
     <string name="people_name">Name Person</string>
     <string name="people_photo_count">%1$d photos</string>
+    <!-- Direct-install update flow; not exposed in Play build -->
+    <string name="update_title">App Updates</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_latest">You are using the latest version.</string>
+    <string name="update_error">Unable to check updates or verify the downloaded APK. Check your connection.</string>
+    <string name="update_signature_mismatch">The new APK has a different signing key and cannot replace your installed app. Do not uninstall before backing up your data.</string>
+    <string name="update_found">GalleryPro %1$s is available. Download it inside the app and confirm installation through Android.</string>
+    <string name="update_downloading">Downloading update. Android continues downloading if you close the app.</string>
+    <string name="update_downloaded">Download verified. You can continue to the Android installer.</string>
+    <string name="update_allow_install">Android needs permission to install from this app. Enable it in Settings, then tap Install again.</string>
+    <string name="update_later">Later</string>
+    <string name="update_retry">Retry</string>
+    <string name="update_download">Download</string>
+    <string name="update_install">Install</string>
+    <string name="settings_privacy_direct">Photos, face data and search remain on your device. This direct APK build connects to GitHub over HTTPS only for update checks and APK downloads; no media is uploaded. The Google Play build remains offline.</string>
 </resources>

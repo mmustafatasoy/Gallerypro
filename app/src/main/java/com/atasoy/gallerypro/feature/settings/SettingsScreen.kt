@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atasoy.gallerypro.BuildConfig
+import com.atasoy.gallerypro.feature.updates.LocalUpdateLauncher
 import com.atasoy.gallerypro.R
 import com.atasoy.gallerypro.data.LocalGalleryStores
 import com.atasoy.gallerypro.data.clip.ClipAssets
@@ -68,6 +69,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(onClose: () -> Unit) {
     val context = LocalContext.current
+    val openUpdates = LocalUpdateLauncher.current
     val locale = remember { Locale.getDefault() }
     val backdrop = rememberLayerBackdrop()
     val stores = LocalGalleryStores.current
@@ -123,6 +125,24 @@ fun SettingsScreen(onClose: () -> Unit) {
                                 stringResource(R.string.settings_version),
                                 "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
                             )
+                        }
+                    }
+                    if (BuildConfig.SELF_UPDATE_ENABLED) {
+                        item {
+                            SectionTitle(stringResource(R.string.update_title))
+                            Group {
+                                Row(
+                                    Modifier.fillMaxWidth()
+                                        .clickable(role = Role.Button) { openUpdates() }
+                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BasicText(stringResource(R.string.update_check),
+                                        style = GalleryType.Body, modifier = Modifier.weight(1f))
+                                    Glyph(GalleryIcons.ChevronRight, GalleryColors.Chevron,
+                                        size = 18.dp)
+                                }
+                            }
                         }
                     }
                     item {
@@ -195,7 +215,8 @@ fun SettingsScreen(onClose: () -> Unit) {
                         SectionTitle(stringResource(R.string.settings_privacy))
                         Group {
                             BasicText(
-                                stringResource(R.string.settings_privacy_body),
+                                stringResource(if (BuildConfig.SELF_UPDATE_ENABLED)
+                                    R.string.settings_privacy_direct else R.string.settings_privacy_body),
                                 style = GalleryType.Body.copy(color = GalleryColors.TextSecondary),
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
                             )

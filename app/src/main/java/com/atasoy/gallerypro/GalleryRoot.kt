@@ -43,6 +43,12 @@ import com.atasoy.gallerypro.feature.library.LibraryViewModel
 import com.atasoy.gallerypro.feature.permission.PermissionScreen
 import com.atasoy.gallerypro.feature.search.SearchScreen
 import com.atasoy.gallerypro.feature.search.SearchViewModel
+import com.atasoy.gallerypro.feature.updates.LocalUpdateLauncher
+import com.atasoy.gallerypro.feature.updates.UpdatePrompt
+import com.atasoy.gallerypro.data.updates.GithubUpdates
+import com.atasoy.gallerypro.data.updates.UpdateCheck
+import com.atasoy.gallerypro.data.updates.UpdateDownloads
+import com.atasoy.gallerypro.data.updates.UpdateInfo
 
 @Composable
 fun GalleryRoot(container: AppContainer) {
@@ -52,6 +58,29 @@ fun GalleryRoot(container: AppContainer) {
     var permanentlyDenied by remember { mutableStateOf(false) }
     // Önceki oturum çöktüyse ayrıntısı bir kez gösterilir.
     var crashReport by remember { mutableStateOf(CrashReporter.pending(context)) }
+    var updateOpen by remember { mutableStateOf(false) }
+    var startupUpdate by remember { mutableStateOf<UpdateInfo?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (BuildConfig.SELF_UPDATE_ENABLED) {
+            val store = context.getSharedPreferences("gallerypro_update_check", Context.MODE_PRIVATE)
+            val last = store.getLong("last", 0L)
+            val now = System.currentTimeMillis()
+            if (UpdateDownloads.pending(context) != null) {
+                updateOpen = true
+            } else if (now - last > 12L * 60 * 60 * 1000) {
+                when (val result = GithubUpdates.check(context)) {
+                    is UpdateCheck.Available -> {
+                        startupUpdate = result.info
+                        updateOpen = true
+                    }
+                    UpdateCheck.Current, UpdateCheck.DifferentSigner -> Unit
+                    UpdateCheck.Failed -> Unit
+                }
+                store.edit().putLong("last", now).apply()
+            }
+        }
+    }
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -71,7 +100,8 @@ fun GalleryRoot(container: AppContainer) {
 
     CompositionLocalProvider(
         LocalGalleryImageLoader provides container.imageLoader,
-        LocalGalleryStores provides container.stores
+        LocalGalleryStores provides container.stores,
+        LocalUpdateLauncher provides { startupUpdate = null; updateOpen = true }
     ) {
         Box(Modifier.fillMaxSize()) {
             if (access == MediaAccess.None) {
@@ -138,6 +168,12 @@ fun GalleryRoot(container: AppContainer) {
                 ) {
                     SearchScreen(searchViewModel, onClose = { searchOpen = false })
                 }
+            }
+            if (BuildConfig.SELF_UPDATE_ENABLED && updateOpen && crashReport == null) {
+                UpdatePrompt(initial = startupUpdate, onDismiss = {
+                    updateOpen = false
+                    startupUpdate = null
+                })
             }
             crashReport?.let { report ->
                 CrashReportSheet(report) {
