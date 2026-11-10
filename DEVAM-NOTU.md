@@ -42,6 +42,75 @@ Yeni özellik aşağıdaki kalıplardan birine oturtulur. Oturmuyorsa durulur ve
 | `designsystem/` | `Tokens.kt` (renk/boyut/hareket), `Type.kt` (yazı), `Glass.kt` (`Modifier.glass` — TEK cam noktası), `GlassControls.kt` (cam düğme, sekme çubuğu, menü, bildirim), `ProgressiveHeader.kt`, `Performance.kt`, `icons/GalleryIcons.kt` | Yeni renk/boyut önce `Tokens.kt`'ye; ekranda doğrudan blur/renk kodu yazılmaz |
 | `feature/<ekran>/` | `XScreen.kt` (Composable) + gerekirse `XViewModel.kt` | Bir ekran = bir klasör. Ekranlar birbirinin içini bilmez; ortak parça `internal` yapılıp aynı yerden kullanılır (örn. `DeleteCard`, `AlbumTile`) |
 
+### NEREDEN NE ALINIR (kaynak tablosu — aynı işi yapan ikinci kod yazılmaz)
+Bir şeye ihtiyaç olunca **önce bu tabloya bakılır**. Burada olan bir şey yeniden yazılmaz, kopyalanmaz, sarmalanmaz.
+Tabloda olmayan bir veri gerekiyorsa: ilgili `data/` sınıfına eklenir ve bu tabloya bir satır yazılır.
+
+**Medya**
+| İhtiyaç | Nereden | Not |
+| --- | --- | --- |
+| Tüm fotoğraf/videolar (gizliler hariç, eskiden yeniye) | `container.mediaRepository.items` (`StateFlow<List<MediaItem>?>`) | `null` = yükleniyor |
+| Gizlenenler / Son Silinenler | `mediaRepository.hiddenItems` / `mediaRepository.trashed` | Çöp yalnızca Android 11+ |
+| Listeyi yenile | `mediaRepository.refresh()` | MediaStore değişince kendiliğinden yenilenir |
+| Bir öğenin adresi (Uri) | `item.contentUri()` (`data/media/MediaItem.kt`) | Elle `ContentUris` yazılmaz |
+| Döndürülmüş genişlik/yükseklik | `item.displayWidth` / `item.displayHeight` | |
+| Ekran görüntüsü mü, kamera mı, panorama mı… | `MediaKinds.isScreenshot/isCamera/isPanorama/isRaw/isImported(item)` (`data/collections/CollectionsLogic.kt`) | |
+| EXIF (kamera, lens, ISO, konum) | `MediaDetailsReader.read(context, item)` — **IO iş parçacığında** | Konum izni: `MediaDetailsReader.hasLocationPermission(context)` |
+| Medya izni durumu | `MediaPermissions.access(context)` → `MediaAccess.Full/Partial/None` | İstenecek izinler: `MediaPermissions.required()` |
+| "Medya yönetimi" (sistem onayı olmadan sil/favori) | `ManageMedia.granted(context)`, `ManageMedia.request(context)` | |
+| Çöpe at / geri al / kalıcı sil / favori | `MediaStore.createTrashRequest` / `createDeleteRequest` / `createFavoriteRequest` + `StartIntentSenderForResult` | Örnek: `ViewerScreen.launchTrash`, `recover`, `deleteForever`, `toggleFavorite`. Önce **`DeleteCard`** ile onay |
+| Paylaş, birlikte aç, duvar kâğıdı yap, panoya kopyala, haritada aç | `context.shareItems(...)`, `openWith`, `setAs`, `copyToClipboard`, `openMap` (`data/media/MediaIntents.kt`) | |
+| Küçük resim | `AsyncImage(model = MediaThumb(uri, boyutPx, item.modifiedMillis), imageLoader = LocalGalleryImageLoader.current)` | Başka resim yükleyici yok; `modifiedMillis` mutlaka verilir |
+| Gün/ay/yıl gruplama | `PeriodGrouper` (`data/media/Periods.kt`), `CollectionsLogic.epochDay(...)` | |
+| Sayı, süre, tarih yazısı | `Formatters.count(n, locale)`, `Formatters.duration(ms)`, `Formatters.longDate(...)`, `Formatters.monthName(...)` | Elle `String.format` yazılmaz |
+| EXIF yazısı (ƒ1,8, 26 mm, MP, boyut, koordinat) | `DetailFormat.*` (`data/media/MediaDetails.kt`) | |
+
+**Kullanıcı verisi (cihazda saklanan)**
+| İhtiyaç | Nereden |
+| --- | --- |
+| Fotoğraf başlığı | `stores.captions.caption(id)`, `.set(id, text)`, akış: `.captions` |
+| Gizle / göster | `stores.hidden.hide(ids)`, `.unhide(ids)`, akış: `.ids` |
+| Düzenlenmiş mi, düzenleme ayarları, orijinal yedek | `stores.edits.editedIds`, `.params(id)`, `.backupFile(id)`, `.hasBackup(id)` |
+| Son aramalar | `container.searchHistory` |
+| Koleksiyon bölüm sırası | `container.sections` (`SectionPrefs`) |
+| Cam efekti seçimi | `GalleryPerformance.fullEffects`, `.setFullEffects(context, açık)` |
+| Ekranda bu depolara erişim | `LocalGalleryStores.current` (`captions`, `edits`, `hidden`, `index`) |
+
+**Yapay zekâ dizini (`container.index` = `IndexStore`)**
+| İhtiyaç | Nereden | Not |
+| --- | --- | --- |
+| Etiketler ve fotoğraftaki yazı | `index.entries` → `Map<Long, IndexEntry>` | Türkçe ad: `LabelDictionary.display(label, turkishUi)` |
+| CLIP anlam vektörü | `index.vectors` → `Map<Long, VectorEntry>` | Benzerlik: `VectorMath.dot`, `.nearest` (metin→foto), `.similar` (foto→foto), `.mean` |
+| Çekildiği yer | `index.places` → `Map<Long, PlaceEntry>` | Ad: `PlaceNames.cityLine/groupTitle/country`; grup: `PlacesLogic.groups/itemsIn` |
+| Dizin durumu (ilerleme) | `index.status` | |
+| Dizinlemeyi başlat | `IndexScheduler.runNow(context)` | Zamanlama: `IndexScheduler.schedule(context)` (yalnızca GalleryRoot) |
+| Metinle arama | `SearchEngine.prepare(...)` + `SearchEngine.search(...)`; cümle: `container.clipText.embed(text)` | Ekran: `SearchViewModel` |
+| Arama ekranını bir sözcükle aç | `LocalSearchLauncher.current?.open("kelime")` | |
+| Anılar | `MemoryBuilder.build(items, places, vectors, now, zone)` | Ekran: `CollectionsViewModel.memories` |
+| Koleksiyon içerikleri | `CollectionsLogic.build(...)`, `.itemsFor(key, ...)`, anahtarlar `CollectionKeys` | |
+
+**Arayüz parçaları (yeniden çizilmez, bunlar kullanılır)**
+| İhtiyaç | Nereden (`designsystem/` veya ilgili ekran) |
+| --- | --- |
+| Renk, boyut, köşe, hareket | `GalleryColors`, `GalleryDimens`, `GalleryMotion` (`Tokens.kt`) |
+| Yazı stilleri | `GalleryType.LargeTitle/SectionTitle/Body/Subtitle/Button/Chip/Duration…` (`Type.kt`) |
+| İkonlar | `GalleryIcons.*` + `Glyph(icon, renk, size)` |
+| Cam yüzey | `Modifier.glass(backdrop, RoundedRectangle(..), GlassTone.Light/Dark/Sheet)` |
+| Cam düğme / yazılı düğme | `GlassIconButton`, `GlassTextButton` |
+| Alt sekme çubuğu | `GlassTabBar` + `GlassTab` |
+| ⋯ menüsü | `GlassMenu` + `GlassMenuItem` |
+| Kısa bildirim | `GlassToast(backdrop, mesaj)` |
+| Üst/alt kademeli bulanık kenar | `ProgressiveBlurEdge` |
+| Silme/onay kartı | `DeleteCard` (`feature/viewer/ViewerScreen.kt`, `internal`) |
+| Tam ekran görüntüleyici | `ViewerScreen(items, startId, onClose, mode)` — slayt modu içinde var |
+| Koleksiyon ızgarası | `CollectionDetailScreen(viewModel, key, title, onBack)` |
+| Yatay kapak kartı | `DayCard` (CollectionsScreen içinde; Anılar ve Yerler de bunu kullanır) |
+| Albüm karesi | `AlbumTile` (`internal`) |
+| Ayarlar satırı/grubu | `SettingsScreen.kt` içindeki `Group`, `RowItem`, `Switch` |
+
+**Yasak kısa yollar:** `Toast.makeText`, `AlertDialog`, Material bileşenleri, `Glide/Picasso`, ikinci bir `SQLiteOpenHelper`,
+yeni `Worker`, `GlobalScope`, ana iş parçacığında disk/bitmap, kodda sabit Türkçe/İngilizce metin, `INTERNET` izni.
+
 ### Veri akışı (her yeni özellik böyle)
 1. Kayıt: `data/...Store` (SQLite ya da SharedPreferences) → `MutableStateFlow` → dışarıya `StateFlow`.
 2. Hesap: saf `object ...Logic` / `...Builder` (JVM'de test edilir, Android sınıfı kullanmaz).
