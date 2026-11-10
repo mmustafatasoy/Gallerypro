@@ -21,10 +21,14 @@ import com.atasoy.gallerypro.data.clip.VectorMath
 import com.atasoy.gallerypro.data.clip.VectorVersion
 import com.atasoy.gallerypro.data.clip.VideoVectorVersion
 import com.atasoy.gallerypro.data.media.MediaAccess
+import com.atasoy.gallerypro.data.media.MediaDetailsReader
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaPermissions
 import com.atasoy.gallerypro.data.media.MediaStoreSource
 import com.atasoy.gallerypro.data.media.contentUri
+import com.atasoy.gallerypro.data.places.CityIndex
+import com.atasoy.gallerypro.data.places.PlaceEntry
+import com.atasoy.gallerypro.data.places.PlaceVersion
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
@@ -172,9 +176,18 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
         val items = runCatching { MediaStoreSource(context).queryAll() }.getOrElse { return Result.retry() }
         val known = store.entries.value
         val knownVectors = store.vectors.value
+        val knownPlaces = store.places.value
         val alive = HashSet<Long>(items.size * 2)
         items.forEach { alive += it.id }
-        store.remove((known.keys + knownVectors.keys).filter { it !in alive })
+        store.remove((known.keys + knownVectors.keys + knownPlaces.keys).filter { it !in alive })
+
+        // Yer adları: konum izni ve APK'da şehir listesi varsa. İzin sonradan verilirse o zaman okunur.
+        val cities = if (MediaDetailsReader.hasLocationPermission(context)) CityIndex.load(context) else null
+        fun needsPlace(item: MediaItem): Boolean {
+            if (cities == null) return false
+            val p = knownPlaces[item.id]
+            return p == null || p.modified != item.modifiedMillis || p.version < PlaceVersion
+        }
 
         // Cümleyle arama modeli APK'da yoksa yalnızca etiket ve yazı çıkarılır.
         val clip = ClipImageEncoder.createOrNull(context)
@@ -188,7 +201,7 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
             return v == null || v.modified != item.modifiedMillis || v.version < vectorVersionFor(item)
         }
         val todo = items
-            .filter { needsLabels(it) || needsVector(it) }
+            .filter { needsLabels(it) || needsVector(it) || needsPlace(it) }
             .sortedByDescending { it.takenAtMillis }
         var done = items.size - todo.size
         store.setStatus(IndexStatus(running = todo.isNotEmpty(), done = done, total = items.size))
@@ -201,21 +214,29 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
             MediaIndexer().use { indexer ->
                 val batch = ArrayList<IndexEntry>(BatchSize)
                 val vectors = HashMap<Long, VectorEntry>(BatchSize * 2)
+                val places = HashMap<Long, PlaceEntry>(BatchSize * 2)
                 fun flush() {
                     store.put(batch.toList())
                     store.putVectors(HashMap(vectors))
+                    store.putPlaces(HashMap(places))
                     batch.clear()
                     vectors.clear()
+                    places.clear()
                 }
                 for (item in todo) {
                     if (isStopped) break
-                    // Uygulama ekrandayken yavaş gider: kaydırma ve fotoğraf açma öncelikli.
-                    if (appVisible()) Thread.sleep(VisiblePauseMs)
-                    val (entry, vector) = indexer.index(context, item, needsLabels(item), clip.takeIf { needsVector(item) })
-                    if (entry != null) batch += entry
-                    if (vector != null) vectors[item.id] = vector
+                    val labels = needsLabels(item)
+                    val vector = needsVector(item)
+                    if (labels || vector) {
+                        // Uygulama ekrandayken yavaş gider: kaydırma ve fotoğraf açma öncelikli.
+                        if (appVisible()) Thread.sleep(VisiblePauseMs)
+                        val (entry, v) = indexer.index(context, item, labels, clip.takeIf { vector })
+                        if (entry != null) batch += entry
+                        if (v != null) vectors[item.id] = v
+                    }
+                    if (cities != null && needsPlace(item)) places[item.id] = readPlace(context, item, cities)
                     done++
-                    if (batch.size + vectors.size >= BatchSize) {
+                    if (batch.size + vectors.size + places.size >= BatchSize) {
                         flush()
                         store.setStatus(IndexStatus(running = true, done = done, total = items.size))
                     }
@@ -231,6 +252,22 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
         clip?.close()
         store.setStatus(IndexStatus(running = false, done = done, total = items.size))
         return Result.success()
+    }
+
+    /** Fotoğrafın/videonun konumu ve en yakın şehir. Konum yoksa boş kayıt. */
+    private fun readPlace(context: Context, item: MediaItem, cities: CityIndex): PlaceEntry {
+        val details = MediaDetailsReader.read(context, item)
+        val lat = details.latitude
+        val lon = details.longitude
+        val city = if (lat != null && lon != null) cities.nearest(lat, lon) else null
+        return PlaceEntry(
+            modified = item.modifiedMillis,
+            lat = lat,
+            lon = lon,
+            city = city?.name.orEmpty(),
+            admin = city?.admin.orEmpty(),
+            country = city?.country.orEmpty()
+        )
     }
 
     private fun appVisible(): Boolean {

@@ -87,6 +87,7 @@ import com.atasoy.gallerypro.data.clip.VectorEntry
 import com.atasoy.gallerypro.data.clip.VectorMath
 import com.atasoy.gallerypro.data.collections.CollectionsLogic
 import com.atasoy.gallerypro.data.index.IndexEntry
+import com.atasoy.gallerypro.data.index.IndexScheduler
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
 import com.atasoy.gallerypro.data.media.MediaDetails
@@ -99,6 +100,7 @@ import com.atasoy.gallerypro.data.media.openMap
 import com.atasoy.gallerypro.data.media.openWith
 import com.atasoy.gallerypro.data.media.setAs
 import com.atasoy.gallerypro.data.media.shareItems
+import com.atasoy.gallerypro.data.places.PlaceEntry
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryMotion
@@ -258,7 +260,11 @@ fun ViewerScreen(
     var locationGranted by remember { mutableStateOf(MediaDetailsReader.hasLocationPermission(context)) }
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> locationGranted = granted }
+    ) { granted ->
+        locationGranted = granted
+        // İzin verilince fotoğrafların yerleri (şehir adları) arka planda okunur.
+        if (granted) IndexScheduler.runNow(context)
+    }
 
     val needsAndroid11 = stringResource(R.string.trash_needs_android11)
     val favoriteNeedsAndroid11 = stringResource(R.string.favorite_needs_android11)
@@ -504,6 +510,9 @@ fun ViewerScreen(
                     value = withContext(Dispatchers.Default) { similarTo(current, list, vectors) }
                 }
             }
+            val place by produceState<PlaceEntry?>(null, current.id) {
+                stores.index.places.map { it[current.id] }.distinctUntilChanged().collect { value = it }
+            }
             val searchLauncher = LocalSearchLauncher.current
             // Metin alanı yerel durumla çalışır (yazarken imleç kaymasın); her değişiklik kaydedilir.
             var caption by remember(current.id) { mutableStateOf(captions.caption(current.id)) }
@@ -530,6 +539,7 @@ fun ViewerScreen(
                     onOpenMap = { lat, lon ->
                         if (!context.openMap(lat, lon, current.displayName.orEmpty())) toast = noAppText
                     },
+                    place = place,
                     smart = smart,
                     similar = similar,
                     onOpenSimilar = { other ->

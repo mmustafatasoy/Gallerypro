@@ -106,6 +106,9 @@
     <string name="section_albums">Albums</string>
     <string name="section_media_types">Media Types</string>
     <string name="section_utilities">Utilities</string>
+    <string name="section_places">Places</string>
+    <string name="places_permission">Allow access to photo locations to see where your photos were taken. Locations never leave your phone.</string>
+    <string name="places_allow">Allow</string>
     <string name="col_favorites">Favorites</string>
     <string name="col_videos">Videos</string>
     <string name="col_recently_saved">Recently Saved</string>

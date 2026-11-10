@@ -6,8 +6,11 @@ import com.atasoy.gallerypro.data.collections.CollectionsContent
 import com.atasoy.gallerypro.data.collections.CollectionsLogic
 import com.atasoy.gallerypro.data.collections.SectionPrefs
 import com.atasoy.gallerypro.data.collections.SectionSetting
+import com.atasoy.gallerypro.data.index.IndexStore
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaRepository
+import com.atasoy.gallerypro.data.places.PlaceGroup
+import com.atasoy.gallerypro.data.places.PlacesLogic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,6 +23,7 @@ import java.time.ZoneId
 class CollectionsViewModel(
     private val repository: MediaRepository,
     private val sectionPrefs: SectionPrefs,
+    private val index: IndexStore,
     private val zone: ZoneId = ZoneId.systemDefault()
 ) : ViewModel() {
 
@@ -34,13 +38,25 @@ class CollectionsViewModel(
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CollectionsContent())
 
+    /** Yerler bölümü (fotoğrafların çekildiği iller/eyaletler). */
+    val places: StateFlow<List<PlaceGroup>> =
+        combine(repository.items, index.places) { items, places -> PlacesLogic.groups(items.orEmpty(), places) }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val sections: StateFlow<List<SectionSetting>> = sectionPrefs.sections
 
     fun setSections(list: List<SectionSetting>) = sectionPrefs.set(list)
 
     /** Bir koleksiyonun öğeleri; MediaStore değişince kendiliğinden güncellenir. */
-    fun items(key: String): Flow<List<MediaItem>> =
-        combine(repository.items, repository.hiddenItems, repository.trashed) { items, hidden, trashed ->
+    fun items(key: String): Flow<List<MediaItem>> {
+        PlacesLogic.groupOf(key)?.let { group ->
+            return combine(repository.items, index.places) { items, places ->
+                PlacesLogic.itemsIn(group, items.orEmpty(), places)
+            }.flowOn(Dispatchers.Default)
+        }
+        return combine(repository.items, repository.hiddenItems, repository.trashed) { items, hidden, trashed ->
             CollectionsLogic.itemsFor(key, items.orEmpty(), hidden, trashed, System.currentTimeMillis(), zone)
         }.flowOn(Dispatchers.Default)
+    }
 }

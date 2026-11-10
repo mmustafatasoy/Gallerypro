@@ -90,7 +90,7 @@ fun GalleryRoot(container: AppContainer) {
                     LibraryViewModel(container.mediaRepository, container.edits)
                 }
                 val collectionsViewModel: CollectionsViewModel = viewModel {
-                    CollectionsViewModel(container.mediaRepository, container.sections)
+                    CollectionsViewModel(container.mediaRepository, container.sections, container.index)
                 }
                 val searchViewModel: SearchViewModel = viewModel {
                     SearchViewModel(

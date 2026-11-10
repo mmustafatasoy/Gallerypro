@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.atasoy.gallerypro.data.clip.VectorEntry
 import com.atasoy.gallerypro.data.clip.VectorMath
+import com.atasoy.gallerypro.data.places.PlaceEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +30,10 @@ class IndexStore(context: Context) {
     private val _vectors = MutableStateFlow<Map<Long, VectorEntry>>(emptyMap())
     val vectors: StateFlow<Map<Long, VectorEntry>> = _vectors.asStateFlow()
 
+    /** Çekildiği yer (öğe kimliği → şehir/il/ülke). Konumu olmayanlar da boş kayıtla durur. */
+    private val _places = MutableStateFlow<Map<Long, PlaceEntry>>(emptyMap())
+    val places: StateFlow<Map<Long, PlaceEntry>> = _places.asStateFlow()
+
     private val _status = MutableStateFlow(IndexStatus())
     val status: StateFlow<IndexStatus> = _status.asStateFlow()
 
@@ -39,6 +44,7 @@ class IndexStore(context: Context) {
             if (loaded) return
             _entries.value = runCatching { readAll() }.getOrDefault(emptyMap())
             _vectors.value = runCatching { readVectors() }.getOrDefault(emptyMap())
+            _places.value = runCatching { readPlaces() }.getOrDefault(emptyMap())
             loaded = true
         }
     }
@@ -90,6 +96,33 @@ class IndexStore(context: Context) {
         _vectors.update { current -> current + batch }
     }
 
+    fun putPlaces(batch: Map<Long, PlaceEntry>) {
+        if (batch.isEmpty()) return
+        runCatching {
+            val w = db.writableDatabase
+            w.beginTransaction()
+            try {
+                for ((id, p) in batch) {
+                    val values = ContentValues(8).apply {
+                        put(ColId, id)
+                        put(ColModified, p.modified)
+                        if (p.lat != null) put(ColLat, p.lat) else putNull(ColLat)
+                        if (p.lon != null) put(ColLon, p.lon) else putNull(ColLon)
+                        put(ColCity, p.city)
+                        put(ColAdmin, p.admin)
+                        put(ColCountry, p.country)
+                        put(ColVersion, p.version)
+                    }
+                    w.insertWithOnConflict(PlaceTable, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+                }
+                w.setTransactionSuccessful()
+            } finally {
+                w.endTransaction()
+            }
+        }
+        _places.update { current -> current + batch }
+    }
+
     fun remove(ids: Collection<Long>) {
         if (ids.isEmpty()) return
         runCatching {
@@ -99,6 +132,7 @@ class IndexStore(context: Context) {
                 for (id in ids) {
                     w.delete(Table, "$ColId = ?", arrayOf(id.toString()))
                     w.delete(VectorTable, "$ColId = ?", arrayOf(id.toString()))
+                    w.delete(PlaceTable, "$ColId = ?", arrayOf(id.toString()))
                 }
                 w.setTransactionSuccessful()
             } finally {
@@ -108,6 +142,7 @@ class IndexStore(context: Context) {
         val gone = ids.toSet()
         _entries.update { current -> current - gone }
         _vectors.update { current -> current - gone }
+        _places.update { current -> current - gone }
     }
 
     fun setStatus(status: IndexStatus) {
@@ -143,24 +178,57 @@ class IndexStore(context: Context) {
         return out
     }
 
-    private class Helper(context: Context) : SQLiteOpenHelper(context, "index.db", null, 2) {
+    private fun readPlaces(): Map<Long, PlaceEntry> {
+        val out = HashMap<Long, PlaceEntry>()
+        db.readableDatabase.query(
+            PlaceTable,
+            arrayOf(ColId, ColModified, ColLat, ColLon, ColCity, ColAdmin, ColCountry, ColVersion),
+            null, null, null, null, null
+        ).use { c ->
+            while (c.moveToNext()) {
+                out[c.getLong(0)] = PlaceEntry(
+                    modified = c.getLong(1),
+                    lat = if (c.isNull(2)) null else c.getDouble(2),
+                    lon = if (c.isNull(3)) null else c.getDouble(3),
+                    city = c.getString(4).orEmpty(),
+                    admin = c.getString(5).orEmpty(),
+                    country = c.getString(6).orEmpty(),
+                    version = c.getInt(7)
+                )
+            }
+        }
+        return out
+    }
+
+    private class Helper(context: Context) : SQLiteOpenHelper(context, "index.db", null, 3) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE $Table ($ColId INTEGER PRIMARY KEY, $ColModified INTEGER NOT NULL, " +
                     "$ColLabels TEXT NOT NULL, $ColText TEXT NOT NULL, $ColVersion INTEGER NOT NULL)"
             )
             createVectors(db)
+            createPlaces(db)
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            // 1 → 2: etiketler korunur, vektör tablosu eklenir.
+            // 1 → 2: etiketler korunur, vektör tablosu eklenir. 2 → 3: yer tablosu eklenir.
             if (oldVersion < 2) createVectors(db)
+            if (oldVersion < 3) createPlaces(db)
         }
 
         override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
             db.execSQL("DROP TABLE IF EXISTS $Table")
             db.execSQL("DROP TABLE IF EXISTS $VectorTable")
+            db.execSQL("DROP TABLE IF EXISTS $PlaceTable")
             onCreate(db)
+        }
+
+        private fun createPlaces(db: SQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS $PlaceTable ($ColId INTEGER PRIMARY KEY, $ColModified INTEGER NOT NULL, " +
+                    "$ColLat REAL, $ColLon REAL, $ColCity TEXT NOT NULL, $ColAdmin TEXT NOT NULL, " +
+                    "$ColCountry TEXT NOT NULL, $ColVersion INTEGER NOT NULL)"
+            )
         }
 
         private fun createVectors(db: SQLiteDatabase) {
@@ -175,6 +243,12 @@ class IndexStore(context: Context) {
         const val Table = "media"
         const val VectorTable = "vectors"
         const val ColVector = "vec"
+        const val PlaceTable = "places"
+        const val ColLat = "lat"
+        const val ColLon = "lon"
+        const val ColCity = "city"
+        const val ColAdmin = "admin"
+        const val ColCountry = "country"
         const val ColId = "id"
         const val ColModified = "modified"
         const val ColLabels = "labels"

@@ -65,6 +65,8 @@ import com.atasoy.gallerypro.data.media.MediaThumb
 import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.displayHeight
 import com.atasoy.gallerypro.data.media.displayWidth
+import com.atasoy.gallerypro.data.places.PlaceEntry
+import com.atasoy.gallerypro.data.places.PlaceNames
 import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.Glyph
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
@@ -93,6 +95,7 @@ internal fun InfoPanelContent(
     onCaptionChange: (String) -> Unit,
     onRequestLocation: () -> Unit,
     onOpenMap: (Double, Double) -> Unit,
+    place: PlaceEntry?,
     smart: IndexEntry?,
     similar: List<MediaItem>,
     onOpenSimilar: (MediaItem) -> Unit,
@@ -153,7 +156,7 @@ internal fun InfoPanelContent(
 
             if (details != null && (details.hasLocation || details.locationHidden)) {
                 Spacer(Modifier.height(12.dp))
-                LocationCard(item, details, locale, onRequestLocation, onOpenMap)
+                LocationCard(item, details, place, locale, onRequestLocation, onOpenMap)
             }
 
             if (smart != null && (smart.labels.isNotEmpty() || smart.text.isNotBlank())) {
@@ -426,6 +429,7 @@ private fun CameraCard(item: MediaItem, details: MediaDetails?, locale: Locale) 
 private fun LocationCard(
     item: MediaItem,
     details: MediaDetails,
+    place: PlaceEntry?,
     locale: Locale,
     onRequestLocation: () -> Unit,
     onOpenMap: (Double, Double) -> Unit
@@ -471,6 +475,10 @@ private fun LocationCard(
         west = stringResource(R.string.coord_west)
     )
     val mapLabel = stringResource(R.string.info_open_map)
+    // Şehir listesinden bulunan yer adı varsa koordinat yerine o yazılır.
+    val placeLine = place?.takeIf { it.hasPlace }?.let { p ->
+        listOf(PlaceNames.cityLine(p), PlaceNames.country(p.country, locale)).filter { it.isNotEmpty() }.joinToString(" · ")
+    }
 
     // İnternet izni olmadığı için harita karosu yok: kartın zemini fotoğrafın
     // bulanık kopyası, ortada fotoğraf iğnesi, altta koordinat ve "Haritada aç".
@@ -522,7 +530,7 @@ private fun LocationCard(
         ) {
             Glyph(GalleryIcons.Pin, Color.White, size = 16.dp)
             BasicText(
-                coordinates,
+                placeLine ?: coordinates,
                 style = GalleryType.Chip.copy(color = Color.White),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

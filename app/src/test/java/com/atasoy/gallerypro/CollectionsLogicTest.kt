@@ -184,7 +184,7 @@ class CollectionsLogicTest {
 
     @Test
     fun sectionOrder_roundTripAndRepair() {
-        val custom = SectionOrder.toggle(SectionOrder.move(SectionOrder.Default, 4, 0), SectionId.Albums)
+        val custom = SectionOrder.toggle(SectionOrder.move(SectionOrder.Default, SectionOrder.Default.indexOfFirst { it.id == SectionId.Utilities }, 0), SectionId.Albums)
         val decoded = SectionOrder.decode(SectionOrder.encode(custom))
         assertEquals(custom, decoded)
         assertEquals(SectionId.Utilities, decoded.first().id)
@@ -193,7 +193,7 @@ class CollectionsLogicTest {
         // Bilinmeyen ad atlanır, eksikler sona eklenir, tekrarlar yok sayılır.
         val repaired = SectionOrder.decode("Albums,Eski,-Pinned,Albums")
         assertEquals(
-            listOf(SectionId.Albums, SectionId.Pinned, SectionId.RecentDays, SectionId.MediaTypes, SectionId.Utilities),
+            listOf(SectionId.Albums, SectionId.Pinned, SectionId.RecentDays, SectionId.Places, SectionId.MediaTypes, SectionId.Utilities),
             repaired.map { it.id }
         )
         assertFalse(repaired[1].visible)
