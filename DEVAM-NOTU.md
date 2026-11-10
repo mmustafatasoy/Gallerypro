@@ -1,4 +1,4 @@
-# Devam notu (devralan yapay zekâ için) — 10 Kasım 2026, 0.8.0 (görev 1–5 ve 7 bitti)
+# Devam notu (devralan yapay zekâ için) — 10 Kasım 2026, 0.8.1
 
 Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağıdakileri** yapar; plan dışına çıkmaz.
 Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
@@ -15,6 +15,7 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 - 0.7.0 Yerler: GeoNames cities5000 (CC BY 4.0) derlemede indirilir (`scripts/places/build_cities.py`), `CityIndex` (60 km),
   `index.db` sürüm 3 `places` tablosu, şehir/il/ülke ile arama, Koleksiyonlar › Yerler, konum izni kartı.
 - 0.7.1 Anılar (`data/memories/MemoryBuilder`): Bu Gün, geziler, yılın özeti; Koleksiyonlar › Anılar.
+- 0.8.1 Silme: her zaman uygulamanın cam onay kartı (`DeleteCard`); Android'in ek penceresi `ManageMedia` izniyle kalkar.
 - 0.8.0 Ayarlar (Kütüphane ⋯): sürüm, Yeniden incele, tam cam efektleri anahtarı (`GalleryPerformance`), gizlilik,
   lisanslar; silinen fotoğrafların düzenleme yedekleri temizlenir. Play: `.github/workflows/aab.yml` (elle),
   `:modeller` kurulum-anı asset pack (yalnızca `-PaabBuild=true`), yayın anahtarı Secrets'tan.
@@ -22,6 +23,54 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 **Kalan (kullanıcı kararı bekliyor):** görev 6 Kişiler (yüz modeli lisansı), görev 8'in kararları (uygulama adı, ikon,
 gerçek yayın anahtarı → Secrets: RELEASE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD). AAB iş akışı
 henüz hiç çalıştırılmadı; ilk çalıştırmada hata verirse yalnızca hata veren satır düzeltilir.
+
+## KOD YAPISI (değişmez mimari — devralan araç buna birebir uyar)
+
+Bu bölüm Claude'un kurduğu yapıdır. **Yeni katman, yeni mimari, yeni kütüphane, yeniden adlandırma, dosya taşıma YOK.**
+Yeni özellik aşağıdaki kalıplardan birine oturtulur. Oturmuyorsa durulur ve kullanıcıya sorulur (iki seçenek, karar beklenir).
+
+### Katmanlar (paket: `com.atasoy.gallerypro`)
+| Klasör | Ne var | Kural |
+| --- | --- | --- |
+| `GalleryApp.kt` | `AppContainer`: tüm tekil nesneler (repository, store'lar, `index`, `clipText`) | DI kütüphanesi (Hilt/Koin) **eklenmez**; yeni tekil nesne buraya `val` olarak eklenir |
+| `GalleryRoot.kt` | İzin kapısı, sekmeler (Kütüphane/Koleksiyonlar), arama katmanı, çökme raporu, ViewModel'lerin `viewModel { }` ile kurulumu | Navigation kütüphanesi **yok**; ekran açma = durum değişkeni + `AnimatedVisibility` |
+| `data/` | Saf veri ve iş mantığı. Android'e dokunan sınıflar (Store, Source, Worker) + **saf Kotlin** `object ...Logic` | Arayüz kodu (Composable) `data/`'ya girmez |
+| `data/media/` | `MediaItem` (tek medya modeli), `MediaStoreSource` (sorgu), `MediaRepository` (StateFlow: `items`, `hiddenItems`, `trashed`), `MediaDetails` (EXIF), `ManageMedia`, küçük depolar (`CaptionStore`, `HiddenStore`) | Medya listesi yalnızca `MediaRepository`'den okunur |
+| `data/index/` | `IndexStore` (SQLite `index.db`, tablolar: `media`, `vectors`, `places`; hepsi bellekte StateFlow), `IndexWorker` (WorkManager, tek dizinleyici), `SearchEngine`/`SearchText`/`LabelDictionary` (saf) | Room/KSP **yok**. Şema değişince `Helper` sürümü +1 ve **veriyi koruyan** `onUpgrade` |
+| `data/clip/` | CLIP: `ClipEncoders` (LiteRT), `WordPieceTokenizer`, `VectorMath` (saf) | Model/çalıştırıcı değişmez; ikinci vektör katmanı açılmaz |
+| `data/places/`, `data/memories/`, `data/collections/`, `data/edit/` | Yerler (`CityIndex`, `PlacesLogic`), Anılar (`MemoryBuilder`), Koleksiyonlar (`CollectionsLogic`, `SectionOrder`), Düzenleme (`EditModel`, `EditRenderer`, `EditSaver`, `EditStore`) | Yeni hesap mantığı = yeni saf `object` + test |
+| `designsystem/` | `Tokens.kt` (renk/boyut/hareket), `Type.kt` (yazı), `Glass.kt` (`Modifier.glass` — TEK cam noktası), `GlassControls.kt` (cam düğme, sekme çubuğu, menü, bildirim), `ProgressiveHeader.kt`, `Performance.kt`, `icons/GalleryIcons.kt` | Yeni renk/boyut önce `Tokens.kt`'ye; ekranda doğrudan blur/renk kodu yazılmaz |
+| `feature/<ekran>/` | `XScreen.kt` (Composable) + gerekirse `XViewModel.kt` | Bir ekran = bir klasör. Ekranlar birbirinin içini bilmez; ortak parça `internal` yapılıp aynı yerden kullanılır (örn. `DeleteCard`, `AlbumTile`) |
+
+### Veri akışı (her yeni özellik böyle)
+1. Kayıt: `data/...Store` (SQLite ya da SharedPreferences) → `MutableStateFlow` → dışarıya `StateFlow`.
+2. Hesap: saf `object ...Logic` / `...Builder` (JVM'de test edilir, Android sınıfı kullanmaz).
+3. ViewModel: `combine(repository.items, store.x) { ... }.flowOn(Dispatchers.Default).stateIn(viewModelScope, WhileSubscribed(5_000), boş)`.
+4. Ekran: `collectAsStateWithLifecycle()`. Ağır iş (disk, model, bitmap) **asla** ana iş parçacığında değil.
+5. Arka plan işi yalnızca `IndexWorker` içinde; yeni bir Worker açılmaz, `IndexWorker.doWork`'e `needsX()` + `putX()` eklenir.
+
+### Arayüz kuralları
+- Compose **foundation** + `BasicText`. Material/Material3 **yok**.
+- Cam: `Modifier.glass(backdrop, şekil, GlassTone.Light/Dark/Sheet, refraction = …)`. Bir ekranda aynı anda en çok 4 cam yüzey.
+- Ekran açma/kapama: `AnimatedVisibility` + `BackHandler`. Onay = cam kart (`DeleteCard` örneği), sistem diyaloğu değil.
+- Koleksiyonlar'a yeni bölüm: `SectionId`'ye ekle → `SectionOrder.Default`'ta yerini ver → `CollectionsScreen`'de `when` dalı → `sectionTitle` → TR/EN metin. Açılan liste: `CollectionKeys`/`...Logic.collectionKey()` + `CollectionsViewModel.items(key)`.
+- Bilgi paneline yeni kart: `InfoPanel.kt`'de `Card { }` kalıbı, veri `ViewerScreen`'de `produceState` ile.
+- Metin: `res/values/` (TR) + `res/values-en/` (EN), kesme işareti `\'` ile. Sayılı metin `plurals`.
+- Animasyonlu Dp/Float: `coerceAtLeast(0.dp)` / `coerceIn(0f, 1f)`.
+
+### Test ve derleme
+- Her saf mantık için `app/src/test/java/com/atasoy/gallerypro/<Konu>LogicTest.kt`. Şu an 72 test.
+- Derleme yalnızca GitHub Actions: `apk.yml` (her gönderim, APK → Releases), `models.yml` (CLIP), `aab.yml` (elle, Play).
+  İndirilen dosyalar (yazı tipi, modeller, GeoNames) **depoya konmaz**.
+- Sürüm: her PR'da `versionCode` +1, `versionName` artar (`app/build.gradle.kts`).
+
+### Sıradaki küçük işler (bu sırayla, her biri ayrı dal + PR; tarif dışına çıkılmaz)
+1. **Anı slayt gösterisi** (`asama-7a-slayt`): `CollectionDetailScreen` başlığına cam "Oynat" düğmesi → mevcut `ViewerScreen` slayt modu (`slideshow` değişkeni) o listeyle açılır. Yeni oynatıcı yazılmaz.
+2. **Uzun basınca önizleme + Albüme ekle** (`asama-7b-onizleme`): `LibraryGrid` hücresinde `combinedClickable(onLongClick)` → büyük önizleme + cam menü (Paylaş, Favori, Albüme ekle, Gizle, Sil). Albüme ekle = `MediaStore` ile seçilen albüm klasörüne **kopya** (`IS_PENDING`), orijinal taşınmaz.
+3. **Kopyaları birleştir** (`asama-7c-kopyalar`): Kopyalar ekranında grupla (`CollectionsLogic.duplicates` + CLIP ≥0,97), her grupta en büyük çözünürlük kalır, diğerleri `DeleteCard` onayıyla çöpe.
+4. **Tarih/konum düzenle** (`asama-7d-ayarla`): Bilgi panelinde "Ayarla" → `ExifInterface` ile yazma, yalnızca JPEG; önce `EditStore` gibi `files/originals` yedeği; HEIC/video için düğme gizli.
+5. **Video kırpma** (`asama-7e-video`): **Yeni kütüphane gerekir (Media3 Transformer)** → başlamadan kullanıcıya sor.
+6. Kişiler (yüz tanıma) ve Play Store kararları: kullanıcıya sorulmadan başlanmaz.
 
 ## Kaynaklar (tek doğru kaynak)
 - Proje dokümanı: https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9

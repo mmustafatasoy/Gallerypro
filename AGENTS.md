@@ -4,6 +4,9 @@
 kurallar, bilinen tuzaklar ve proje dokümanı + tasarım tuvali bağlantıları orada. Plan dışına çıkma; emin
 değilsen kullanıcıya sor (iki seçenek sun, kararı bekle).
 
+**Kod yapısı DEVAM-NOTU.md › "KOD YAPISI" bölümündedir. Yeni katman, yeni kütüphane, dosya taşıma veya
+yeniden adlandırma yapılmaz; her özellik oradaki kalıplardan birine oturtulur.**
+
 ## Kısa kurallar
 - Kotlin + Jetpack Compose **foundation** (Material3 yok). minSdk 29, targetSdk 36, compileSdk 37.
 - Sürümler yalnızca `gradle/libs.versions.toml`; yükseltme yok, alfa/beta yok. Yeni kütüphane için önce sor.
