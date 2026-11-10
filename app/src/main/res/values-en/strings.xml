@@ -128,7 +128,7 @@
     <string name="settings_index_labels">%1$s items analyzed.</string>
     <string name="settings_index_semantic">%1$s items analyzed; %2$s ready for sentence search.</string>
     <string name="settings_privacy">Privacy</string>
-    <string name="settings_privacy_body">This app has no internet permission. Photo analysis, search, place names and memories run entirely on this phone; nothing is sent anywhere.</string>
+    <string name="settings_privacy_body">Photo analysis, search, places and memories run on-device. Personal APK builds only check public GitHub update metadata and never upload photos or face data. The Google Play build has no internet permission.</string>
     <string name="settings_licenses">Open Source Licenses</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_effects">Full glass effects</string>
@@ -282,4 +282,18 @@
     <string name="people_unnamed">Unnamed Person</string>
     <string name="people_name">Name Person</string>
     <string name="people_photo_count">%1$d photos</string>
+    <string name="updates_title">App Updates</string>
+    <string name="updates_check">Check for Updates</string>
+    <string name="updates_checking">Checking for new versions…</string>
+    <string name="updates_current">GalleryPro is up to date.</string>
+    <string name="updates_available">New version: %1$s</string>
+    <string name="updates_failed">Unable to check for updates. Check your internet connection.</string>
+    <string name="updates_download">Download Update</string>
+    <string name="updates_downloading">Downloading: %1$d%%</string>
+    <string name="updates_ready">Version %1$s downloaded and verified.</string>
+    <string name="updates_install">Install Update</string>
+    <string name="updates_later">Later</string>
+    <string name="updates_download_failed">APK download failed or SHA-256 verification did not match.</string>
+    <string name="updates_privacy">Only GitHub release metadata is checked. No photos or face data are sent. This updater is disabled in the Google Play build.</string>
+    <string name="updates_unknown_sources">If Android asks for permission to install apps, allow this source, then tap Install Update again.</string>
 </resources>

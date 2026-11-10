@@ -3,6 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Play AAB için internet ve sideload izinleri hiçbir zaman bulunmaz.
+val playBuild = project.findProperty("aabBuild") == "true"
+
 android {
     namespace = "com.atasoy.gallerypro"
     compileSdk = 37
@@ -11,8 +14,11 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 25
-        versionName = "0.9.3"
+        versionCode = 26
+        versionName = "0.9.4"
+        // GitHub APK: geçici, kullanıcı onaylı güncelleme.
+        // Google Play AAB: internet ve başka APK kurma yetkisi kaldırılır.
+        buildConfigField("boolean", "SIDELOAD_UPDATER", if (playBuild) "false" else "true")
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
         // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. AAB'de (Play) Play kendisi böler;
         // -PaabBuild=true ile derlenirken süzgeç uygulanmaz.
@@ -23,6 +29,13 @@ android {
     // modeller doğrudan app/src/main/assets/models/ altındadır.
     if (project.findProperty("aabBuild") == "true") assetPacks += ":modeller"
 
+
+    sourceSets {
+        getByName("main").manifest.srcFile(
+            if (playBuild) "src/main/AndroidManifest-play.xml"
+            else "src/main/AndroidManifest.xml"
+        )
+    }
 
     signingConfigs {
         // Gerçek yayın anahtarı: GitHub Secrets'tan (RELEASE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)

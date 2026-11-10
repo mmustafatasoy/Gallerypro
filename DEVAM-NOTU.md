@@ -275,3 +275,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Bilinçli sınır: HEIC/RAW/GIF için bölgesel decoder desteği garanti olmadığından mevcut akış kalır; bazı fotoğraflarda MediaStore boyutu ham dosyayla uyuşmazsa yalnızca önizleme gösterilir.
 - Yayın öncesi **gerçek 48/108/200 MP JPEG**, döndürülmüş çekim, panorama, düşük RAM, hızlı yakınlaştırma ve sayfalama testleri yapılmalı. GitHub Actions başarılı test + APK + tam kaynak ZIP + SHA-256 doğrulamadan main'e birleştirme yapılmaz.
 - Sıradaki ertelenenler: video pinch-to-zoom, Samsung hareketli fotoğraf video bölümü, ızgaradan açılış animasyonu (bunların kapsamına bu aşamada girilmez).
+
+## Aşama 9b — Kişisel APK için geçici, güvenli güncelleme (0.9.4)
+
+- Kullanıcı GalleryPro'yu GitHub APK'sı olarak kullanıyor; **Google Play'e geçene kadar** uygulama içi güncelleme istedi. Önceki INTERNET yasak kuralı yalnızca kişisel APK için açık kullanıcı kararıyla dar kapsamlı değiştirildi.
+- **İki Android manifesti:** `app/src/main/AndroidManifest.xml` doğrudan APK için `INTERNET` ve `REQUEST_INSTALL_PACKAGES` içerir. `app/src/main/AndroidManifest-play.xml` ise `-PaabBuild=true` ile seçilir ve `tools:node="remove"` ile iki izni kaldırır. `BuildConfig.SIDELOAD_UPDATER=false` olduğundan Play sürümünde güncelleme bileşeni çalışmaz. Manifest merger `tools:node` içinde placeholder kabul etmediği için ayrı dosyalar kullanıldı.
+- `UpdateLogic` saf Kotlin: yalnızca `Gallerypro X.Y.Z (main)` sürüm adını ve resmî HTTPS `son-surum/Gallerypro.apk` adresini kabul eder; 64 basamaklı GitHub asset SHA-256 ve dosya boyutu şarttır. `UpdateLogicTest` eklendi.
+- `UpdateManager`: yalnızca herkese açık GitHub Releases metadata API'sini sorgular, başka medya/kimlik verisi göndermez. Açılışta kontrol, 30 dk önbellek, Ayarlar'da manuel kontrol; yeni sürüm uyarısı bir defa gösterilir.
+- Kullanıcı isterse Android `DownloadManager` ile APK indirir. **SHA-256 ve boyut doğrulaması bitmeden kurulum ekranını açmaz.** Android 8+ bilinmeyen kaynak yükleme izni ve kullanıcının sistem kurulum onayı gerekir. Eski APK ile yeni APK imzası eşleşmezse Android kurulumunu reddeder.
+- `GalleryRoot` açılış uyarısı ve kurulum teklifi, `SettingsScreen` güncelleme kartı, Türkçe/İngilizce kaynaklar eklendi. Görsel/arayüz kodu Compose foundation; yeni kütüphane yok.
+- Google Play AAB'de `REQUEST_INSTALL_PACKAGES` yasak ve INTERNET izni yok; AAB manifesti ve Play derlemesi ayrı doğrulanmalıdır. CI `testDebugUnitTest assembleRelease` + tam kaynak ZIP + SHA-256 başarıyla tamamlanmadan ana dala birleştirilmez.

@@ -12,6 +12,7 @@ import com.atasoy.gallerypro.data.media.CaptionStore
 import com.atasoy.gallerypro.data.media.GalleryImageLoader
 import com.atasoy.gallerypro.data.media.HiddenStore
 import com.atasoy.gallerypro.data.media.MediaRepository
+import com.atasoy.gallerypro.data.update.UpdateManager
 import com.atasoy.gallerypro.designsystem.GalleryPerformance
 import com.atasoy.gallerypro.feature.search.SearchHistory
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,7 @@ class AppContainer(context: Context) {
     val index = IndexStore(context)
     val stores = GalleryStores(captions, edits, hidden, index)
     val searchHistory = SearchHistory(context)
+    val updates = UpdateManager(context.applicationContext, appScope)
 
     /** Cümleyle arama metin modeli; ilk aramada yüklenir. */
     val clipText by lazy { ClipTextEncoder(context.applicationContext) }
