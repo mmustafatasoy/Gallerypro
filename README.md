@@ -43,6 +43,8 @@ Gradle sürümü `gradle/wrapper/gradle-wrapper.properties` içindedir (9.7.1).
 
 Kotlin, Jetpack Compose, AGP 9.3.2, Kotlin 2.4.10, cam efekti için [Kyant Backdrop](https://github.com/Kyant0/AndroidLiquidGlass), küçük resimler için Coil 3. Tüm sürümler `gradle/libs.versions.toml` içinde.
 
+Cümleyle arama: OpenAI CLIP ViT-B/32 (MIT) ve `sentence-transformers/clip-ViT-B-32-multilingual-v1` (Apache-2.0), LiteRT ile telefonda, internetsiz. Modeller depoda değildir; `Modeller` iş akışı (`scripts/models/export_clip.py`) çevirip Releases'taki `modeller` sürümüne koyar, APK derlemesi oradan indirir. Lisans bildirimi: `scripts/models/NOTICE.txt` (APK'da `assets/licenses/clip-models.txt`).
+
 Yazı tipi: Inter (SIL Open Font License 1.1). Lisans metni derlemede `app/src/main/assets/licenses/inter-OFL.txt` olarak uygulamaya eklenir.
 
 ## Geçmiş

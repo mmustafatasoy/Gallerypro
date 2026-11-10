@@ -27,4 +27,11 @@
     </plurals>
     <string name="index_now">Şimdi incele</string>
     <string name="index_queued">Başlatılıyor…</string>
+    <string name="search_hint_semantic">Ne arıyorsun? Örn. denizde gün batımı</string>
+    <string name="search_sentences">Cümleyle Dene</string>
+    <string name="search_sentence_1">Kumsalda gün batımı</string>
+    <string name="search_sentence_2">Karla kaplı dağlar</string>
+    <string name="search_sentence_3">Masada yemek tabağı</string>
+    <string name="search_sentence_4">Parkta oynayan köpek</string>
+    <string name="index_semantic">Cümleyle de arayabilirsin: fotoğrafın ne anlattığı da bu telefonda, internetsiz incelenir.</string>
 </resources>

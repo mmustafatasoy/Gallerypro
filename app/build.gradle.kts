@@ -11,8 +11,8 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.5.2"
+        versionCode = 9
+        versionName = "0.6.0"
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
         // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. Play Store'da AAB'ye geçince kaldırılır.
         ndk { abiFilters += "arm64-v8a" }
@@ -58,6 +58,11 @@ android {
         compose = true
     }
 
+    // Cümleyle arama modelleri sıkıştırılmadan paketlenir: telefonda doğrudan belleğe eşlenir.
+    androidResources {
+        noCompress += "tflite"
+    }
+
     packaging {
         resources {
             excludes += setOf(
@@ -99,6 +104,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.mlkit.image.labeling)
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.litert)
 
     testImplementation(libs.junit)
 }

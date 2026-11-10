@@ -27,4 +27,11 @@
     </plurals>
     <string name="index_now">Analyze now</string>
     <string name="index_queued">Starting…</string>
+    <string name="search_hint_semantic">What are you looking for? e.g. sunset over the sea</string>
+    <string name="search_sentences">Try a Sentence</string>
+    <string name="search_sentence_1">Sunset at the beach</string>
+    <string name="search_sentence_2">Snowy mountains</string>
+    <string name="search_sentence_3">A plate of food on a table</string>
+    <string name="search_sentence_4">A dog playing in the park</string>
+    <string name="index_semantic">You can also search with a sentence: what each photo shows is analyzed on this phone, offline.</string>
 </resources>

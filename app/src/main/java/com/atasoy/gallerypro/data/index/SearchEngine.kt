@@ -151,6 +151,46 @@ object SearchEngine {
         return scored.map { it.first }
     }
 
+    /** Tarih ve tür süzgeçleri; cümleyle arama sonuçlarına da uygulanır. */
+    fun matchesFilters(item: MediaItem, q: ParsedQuery, zone: ZoneId, now: Long = System.currentTimeMillis()): Boolean =
+        passesFilters(item, q, zone, epochDay(now, zone))
+
+    // ---------------------------------------------------------------- cümleyle arama
+
+    /**
+     * Cümleyle arama modeline gidecek metin: kullanıcının yazdığı sözcükler, süzgeç sözcükleri
+     * ("2023", "temmuz", "videolar", "ekran görüntüsü"…) çıkarılmış. Model büyük harf ve Türkçe
+     * karakterleri anladığı için metin sadeleştirilmez. Yalnızca süzgeç varsa boş döner.
+     */
+    fun semanticText(query: String): String {
+        val kept = ArrayList<String>()
+        var afterScreen = false
+        for (raw in query.trim().split(Regex("\\s+"))) {
+            if (raw.isEmpty()) continue
+            val tokens = SearchText.tokens(raw)
+            if (tokens.isEmpty()) continue
+            val filter = tokens.all { t ->
+                val asYear = t.takeIf { it.length == 4 }?.toIntOrNull()
+                (asYear != null && asYear in 1970..2100) || t in months || t in todayWords ||
+                    t in yesterdayWords || t in videoWords || t in photoWords || t in screenshotWords ||
+                    t in favoriteWords || (afterScreen && t in screenshotTail)
+            }
+            afterScreen = tokens.any { it in screenshotWords }
+            if (!filter) kept += raw
+        }
+        return kept.joinToString(" ")
+    }
+
+    /** Sözcük eşleşmeleri önce (kesin), ardından anlamca benzer olanlar; aynı öğe bir kez. */
+    fun merge(keyword: List<MediaItem>, semantic: List<MediaItem>): List<MediaItem> {
+        if (semantic.isEmpty()) return keyword
+        val seen = HashSet<Long>(keyword.size * 2)
+        val out = ArrayList<MediaItem>(keyword.size + semantic.size)
+        for (item in keyword) if (seen.add(item.id)) out += item
+        for (item in semantic) if (seen.add(item.id)) out += item
+        return out
+    }
+
     private fun passesFilters(item: MediaItem, q: ParsedQuery, zone: ZoneId, today: Long): Boolean {
         when (q.kind) {
             SearchKind.Videos -> if (!item.isVideo) return false

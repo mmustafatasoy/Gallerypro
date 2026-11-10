@@ -14,6 +14,9 @@ import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.atasoy.gallerypro.GalleryApp
+import com.atasoy.gallerypro.data.clip.ClipImageEncoder
+import com.atasoy.gallerypro.data.clip.VectorEntry
+import com.atasoy.gallerypro.data.clip.VectorVersion
 import com.atasoy.gallerypro.data.media.MediaAccess
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaPermissions
@@ -51,11 +54,24 @@ class MediaIndexer : Closeable {
         TextRecognizerOptions.Builder().setExecutor(executor).build()
     )
 
-    /** Çalışan iş parçacığını bekletir; ana iş parçacığında çağrılmaz. */
-    fun index(context: Context, item: MediaItem): IndexEntry {
+    /**
+     * Çalışan iş parçacığını bekletir; ana iş parçacığında çağrılmaz. [labels] false ise yalnızca
+     * [clip] vektörü çıkarılır (etiketleri zaten olan eski öğeler).
+     */
+    fun index(context: Context, item: MediaItem, labels: Boolean, clip: ClipImageEncoder?): Pair<IndexEntry?, VectorEntry?> {
         val bitmap = runCatching { loadThumb(context, item) }.getOrNull()
-            ?: return IndexEntry(item.id, item.modifiedMillis, emptyList(), "")
+            ?: return (if (labels) IndexEntry(item.id, item.modifiedMillis, emptyList(), "") else null) to null
         try {
+            val vector = clip?.embed(bitmap)?.let { VectorEntry(item.modifiedMillis, it) }
+            val entry = if (labels) analyze(item, bitmap) else null
+            return entry to vector
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    private fun analyze(item: MediaItem, bitmap: Bitmap): IndexEntry {
+        run {
             val image = InputImage.fromBitmap(bitmap, 0)
             val labels = runCatching {
                 Tasks.await(labeler.process(image), TimeoutSec, TimeUnit.SECONDS)
@@ -76,8 +92,6 @@ class MediaIndexer : Closeable {
                 labels = labels,
                 text = text.replace('\n', ' ').take(MaxText)
             )
-        } finally {
-            bitmap.recycle()
         }
     }
 
@@ -123,42 +137,64 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
 
         val items = runCatching { MediaStoreSource(context).queryAll() }.getOrElse { return Result.retry() }
         val known = store.entries.value
+        val knownVectors = store.vectors.value
         val alive = HashSet<Long>(items.size * 2)
         items.forEach { alive += it.id }
-        store.remove(known.keys.filter { it !in alive })
+        store.remove((known.keys + knownVectors.keys).filter { it !in alive })
 
+        // Cümleyle arama modeli APK'da yoksa yalnızca etiket ve yazı çıkarılır.
+        val clip = ClipImageEncoder.createOrNull(context)
+        fun needsLabels(item: MediaItem): Boolean {
+            val e = known[item.id]
+            return e == null || e.modified != item.modifiedMillis || e.version < IndexVersion
+        }
+        fun needsVector(item: MediaItem): Boolean {
+            if (clip == null) return false
+            val v = knownVectors[item.id]
+            return v == null || v.modified != item.modifiedMillis || v.version < VectorVersion
+        }
         val todo = items
-            .filter { item ->
-                val e = known[item.id]
-                e == null || e.modified != item.modifiedMillis || e.version < IndexVersion
-            }
+            .filter { needsLabels(it) || needsVector(it) }
             .sortedByDescending { it.takenAtMillis }
         var done = items.size - todo.size
         store.setStatus(IndexStatus(running = todo.isNotEmpty(), done = done, total = items.size))
-        if (todo.isEmpty()) return Result.success()
+        if (todo.isEmpty()) {
+            clip?.close()
+            return Result.success()
+        }
 
         try {
             MediaIndexer().use { indexer ->
                 val batch = ArrayList<IndexEntry>(BatchSize)
+                val vectors = HashMap<Long, VectorEntry>(BatchSize * 2)
+                fun flush() {
+                    store.put(batch.toList())
+                    store.putVectors(HashMap(vectors))
+                    batch.clear()
+                    vectors.clear()
+                }
                 for (item in todo) {
                     if (isStopped) break
                     // Uygulama ekrandayken yavaş gider: kaydırma ve fotoğraf açma öncelikli.
                     if (appVisible()) Thread.sleep(VisiblePauseMs)
-                    batch += indexer.index(context, item)
+                    val (entry, vector) = indexer.index(context, item, needsLabels(item), clip.takeIf { needsVector(item) })
+                    if (entry != null) batch += entry
+                    if (vector != null) vectors[item.id] = vector
                     done++
-                    if (batch.size >= BatchSize) {
-                        store.put(batch.toList())
-                        batch.clear()
+                    if (batch.size + vectors.size >= BatchSize) {
+                        flush()
                         store.setStatus(IndexStatus(running = true, done = done, total = items.size))
                     }
                 }
-                store.put(batch.toList())
+                flush()
             }
         } catch (t: Throwable) {
+            clip?.close()
             // ML Kit yüklenemezse (ör. cihaz desteklemiyor) uygulama etkilenmez; sonra yeniden denenir.
             store.setStatus(IndexStatus(running = false, done = done, total = items.size))
             return Result.retry()
         }
+        clip?.close()
         store.setStatus(IndexStatus(running = false, done = done, total = items.size))
         return Result.success()
     }
@@ -171,7 +207,7 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
 
     private companion object {
         const val BatchSize = 20
-        const val VisiblePauseMs = 150L
+        const val VisiblePauseMs = 250L
     }
 }
 

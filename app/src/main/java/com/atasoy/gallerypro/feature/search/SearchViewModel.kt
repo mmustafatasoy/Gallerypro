@@ -3,6 +3,9 @@ package com.atasoy.gallerypro.feature.search
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.atasoy.gallerypro.data.clip.ClipTextEncoder
+import com.atasoy.gallerypro.data.clip.VectorEntry
+import com.atasoy.gallerypro.data.clip.VectorMath
 import com.atasoy.gallerypro.data.index.IndexStatus
 import com.atasoy.gallerypro.data.index.IndexStore
 import com.atasoy.gallerypro.data.index.SearchDoc
@@ -54,7 +57,8 @@ class SearchHistory(context: Context) {
 
 /**
  * Arama ekranının durumu. Dizin, başlıklar ve medya listesi birleşip aranabilir belgelere
- * dönüşür (yalnızca ekran açıkken); sorgu 300 ms durunca aranır.
+ * dönüşür (yalnızca ekran açıkken); sorgu 300 ms durunca aranır. Sözcükle bulunanlar önce,
+ * ardından cümleyle arama modelinin (CLIP) anlamca benzer bulduğu fotoğraflar gelir.
  */
 @OptIn(FlowPreview::class)
 class SearchViewModel(
@@ -62,6 +66,7 @@ class SearchViewModel(
     private val index: IndexStore,
     captions: CaptionStore,
     private val history: SearchHistory,
+    private val clipText: ClipTextEncoder,
     private val zone: ZoneId = ZoneId.systemDefault()
 ) : ViewModel() {
 
@@ -77,8 +82,12 @@ class SearchViewModel(
 
     /** null: sorgu boş (öneriler gösterilir). */
     val results: StateFlow<List<MediaItem>?> =
-        combine(_query.debounce(300), docs) { q, d ->
-            if (q.isBlank() || d == null) null else SearchEngine.search(q, d, zone)
+        combine(_query.debounce(300), docs, index.vectors) { q, d, vectors ->
+            if (q.isBlank() || d == null) {
+                null
+            } else {
+                SearchEngine.merge(SearchEngine.search(q, d, zone), semantic(q, d, vectors))
+            }
         }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -89,15 +98,45 @@ class SearchViewModel(
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Cümleyle arama modeli APK'da var mı (yerel derlemelerde olmayabilir). */
+    val semanticAvailable: Boolean get() = clipText.available
+
+    /** Anlam vektörü çıkarılmış öğe sayısı. */
+    val vectorCount: StateFlow<Int> =
+        index.vectors.map { it.size }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     val status: StateFlow<IndexStatus> = index.status
+    /** Tamamen incelenmiş öğe sayısı: etiketler ve (model varsa) anlam vektörü hazır. */
     val indexedCount: StateFlow<Int> =
-        index.entries.map { it.size }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+        combine(index.entries, index.vectors) { entries, vectors ->
+            if (!clipText.available) entries.size else entries.keys.count { it in vectors }
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val mediaCount: StateFlow<Int> =
         repository.items.map { it?.size ?: 0 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val recent: StateFlow<List<String>> = history.recent
 
     init {
         viewModelScope.launch(Dispatchers.IO) { index.ensureLoaded() }
+    }
+
+    private fun semantic(query: String, docs: List<SearchDoc>, vectors: Map<Long, VectorEntry>): List<MediaItem> {
+        if (vectors.isEmpty()) return emptyList()
+        val text = SearchEngine.semanticText(query)
+        if (text.isEmpty()) return emptyList()
+        val q = clipText.embed(text) ?: return emptyList()
+        val parsed = SearchEngine.parse(query)
+        val now = System.currentTimeMillis()
+        val byId = HashMap<Long, MediaItem>(docs.size * 2)
+        val candidates = ArrayList<Pair<Long, FloatArray>>(vectors.size)
+        for (doc in docs) {
+            val v = vectors[doc.item.id] ?: continue
+            if (!SearchEngine.matchesFilters(doc.item, parsed, zone, now)) continue
+            byId[doc.item.id] = doc.item
+            candidates += doc.item.id to v.vector
+        }
+        return VectorMath.nearest(q, candidates).mapNotNull { byId[it.first] }
     }
 
     fun setQuery(text: String) {

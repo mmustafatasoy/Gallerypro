@@ -20,7 +20,9 @@ değilsen kullanıcıya sor (iki seçenek sun, kararı bekle).
 - GitHub Actions her gönderimde test + hızlı (release, R8) APK üretir; APK Releases'a yüklenir
   (`main` → `son-surum`). Yerelde: JDK 21, Gradle 9.7.1, `bash scripts/fetch-fonts.sh`,
   `gradle testDebugUnitTest assembleRelease`.
-- Saf mantık testleri: `app/src/test/` (CollectionsLogic, EditLogic, SearchEngine).
+- Saf mantık testleri: `app/src/test/` (CollectionsLogic, EditLogic, SearchEngine, ClipLogic).
+- Cümleyle arama modelleri depoda değil: Releases'taki `modeller` sürümü (`.github/workflows/models.yml` üretir);
+  `apk.yml` derlemeden önce indirir. Model dosyalarını depoya ekleme.
 
 ## Hata ayıklama
 - Uygulama çökerse bir sonraki açılışta hata raporu gösterilir; kullanıcı "Paylaş" ile gönderir.

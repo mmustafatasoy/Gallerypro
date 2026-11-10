@@ -49,8 +49,44 @@ jobs:
       - name: Debug imza anahtarı
         run: mkdir -p ~/.android && base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
 
+      # Cümleyle arama (CLIP) modelleri depoda değil, "modeller" sürümündedir (Modeller iş akışı üretir).
+      # Yoksa APK yine derlenir; uygulamada cümleyle arama kapalı kalır.
+      - name: Cümleyle arama modelleri
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p app/src/main/assets/models app/src/test/resources/clip
+          ok=0
+          for i in 1 2 3 4 5 6; do
+            if gh release download modeller -D app/src/main/assets/models -p "clip_image.tflite" -p "clip_text.tflite" -p "clip_text_vocab.txt" --clobber; then ok=1; break; fi
+            sleep 30
+          done
+          if [ "$ok" = 1 ]; then
+            gh release download modeller -D app/src/test/resources/clip -p "clip_tokens_test.json" --clobber || true
+            mkdir -p app/src/main/assets/licenses && cp scripts/models/NOTICE.txt app/src/main/assets/licenses/clip-models.txt
+            ls -la app/src/main/assets/models
+          else
+            echo "::warning::Modeller henüz yok; APK cümleyle arama olmadan derleniyor."
+          fi
+
       - name: Testler ve APK
         run: gradle --no-daemon testDebugUnitTest assembleRelease
+
+      - name: Test özeti
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          total = skipped = failed = 0
+          for f in glob.glob("app/build/test-results/testDebugUnitTest/*.xml"):
+              root = ET.parse(f).getroot()
+              total += int(root.get("tests", 0)); failed += int(root.get("failures", 0)) + int(root.get("errors", 0))
+              for case in root.iter("testcase"):
+                  if case.find("skipped") is not None:
+                      skipped += 1
+                      print("atlandı:", case.get("classname"), case.get("name"))
+          print(f"test: {total}, hata: {failed}, atlanan: {skipped}")
+          PY
 
       - name: APK adı
         run: cp app/build/outputs/apk/release/app-release.apk Gallerypro.apk
