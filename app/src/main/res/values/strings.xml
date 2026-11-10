@@ -280,4 +280,15 @@
     <string name="video_trim_select_range">Kırpmak için başlangıç veya bitiş işaretini hareket ettir. En az 1 saniye seç.</string>
     <string name="video_trim_error">Video kaydedilemedi. Orijinal videoda değişiklik yapılmadı.</string>
     <string name="video_trim_saved">Kırpılan video yeni MP4 olarak kaydedildi.</string>
+    <!-- Kişiler: cihaz içi YuNet + SFace FP32 -->
+    <string name="section_people">Kişiler</string>
+    <string name="people_scan">Kişileri Tara</string>
+    <string name="people_cancel">Taramayı Durdur</string>
+    <string name="people_scan_progress">Fotoğraflar inceleniyor: %1$d / %2$d</string>
+    <string name="people_scan_failed">Yüz taraması tamamlanamadı. Model veya fotoğraf erişimini kontrol et.</string>
+    <string name="people_privacy">Yüz eşleştirmesi yalnızca bu cihazda yapılır. Tarama sen başlatınca çalışır; fotoğrafların ve yüz verilerin gönderilmez.</string>
+    <string name="people_empty">Henüz kişi bulunamadı. Fotoğraflarını incelemek için Kişileri Tara düğmesine bas.</string>
+    <string name="people_unnamed">İsimsiz Kişi</string>
+    <string name="people_name">Kişiye İsim Ver</string>
+    <string name="people_photo_count">%1$d fotoğraf</string>
 </resources>
