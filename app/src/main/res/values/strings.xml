@@ -291,4 +291,20 @@
     <string name="people_unnamed">İsimsiz Kişi</string>
     <string name="people_name">Kişiye İsim Ver</string>
     <string name="people_photo_count">%1$d fotoğraf</string>
+    <!-- Doğrudan APK güncelleme, Play sürümünde görünmez -->
+    <string name="update_title">Uygulama Güncellemesi</string>
+    <string name="update_check">Yeni sürümü kontrol et</string>
+    <string name="update_checking">Yeni sürüm kontrol ediliyor…</string>
+    <string name="update_latest">En güncel sürümü kullanıyorsun.</string>
+    <string name="update_error">Güncelleme kontrol edilemedi veya indirilen dosya doğrulanamadı. Bağlantını kontrol et.</string>
+    <string name="update_signature_mismatch">Yeni APK farklı bir anahtarla imzalanmış. Android bu sürümü mevcut kurulumun üzerine yükleyemez. Uygulama verilerini yedeklemeden eski kurulumu silme.</string>
+    <string name="update_found">GalleryPro %1$s hazır. Güncellemeyi uygulama içinden indirip Android kurulum ekranında onaylayabilirsin.</string>
+    <string name="update_downloading">Güncelleme indiriliyor. Uygulamayı kapatsan da Android indirmeye devam eder.</string>
+    <string name="update_downloaded">Güncelleme doğrulandı. Android kurulum ekranına geçebilirsin.</string>
+    <string name="update_allow_install">Android bu uygulamaya kurulum izni istiyor. Ayarlarda izin verdikten sonra tekrar Kur düğmesine dokun.</string>
+    <string name="update_later">Sonra</string>
+    <string name="update_retry">Yeniden dene</string>
+    <string name="update_download">İndir</string>
+    <string name="update_install">Kur</string>
+    <string name="settings_privacy_direct">Fotoğraf, yüz verisi ve arama cihazında kalır. Bu doğrudan APK sürümü yalnızca güncellemeleri kontrol etmek ve APK indirmek için GitHub'a HTTPS bağlantısı kurar. Medya verileri yüklenmez. Google Play sürümü internetsizdir.</string>
 </resources>
