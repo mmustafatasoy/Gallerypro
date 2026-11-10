@@ -146,7 +146,15 @@ internal fun PeopleScreen(
         selectedGroup?.let { store.name(it.key) }.orEmpty()
     }
 
-    Box(Modifier.fillMaxSize().background(GalleryColors.LightBackground).layerBackdrop(backdrop)) {
+    // Backdrop kendi içindeki Glass kontrollerini yakalamamalı: RenderThread
+    // döngüsel katman çizimi bazı cihazlarda native SIGSEGV ile kapanmaya neden olur.
+    // Arka plan kaynak katmanı ile cam denetimleri aynı Box'ın kardeş elemanlarıdır.
+    Box(Modifier.fillMaxSize().background(GalleryColors.LightBackground)) {
+        Box(
+            Modifier.fillMaxSize()
+                .layerBackdrop(backdrop)
+                .background(GalleryColors.LightBackground)
+        )
         Column(
             Modifier.fillMaxSize().padding(GalleryDimens.ScreenPadding),
             verticalArrangement = Arrangement.spacedBy(GalleryDimens.CardSpacing)

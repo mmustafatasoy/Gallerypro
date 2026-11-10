@@ -152,15 +152,9 @@ internal fun CollectionDetailScreen(
             when {
                 list == null -> Unit
                 isTrash && !trashSupported -> CenterMessage(stringResource(R.string.trash_album_needs_android11))
-                isDuplicates -> DuplicateGroupsContent(
-                    viewModel = viewModel,
-                    backdrop = backdrop,
-                    candidates = list.orEmpty(),
-                    topInset = topInset,
-                    bottomInset = bottomInset,
-                    onOpen = { startSlideshow = false; viewerId = it.id },
-                    onReview = { pendingMerge = it }
-                )
+                // Cam butonlu Kopyalar içeriğini bu layerBackdrop içine çizme.
+                // Dışarıda kardeş öğe olarak çizilecek, yoksa döngüsel backdrop oluşur.
+                isDuplicates -> Unit
                 list.isEmpty() -> CenterMessage(stringResource(R.string.collection_empty))
                 else -> LibraryGrid(
                     items = list,
@@ -187,6 +181,18 @@ internal fun CollectionDetailScreen(
                     }
                 )
             }
+        }
+
+        if (isDuplicates && list != null) {
+            DuplicateGroupsContent(
+                viewModel = viewModel,
+                backdrop = backdrop,
+                candidates = list.orEmpty(),
+                topInset = topInset,
+                bottomInset = bottomInset,
+                onOpen = { startSlideshow = false; viewerId = it.id },
+                onReview = { pendingMerge = it }
+            )
         }
 
         val subtitle = when {
