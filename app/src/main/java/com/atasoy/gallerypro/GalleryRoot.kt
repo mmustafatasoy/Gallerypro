@@ -35,6 +35,7 @@ import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
 import com.atasoy.gallerypro.data.media.MediaAccess
 import com.atasoy.gallerypro.data.media.MediaPermissions
 import com.atasoy.gallerypro.designsystem.LocalSearchLauncher
+import com.atasoy.gallerypro.designsystem.SearchLauncher
 import com.atasoy.gallerypro.feature.collections.CollectionsScreen
 import com.atasoy.gallerypro.feature.collections.CollectionsViewModel
 import com.atasoy.gallerypro.feature.library.LibraryScreen
@@ -101,7 +102,12 @@ fun GalleryRoot(container: AppContainer) {
                     )
                 }
                 var searchOpen by rememberSaveable { mutableStateOf(false) }
-                val openSearch = remember { { searchOpen = true } }
+                val openSearch = remember {
+                    SearchLauncher { query ->
+                        if (query != null) searchViewModel.requestQuery(query)
+                        searchOpen = true
+                    }
+                }
                 // Sekmeler arasında geçerken her sekmenin kaydırma yeri ve açık ekranı korunur.
                 var tab by rememberSaveable { mutableIntStateOf(TabLibrary) }
                 val tabStates = rememberSaveableStateHolder()

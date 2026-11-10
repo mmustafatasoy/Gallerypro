@@ -72,6 +72,9 @@
     <string name="info_video">Video</string>
     <string name="info_megapixels">%1$s MP</string>
     <string name="info_file">File</string>
+    <string name="info_smart_labels">Smart Labels</string>
+    <string name="info_text_in_photo">Text in photo</string>
+    <string name="info_similar">Similar Photos</string>
     <string name="info_open_map">Open in Maps</string>
     <string name="info_location_permission">Show where it was taken</string>
     <string name="info_location_allow">Allow</string>

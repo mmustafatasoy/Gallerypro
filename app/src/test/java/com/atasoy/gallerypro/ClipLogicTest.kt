@@ -127,6 +127,20 @@ class ClipLogicTest {
         assertTrue(VectorMath.nearest(q, emptyList()).isEmpty())
     }
 
+    @Test
+    fun vector_similarAboveThresholdBestFirstWithLimit() {
+        val target = unit(1f, 0f)
+        val candidates = listOf(
+            1L to unit(0.82f, 0.572f), // ~0,82
+            2L to unit(0.97f, 0.243f), // ~0,97
+            3L to unit(0.60f, 0.80f), // ~0,60: benzemez
+            4L to unit(0.90f, 0.436f) // ~0,90
+        )
+        assertEquals(listOf(2L, 4L, 1L), VectorMath.similar(target, candidates))
+        assertEquals(listOf(2L, 4L), VectorMath.similar(target, candidates, limit = 2))
+        assertTrue(VectorMath.similar(target, candidates, minSimilarity = 0.99f).isEmpty())
+    }
+
     // ---------------------------------------------------------------- sorgu metni
 
     @Test

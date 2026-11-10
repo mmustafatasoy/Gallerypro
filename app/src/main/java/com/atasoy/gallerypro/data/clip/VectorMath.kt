@@ -52,6 +52,28 @@ object VectorMath {
             .take(limit)
     }
 
+    /**
+     * Bir fotoğrafa görünüşçe benzeyenler (görsel–görsel benzerlik; metin–görselden çok daha yüksek çıkar).
+     * [candidates] fotoğrafın kendisini içermemeli. En benzerden aza, en çok [limit] tane.
+     */
+    fun similar(
+        target: FloatArray,
+        candidates: List<Pair<Long, FloatArray>>,
+        minSimilarity: Float = SimilarMin,
+        limit: Int = SimilarLimit
+    ): List<Long> {
+        val scored = ArrayList<Pair<Long, Float>>()
+        for ((id, v) in candidates) {
+            val s = dot(target, v)
+            if (s >= minSimilarity) scored += id to s
+        }
+        scored.sortByDescending { it.second }
+        return scored.take(limit).map { it.first }
+    }
+
+    const val SimilarMin = 0.80f
+    const val SimilarLimit = 12
+
     const val MinSimilarity = 0.20f
     const val Window = 0.06f
     const val Limit = 300

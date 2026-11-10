@@ -139,6 +139,15 @@ class SearchViewModel(
         return VectorMath.nearest(q, candidates).mapNotNull { byId[it.first] }
     }
 
+    /** Başka bir ekrandan (Bilgi panelindeki etiket) gelen ve arama açılınca uygulanacak sorgu. */
+    private var pendingQuery: String? = null
+
+    fun requestQuery(text: String) {
+        pendingQuery = text
+    }
+
+    fun takePendingQuery(): String? = pendingQuery.also { pendingQuery = null }
+
     fun setQuery(text: String) {
         _query.value = text
     }
