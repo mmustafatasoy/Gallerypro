@@ -306,5 +306,5 @@
     <string name="update_retry">Yeniden dene</string>
     <string name="update_download">İndir</string>
     <string name="update_install">Kur</string>
-    <string name="settings_privacy_direct">Fotoğraf, yüz verisi ve arama cihazında kalır. Bu doğrudan APK sürümü yalnızca güncellemeleri kontrol etmek ve APK indirmek için GitHub'a HTTPS bağlantısı kurar. Medya verileri yüklenmez. Google Play sürümü internetsizdir.</string>
+    <string name="settings_privacy_direct">Fotoğraf, yüz verisi ve arama cihazında kalır. Bu doğrudan APK sürümü yalnızca güncellemeleri kontrol etmek ve APK indirmek için GitHub\'a HTTPS bağlantısı kurar. Medya verileri yüklenmez. Google Play sürümü internetsizdir.</string>
 </resources>
