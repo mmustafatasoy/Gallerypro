@@ -56,6 +56,15 @@
     <string name="viewer_delete_message_video">This video will be moved to Recently Deleted. You can restore it within 30 days.</string>
     <string name="viewer_delete_photo">Delete Photo</string>
     <string name="viewer_delete_video">Delete Video</string>
+    <string name="delete_access_hint">Turn off Android\'s extra confirmation (Media management access)</string>
+    <plurals name="delete_selected_message">
+        <item quantity="one">This item will be moved to Recently Deleted. You can restore it within 30 days.</item>
+        <item quantity="other">These %1$d items will be moved to Recently Deleted. You can restore them within 30 days.</item>
+    </plurals>
+    <plurals name="delete_selected_action">
+        <item quantity="one">Delete Item</item>
+        <item quantity="other">Delete %1$d Items</item>
+    </plurals>
     <string name="viewer_cancel">Cancel</string>
     <string name="menu_copy">Copy</string>
     <string name="menu_open_with">Open with another app</string>

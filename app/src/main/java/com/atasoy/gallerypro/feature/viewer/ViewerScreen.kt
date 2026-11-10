@@ -90,6 +90,7 @@ import com.atasoy.gallerypro.data.index.IndexEntry
 import com.atasoy.gallerypro.data.index.IndexScheduler
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
+import com.atasoy.gallerypro.data.media.ManageMedia
 import com.atasoy.gallerypro.data.media.MediaDetails
 import com.atasoy.gallerypro.data.media.MediaDetailsReader
 import com.atasoy.gallerypro.data.media.MediaItem
@@ -278,11 +279,12 @@ fun ViewerScreen(
         }
     }
 
-    fun askDelete(item: MediaItem) {
-        // "Medya yönetimi" izni varsa Android ayrıca sormaz; o zaman cam onay kartı gösterilir.
-        // Yoksa Android'in kendi onay penceresi tek onay olur.
-        val canManage = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(context)
-        if (canManage) confirmDelete = true else launchTrash(item)
+    // Her zaman uygulamanın cam onay kartı. "Medya yönetimi" izni varsa Android ayrıca sormaz;
+    // yoksa kartta bu izni vermek için bir bağlantı görünür.
+    var manageGranted by remember { mutableStateOf(ManageMedia.granted(context)) }
+    fun askDelete(@Suppress("UNUSED_PARAMETER") item: MediaItem) {
+        manageGranted = ManageMedia.granted(context)
+        confirmDelete = true
     }
 
     val restoredText = stringResource(R.string.toast_recovered)
@@ -755,8 +757,14 @@ fun ViewerScreen(
             val target = current
             if (target != null) {
                 DeleteCard(
-                    isVideo = target.isVideo,
+                    message = stringResource(if (target.isVideo) R.string.viewer_delete_message_video else R.string.viewer_delete_message),
+                    action = stringResource(if (target.isVideo) R.string.viewer_delete_video else R.string.viewer_delete_photo),
                     backdrop = backdrop,
+                    showAccessHint = !manageGranted && ManageMedia.supported,
+                    onGrantAccess = {
+                        confirmDelete = false
+                        ManageMedia.request(context)
+                    },
                     onConfirm = {
                         confirmDelete = false
                         launchTrash(target)
@@ -986,9 +994,12 @@ private fun ToolbarSlot(
 }
 
 @Composable
-private fun DeleteCard(
-    isVideo: Boolean,
+internal fun DeleteCard(
+    message: String,
+    action: String,
     backdrop: com.kyant.backdrop.Backdrop,
+    showAccessHint: Boolean,
+    onGrantAccess: () -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -999,7 +1010,7 @@ private fun DeleteCard(
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp)
     ) {
         BasicText(
-            stringResource(if (isVideo) R.string.viewer_delete_message_video else R.string.viewer_delete_message),
+            message,
             style = GalleryType.Body.copy(
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 14.sp,
@@ -1011,7 +1022,7 @@ private fun DeleteCard(
                 .padding(start = 8.dp, end = 8.dp, bottom = 16.dp)
         )
         CardButton(
-            text = stringResource(if (isVideo) R.string.viewer_delete_video else R.string.viewer_delete_photo),
+            text = action,
             fill = GalleryColors.Delete,
             weight = FontWeight.Bold,
             onClick = onConfirm
@@ -1023,6 +1034,23 @@ private fun DeleteCard(
             weight = FontWeight.SemiBold,
             onClick = onCancel
         )
+        if (showAccessHint) {
+            // Android'in ikinci onay penceresini kapatmak için tek seferlik izin.
+            BasicText(
+                stringResource(R.string.delete_access_hint),
+                style = GalleryType.Chip.copy(
+                    color = Color(0xFF8CBCFF),
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth()
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = onGrantAccess)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+            )
+        }
     }
 }
 
