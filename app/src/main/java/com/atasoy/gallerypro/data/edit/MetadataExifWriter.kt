@@ -109,16 +109,17 @@ object MetadataExifWriter {
             scan(context, item)
             true
         } catch (_: Exception) {
-            if (writing && original.length() > 0L) {
+            val restored = if (writing && original.length() > 0L) {
                 runCatching {
                     resolver.openOutputStream(mediaUri, "wt").use { output ->
                         checkNotNull(output)
                         original.inputStream().use { input -> input.copyTo(output, 64 * 1024) }
                     }
                     scan(context, item)
-                }
-            }
-            if (newBackup) persistentBackup.delete()
+                }.isSuccess
+            } else !writing
+            // Geri yükleme başarısızsa eldeki tek sağlam yedeği asla silme.
+            if (newBackup && restored) persistentBackup.delete()
             false
         } finally {
             original.delete()
