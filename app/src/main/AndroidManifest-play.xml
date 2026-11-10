@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Android 10–12 -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Android 14+: "sadece seçtiklerim" kısmi erişimi -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <!-- Bilgi panelinde fotoğrafın çekildiği yer (EXIF konumu). Kullanıcı panelden ister. -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    <!-- İsteğe bağlı "Medya yönetimi" özel erişimi: verilirse silme/favori için ayrıca sorulmaz. -->
+    <uses-permission android:name="android.permission.MANAGE_MEDIA" />
+    <!-- Gizli albüm parmak izi, yüz veya ekran kilidiyle açılır. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <!-- Yalnızca GitHub APK kurulumlarında geçici güncelleme izinleri.
+         -PaabBuild=true ile üretilen Google Play AAB'de ikisi de kesin çıkarılır.
+         Fotoğraflar ve yüz bilgileri hiçbir güncelleme isteğine eklenmez. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+
+    <application
+        android:name=".GalleryApp"
+        android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Gallerypro">
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"
+            android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
