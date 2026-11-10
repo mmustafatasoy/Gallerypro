@@ -39,6 +39,12 @@ gradle assembleDebug          # veya Android Studio ile aç
 
 Gradle sürümü `gradle/wrapper/gradle-wrapper.properties` içindedir (9.7.1).
 
+## Google Play hazırlığı (0.9.2)
+
+`.github/workflows/aab.yml` için `asama-play-*` aşama dalında otomatik **TEST AAB** üretilir; Play Console'a yüklemeyin. Gerçek imzalı yükleme AAB'si yalnızca `main` üzerinde, GitHub Actions → Play AAB → Run workflow → `publish=true` ve 4 yayın anahtarı Secret'ı mevcutsa oluşturulur. Bu işlem Play Console'a kendiliğinden yayımlamaz.
+
+Mağaza metinleri, gizlilik politikası ve yayımlama kontrol listesi `play/` klasöründedir. SFace yüz modelinin ticari dağıtım hakları ve mağaza görselleri tamamlanmadan genel yayın yapılmamalıdır.
+
 ## Teknoloji
 
 Kotlin, Jetpack Compose, AGP 9.3.2, Kotlin 2.4.10, cam efekti için [Kyant Backdrop](https://github.com/Kyant0/AndroidLiquidGlass), küçük resimler için Coil 3. Tüm sürümler `gradle/libs.versions.toml` içinde.
