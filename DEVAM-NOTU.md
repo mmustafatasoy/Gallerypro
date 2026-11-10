@@ -217,3 +217,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Disk işlemleri `Dispatchers.IO` üzerinde yapılır; internet erişimi, yeni bağımlılık, yeni veritabanı veya Worker yoktur. Kaydedildikten sonra mevcut MediaStore taraması ve dizinleme isteği kullanılır.
 - GitHub Actions başarılı APK + testleri sonrasında `Gallerypro-kaynak.zip` ve SHA-256 aynı sürümde yayımlanır. Başarılı olduğunda PR kullanıcı talimatı gereği otomatik `main` dalına birleştirilir.
 - Sıradaki aşama **7e Video kırpma** için **Media3 Transformer** adlı yeni kütüphane gerekir: başlanmadan önce kullanıcı kararı alınmalıdır.
+
+## Aşama 7e — Video Kırpma (0.8.6, `asama-7e-video-kirpma`)
+
+- Kullanıcı, önerilen **Media3 Transformer** ile video kırpma özelliğine onay verdi. Mevcut `media3 = 1.11.1` sürümü değişmedi; yalnızca aynı sürümden `androidx.media3:media3-transformer` modülü eklendi (`gradle/libs.versions.toml`).
+- Video görüntüleyicisindeki mevcut **Düzenle** düğmesi artık `VideoTrimScreen` ekranını açar. Oynatıcı yeniden yazılmadı: `SharedVideoPlayer`, `extractFrames` (10 karelik film şeridi), `GlassTextButton`, `GlassIconButton` ve `designsystem/Tokens.kt` yeniden kullanıldı.
+- İki tutma koluyla başlangıç/bitiş seçilir (en az 1 saniye), video yalnızca seçilen aralıkta önizlenir. `VideoTrimLogic` saf Kotlin, `VideoTrimLogicTest` JVM testleri var.
+- `VideoTrimExporter`, `Transformer` ile yalnızca **yeni** yerel geçici MP4 oluşturur; başarılı olduğunda `MediaStore.IS_PENDING` üzerinden orijinal klasörüne veya `Movies/Gallerypro/` klasörüne ayrı video kaydeder. Orijinal video hiç değiştirilmez, hatalı çıktılar temizlenir, iş iptal edilebilir.
+- Foundation Compose, cihaz içi çalışma, internetsiz yapı, Türkçe/İngilizce string kaynakları korunur. İşlem sırasında uygulama açık kalmalıdır, cihazın kodek destekleri dışa aktarmayı etkileyebilir.
+- Başarılı GitHub Actions test + APK + ZIP + SHA-256 doğrulamasından sonra kullanıcı talimatına uygun şekilde ayrı PR, ardından `main` dalına birleştirme. Gerçek Android 16 telefon kurulumu ve video dışa aktarma testleri ayrıca yapılmalıdır.
+- **Sıradaki karar:** Görev 6 Kişiler/yüz tanıma için lisanslı yüz modeli veya görev 8 Google Play için isim, ikon ve imza anahtarı kullanıcı tarafından seçilir. İzin almadan başlamayın.

@@ -265,4 +265,19 @@
     <string name="metadata_permission_required">Konum bilgisini güvenle korumak için fotoğraf konum izni gerekiyor.</string>
     <string name="metadata_saved">Tarih ve konum bilgileri kaydedildi.</string>
     <string name="metadata_saving">Kaydediliyor…</string>
+    <!-- Video kırpma 7e -->
+    <string name="video_trim_title">Video Kırpma</string>
+    <string name="video_trim_save">Kırp ve Kaydet</string>
+    <string name="video_trim_cancel_export">İptal</string>
+    <string name="video_trim_start">Başlangıç: %1$s</string>
+    <string name="video_trim_end">Bitiş: %1$s</string>
+    <string name="video_trim_selected">Seçilen bölüm: %1$s</string>
+    <string name="video_trim_preview">Önizleme: %1$s</string>
+    <string name="video_trim_handles">Başlangıç ve bitiş işaretlerini sürükle</string>
+    <string name="video_trim_original_note">Orijinal video korunur. Seçilen bölüm yeni MP4 video olarak albüme eklenir.</string>
+    <string name="video_trim_processing">Yeni video hazırlanıyor… Uygulamayı açık tut.</string>
+    <string name="video_trim_short">Bu video kırpılamayacak kadar kısa veya süresi bilinmiyor.</string>
+    <string name="video_trim_select_range">Kırpmak için başlangıç veya bitiş işaretini hareket ettir. En az 1 saniye seç.</string>
+    <string name="video_trim_error">Video kaydedilemedi. Orijinal videoda değişiklik yapılmadı.</string>
+    <string name="video_trim_saved">Kırpılan video yeni MP4 olarak kaydedildi.</string>
 </resources>
