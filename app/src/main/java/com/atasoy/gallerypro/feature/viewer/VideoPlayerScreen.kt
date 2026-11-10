@@ -815,7 +815,7 @@ private fun pipRatio(size: VideoSize): Rational {
     }
 }
 
-private fun extractFrames(context: Context, uri: Uri, durationMs: Long, sizePx: Int): List<ImageBitmap> {
+internal fun extractFrames(context: Context, uri: Uri, durationMs: Long, sizePx: Int): List<ImageBitmap> {
     if (durationMs <= 0L) return emptyList()
     val retriever = MediaMetadataRetriever()
     return try {
