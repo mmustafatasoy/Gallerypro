@@ -3,6 +3,7 @@ package com.atasoy.gallerypro.data.index
 import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.os.Process
 import android.util.Size
 import androidx.work.Constraints
@@ -16,7 +17,9 @@ import androidx.work.WorkerParameters
 import com.atasoy.gallerypro.GalleryApp
 import com.atasoy.gallerypro.data.clip.ClipImageEncoder
 import com.atasoy.gallerypro.data.clip.VectorEntry
+import com.atasoy.gallerypro.data.clip.VectorMath
 import com.atasoy.gallerypro.data.clip.VectorVersion
+import com.atasoy.gallerypro.data.clip.VideoVectorVersion
 import com.atasoy.gallerypro.data.media.MediaAccess
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaPermissions
@@ -56,47 +59,72 @@ class MediaIndexer : Closeable {
 
     /**
      * Çalışan iş parçacığını bekletir; ana iş parçacığında çağrılmaz. [labels] false ise yalnızca
-     * [clip] vektörü çıkarılır (etiketleri zaten olan eski öğeler).
+     * [clip] vektörü çıkarılır (etiketleri zaten olan eski öğeler). Videolar 3 kareden incelenir
+     * (%10, %50, %90); kare alınamazsa videonun küçük resmi kullanılır.
      */
     fun index(context: Context, item: MediaItem, labels: Boolean, clip: ClipImageEncoder?): Pair<IndexEntry?, VectorEntry?> {
-        val bitmap = runCatching { loadThumb(context, item) }.getOrNull()
-            ?: return (if (labels) IndexEntry(item.id, item.modifiedMillis, emptyList(), "") else null) to null
+        val frames = (if (item.isVideo) runCatching { loadVideoFrames(context, item) }.getOrNull().orEmpty() else emptyList())
+            .ifEmpty { listOfNotNull(runCatching { loadThumb(context, item) }.getOrNull()) }
+        if (frames.isEmpty()) {
+            return (if (labels) IndexEntry(item.id, item.modifiedMillis, emptyList(), "", indexVersionFor(item)) else null) to null
+        }
         try {
-            val vector = clip?.embed(bitmap)?.let { VectorEntry(item.modifiedMillis, it) }
-            val entry = if (labels) analyze(item, bitmap) else null
+            val vector = clip
+                ?.let { encoder -> VectorMath.mean(frames.mapNotNull { encoder.embed(it) }) }
+                ?.let { VectorEntry(item.modifiedMillis, it, vectorVersionFor(item)) }
+            val entry = if (labels) analyze(item, frames) else null
             return entry to vector
         } finally {
-            bitmap.recycle()
+            frames.forEach { it.recycle() }
         }
     }
 
-    private fun analyze(item: MediaItem, bitmap: Bitmap): IndexEntry {
-        run {
-            val image = InputImage.fromBitmap(bitmap, 0)
-            val labels = runCatching {
-                Tasks.await(labeler.process(image), TimeoutSec, TimeUnit.SECONDS)
-                    .sortedByDescending { it.confidence }
-                    .take(MaxLabels)
-                    .map { it.text }
+    private fun analyze(item: MediaItem, frames: List<Bitmap>): IndexEntry {
+        val perFrame = frames.map { frame ->
+            runCatching {
+                Tasks.await(labeler.process(InputImage.fromBitmap(frame, 0)), TimeoutSec, TimeUnit.SECONDS)
+                    .map { it.text to it.confidence }
             }.getOrDefault(emptyList())
-            val text = if (item.isVideo) {
-                ""
-            } else {
-                runCatching {
-                    Tasks.await(recognizer.process(image), TimeoutSec, TimeUnit.SECONDS).text
-                }.getOrDefault("")
-            }
-            return IndexEntry(
-                id = item.id,
-                modified = item.modifiedMillis,
-                labels = labels,
-                text = text.replace('\n', ' ').take(MaxText)
-            )
         }
+        val text = if (item.isVideo) {
+            ""
+        } else {
+            runCatching {
+                Tasks.await(recognizer.process(InputImage.fromBitmap(frames.first(), 0)), TimeoutSec, TimeUnit.SECONDS).text
+            }.getOrDefault("")
+        }
+        return IndexEntry(
+            id = item.id,
+            modified = item.modifiedMillis,
+            labels = FrameLabels.merge(perFrame, MaxLabels),
+            text = text.replace('\n', ' ').take(MaxText),
+            version = indexVersionFor(item)
+        )
     }
 
-    private fun loadThumb(context: Context, item: MediaItem): Bitmap {
-        val bitmap = context.contentResolver.loadThumbnail(item.contentUri(), Size(ThumbPx, ThumbPx), null)
+    /** Videonun 3 karesi, en çok 640 px (yazılım bitmap'i). */
+    private fun loadVideoFrames(context: Context, item: MediaItem): List<Bitmap> {
+        val out = ArrayList<Bitmap>(VideoFractions.size)
+        MediaMetadataRetriever().use { retriever ->
+            retriever.setDataSource(context, item.contentUri())
+            val durationMs = item.durationMs.takeIf { it > 0 }
+                ?: retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                ?: 0L
+            val times = if (durationMs > 0) VideoFractions.map { (durationMs * it * 1000).toLong() } else listOf(0L)
+            for (us in times) {
+                val frame = runCatching {
+                    retriever.getScaledFrameAtTime(us, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, ThumbPx, ThumbPx)
+                }.getOrNull() ?: continue
+                out += software(frame)
+            }
+        }
+        return out
+    }
+
+    private fun loadThumb(context: Context, item: MediaItem): Bitmap =
+        software(context.contentResolver.loadThumbnail(item.contentUri(), Size(ThumbPx, ThumbPx), null))
+
+    private fun software(bitmap: Bitmap): Bitmap {
         // ML Kit piksellere erişir; donanım bitmap'i yazılıma kopyalanır.
         if (bitmap.config == Bitmap.Config.HARDWARE) {
             val copy = bitmap.copy(Bitmap.Config.ARGB_8888, false)
@@ -118,8 +146,14 @@ class MediaIndexer : Closeable {
         const val MaxLabels = 8
         const val MaxText = 1500
         const val TimeoutSec = 20L
+        val VideoFractions = listOf(0.1, 0.5, 0.9)
     }
 }
+
+/** Öğenin dizin sürümü: videolar 3 kareden incelendiği için ayrı sürüm taşır. */
+internal fun indexVersionFor(item: MediaItem): Int = if (item.isVideo) VideoIndexVersion else IndexVersion
+
+internal fun vectorVersionFor(item: MediaItem): Int = if (item.isVideo) VideoVectorVersion else VectorVersion
 
 /**
  * Arka planda dizinleme. Yalnızca yeni ve değişen öğeleri işler, silinenleri dizinden çıkarır.
@@ -146,12 +180,12 @@ class IndexWorker(context: Context, params: WorkerParameters) : Worker(context, 
         val clip = ClipImageEncoder.createOrNull(context)
         fun needsLabels(item: MediaItem): Boolean {
             val e = known[item.id]
-            return e == null || e.modified != item.modifiedMillis || e.version < IndexVersion
+            return e == null || e.modified != item.modifiedMillis || e.version < indexVersionFor(item)
         }
         fun needsVector(item: MediaItem): Boolean {
             if (clip == null) return false
             val v = knownVectors[item.id]
-            return v == null || v.modified != item.modifiedMillis || v.version < VectorVersion
+            return v == null || v.modified != item.modifiedMillis || v.version < vectorVersionFor(item)
         }
         val todo = items
             .filter { needsLabels(it) || needsVector(it) }

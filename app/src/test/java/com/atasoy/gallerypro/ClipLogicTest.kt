@@ -2,6 +2,7 @@ package com.atasoy.gallerypro
 
 import com.atasoy.gallerypro.data.clip.VectorMath
 import com.atasoy.gallerypro.data.clip.WordPieceTokenizer
+import com.atasoy.gallerypro.data.index.FrameLabels
 import com.atasoy.gallerypro.data.index.SearchEngine
 import com.atasoy.gallerypro.data.media.MediaItem
 import org.junit.Assert.assertArrayEquals
@@ -139,6 +140,28 @@ class ClipLogicTest {
         assertEquals(listOf(2L, 4L, 1L), VectorMath.similar(target, candidates))
         assertEquals(listOf(2L, 4L), VectorMath.similar(target, candidates, limit = 2))
         assertTrue(VectorMath.similar(target, candidates, minSimilarity = 0.99f).isEmpty())
+    }
+
+    @Test
+    fun vector_meanIsUnitLength() {
+        val m = VectorMath.mean(listOf(unit(1f, 0f), unit(0f, 1f)))!!
+        assertEquals(1f, VectorMath.dot(m, m), 1e-5f)
+        assertEquals(m[0], m[1], 1e-6f)
+        assertTrue(VectorMath.mean(emptyList()) == null)
+        val single = unit(0.6f, 0.8f)
+        assertArrayEquals(single, VectorMath.mean(listOf(single)), 0f)
+    }
+
+    @Test
+    fun frameLabels_keepBestConfidenceAcrossFrames() {
+        val frames = listOf(
+            listOf("Dog" to 0.70f, "Grass" to 0.65f),
+            listOf("Beach" to 0.90f, "Dog" to 0.95f),
+            listOf("Sky" to 0.63f, "Grass" to 0.80f)
+        )
+        assertEquals(listOf("Dog", "Beach", "Grass", "Sky"), FrameLabels.merge(frames, 8))
+        assertEquals(listOf("Dog", "Beach"), FrameLabels.merge(frames, 2))
+        assertTrue(FrameLabels.merge(emptyList(), 8).isEmpty())
     }
 
     // ---------------------------------------------------------------- sorgu metni

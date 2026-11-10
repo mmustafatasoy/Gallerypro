@@ -9,6 +9,9 @@ class VectorEntry(val modified: Long, val vector: FloatArray, val version: Int =
 /** Vektör çıkarma yöntemi değişince artırılır; eski vektörler yeniden hesaplanır. */
 const val VectorVersion = 1
 
+/** Videolar: 2 = 3 karenin ortalaması (fotoğraflar etkilenmez). */
+const val VideoVectorVersion = 2
+
 /** Saf Kotlin; JVM'de test edilir. */
 object VectorMath {
 
@@ -18,6 +21,20 @@ object VectorMath {
         var s = 0f
         for (i in 0 until n) s += a[i] * b[i]
         return s
+    }
+
+    /** Birim vektörlerin ortalaması, yeniden birim uzunluğa getirilmiş (video kareleri). Boşsa null. */
+    fun mean(vectors: List<FloatArray>): FloatArray? {
+        if (vectors.isEmpty()) return null
+        if (vectors.size == 1) return vectors[0]
+        val out = FloatArray(vectors[0].size)
+        for (v in vectors) for (i in out.indices) out[i] += v.getOrElse(i) { 0f }
+        var norm = 0f
+        for (x in out) norm += x * x
+        if (norm <= 0f) return null
+        val inv = 1f / kotlin.math.sqrt(norm)
+        for (i in out.indices) out[i] *= inv
+        return out
     }
 
     fun toBytes(v: FloatArray): ByteArray {
