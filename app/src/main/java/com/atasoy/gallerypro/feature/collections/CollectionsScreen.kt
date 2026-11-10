@@ -394,7 +394,12 @@ fun CollectionsScreen(
                     enter = slideInHorizontally { it / 3 } + fadeIn(),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (entry == CollectionKeys.AllAlbums) {
+                    if (entry == "people") {
+                        PeopleScreen(
+                            photos = viewModel.photoItems.value.orEmpty(),
+                            onBack = ::pop
+                        )
+                    } else if (entry == CollectionKeys.AllAlbums) {
                         AllAlbumsScreen(
                             albums = content.albums,
                             locale = locale,
@@ -854,6 +859,7 @@ private fun UtilitiesSection(
     onOpen: (String) -> Unit
 ) {
     val rows = listOf(
+        RowSpec(GalleryIcons.People, stringResource(R.string.section_people), "") { onOpen("people") },
         RowSpec(GalleryIcons.Lock, stringResource(R.string.col_hidden), "", onOpenHidden),
         RowSpec(
             GalleryIcons.TrashOutline,

@@ -25,6 +25,12 @@ object GalleryIcons {
         }
     }
 
+    val People: ImageVector by lazy {
+        icon("people") {
+            stroke(circle(9f, 8f, 3f) + "M3 20c0-4 2-6 6-6s6 2 6 6M17 11a2.7 2.7 0 0 0 0-5.4M16 14c3.5 0 5 2 5 6")
+        }
+    }
+
     val Collections: ImageVector by lazy {
         icon("collections") {
             stroke(roundRect(4f, 8.5f, 16f, 12f, 2.6f) + "M6.5 5.5h11M9 2.8h6")

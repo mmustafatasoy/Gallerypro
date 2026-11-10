@@ -237,3 +237,12 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Yeni model, kütüphane, internet izni veya tasarım değişikliği yapılmadı; 0.8.7 `versionCode 21`. GitHub Actions testleri ve ZIP/sha doğrulanır, sonra kullanıcı talimatıyla main'e birleştirilir.
 - **Kişiler / yüz tanıma:** Kullanıcı istedi. Ancak `CODEX-ILK-MESAJ.md` görev 6 gereği yüz-gömme modelinin lisansı kullanıcı tarafından seçilmeden koduna başlanmaz. Onaydan sonra ayrı dal/PR.
 - Kesin çökme kök nedeni için kullanıcı uygulamayı yeniden açınca çıkan `CrashReportSheet` raporunun metnini paylaşabilir. Android 16 cihaz kurulumu ve gerçek kırpma testi ayrıca gereklidir.
+
+## Görev 6 — Kişiler / yüksek doğruluklu yüz tanıma (0.9.0, `asama-6-kisiler-sface-fp32`)
+
+- Kullanıcı **yüksek doğruluk** tercih etti, APK boyutu ikincil. Seçilen **OpenCV Zoo SFace 2021dec FP32 (~36,9 MB)**, YuNet 2023mar yüz algılama ve OpenCV Android **4.14.0**; INT8 yüz tanıma kullanılmadı.
+- Model dosyaları Git'e eklenmedi. `apk.yml` resmî `opencv/opencv_zoo` kaynağından modelleri indirir, boyutlarını denetler ve ilgili Apache-2.0 / MIT lisans dosyalarını APK'ya kopyalar. OpenCV AAR resmi Maven Central dağıtımıdır.
+- Koleksiyonlar > Araçlar > **Kişiler** açılır. Kullanıcının açık **Kişileri Tara** eylemiyle görüntüler `PeopleScanner` içinde `Dispatchers.Default` üzerinde incelenir; orijinal medya değiştirilmez. OpenCV yüz algılama + beş noktalı hizalama + 128 boyutlu FP32 vektör + yerel eşleştirme yapılır. Dizin ve atanan isimler özel uygulama depolamasında, sunucu veya internet yoktur. Gizli/çöp fotoğraflar dizine alınmaz.
+- `PeopleLogic` sahte eşleşmeleri azaltmak için korumacı benzerlik eşiği kullanır; kesin kişi kimlik doğrulaması değildir. Gruplar kullanıcıya gösterilir, elle isimlendirilebilir ve fotoğraflar normal `ViewerScreen` ile açılır. Saf JVM testleri `PeopleLogicTest` eklendi.
+- **Lisans riski / yayın öncesi kontrol:** OpenCV Zoo SFace model dizininde Apache-2.0 yazsa da ticari dağıtımda eğitim veri seti kaynağının hakları hakkındaki GitHub OpenCV Zoo #318 sorusu çözülmeden Google Play ticari yayın uyumluluğu garanti edilmez. Bu sürüm geliştirme / test amaçlıdır.
+- Gerçek Android 16 üzerinde model açma / yüz eşleştirme doğrulaması gerekir. CI APK + kaynak ZIP başarıyla tamamlanırsa kullanıcı talimatıyla main'e birleştirilebilir.

@@ -64,6 +64,9 @@ class CollectionsViewModel(
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Kişiler yalnızca görünür fotoğrafları inceler, gizli/çöp içerik taranmaz. */
+    val photoItems: StateFlow<List<MediaItem>?> = repository.items
+
     fun refreshMedia() = repository.refresh()
 
     val sections: StateFlow<List<SectionSetting>> = sectionPrefs.sections
