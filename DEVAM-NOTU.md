@@ -178,3 +178,12 @@ Cümleyle arama `main`'de hazır: `data/clip/` (ClipEncoders, WordPieceTokenizer
 ## Yedek
 Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all` tek zip, kullanıcının Google Drive'ına.
 **Her yedekte `DEVAM-NOTU.md` ayrıca dosya olarak kullanıcıya gönderilir** (kullanıcı bunu ChatGPT/Codex'e verip devam ettirebilsin).
+
+## Aşama 7a — Anı slayt gösterisi (0.8.2, `asama-7a-slayt`)
+
+- PR #9'daki "Sıradaki küçük işler" sırasının **1. adımı** uygulandı; kullanıcı incelemesi ve birleştirmesi bekleniyor.
+- Yalnızca Anılar koleksiyonlarının `CollectionDetailScreen` başlığında mevcut `GlassTextButton` ile **Oynat** gösterilir; boş Anılar koleksiyonunda gösterilmez.
+- Düğme o anının ilk öğesinden `ViewerScreen`'i açar ve **mevcut** `slideshow` modunu başlatır. Yeni oynatıcı, Worker, model, mimari veya kütüphane eklenmedi. Fotoğrafa normal dokunmak eski görüntüleme davranışını korur.
+- `ViewerScreen`'in diğer çağrıları, varsayılan `startSlideshow = false` ile değişmeden çalışır.
+- Yeni saf hesap mantığı eklenmedi; mevcut JVM testleri ve GitHub Actions APK derlemesi kontrol edilmelidir.
+- **Sıradaki iş:** 7b Uzun basınca önizleme + Albüme ekle. PR #9 mimari/kaynak tablosu esas alınır.

@@ -159,7 +159,8 @@ fun ViewerScreen(
     items: List<MediaItem>,
     startId: Long,
     onClose: (lastId: Long?) -> Unit,
-    mode: ViewerMode = ViewerMode.Normal
+    mode: ViewerMode = ViewerMode.Normal,
+    startSlideshow: Boolean = false
 ) {
     val context = LocalContext.current
     val stores = LocalGalleryStores.current
@@ -179,7 +180,7 @@ fun ViewerScreen(
 
     var chromeVisible by rememberSaveable { mutableStateOf(true) }
     var menuOpen by remember { mutableStateOf(false) }
-    var slideshow by remember { mutableStateOf(false) }
+    var slideshow by remember { mutableStateOf(startSlideshow) }
     var confirmDelete by remember { mutableStateOf(false) }
     var zoomed by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf<String?>(null) }

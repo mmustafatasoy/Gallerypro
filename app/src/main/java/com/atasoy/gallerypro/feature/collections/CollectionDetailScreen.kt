@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,10 +45,12 @@ import com.atasoy.gallerypro.data.collections.Album
 import com.atasoy.gallerypro.data.collections.CollectionKeys
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.MediaItem
+import com.atasoy.gallerypro.data.memories.MemoryBuilder
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.GlassIconButton
+import com.atasoy.gallerypro.designsystem.GlassTextButton
 import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import com.atasoy.gallerypro.feature.library.ColumnSteps
@@ -79,6 +82,7 @@ internal fun CollectionDetailScreen(
     val gridState = rememberLazyGridState()
     var columns by rememberSaveable { mutableIntStateOf(3) }
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var startSlideshow by rememberSaveable { mutableStateOf(false) }
     var scrolledToEnd by rememberSaveable { mutableStateOf(false) }
 
     val isTrash = collectionKey == CollectionKeys.Trash
@@ -124,9 +128,9 @@ internal fun CollectionDetailScreen(
                     contentPadding = PaddingValues(top = topInset + 128.dp, bottom = bottomInset + 40.dp),
                     selecting = false,
                     selected = emptySet(),
-                    onOpen = { viewerId = it.id },
+                    onOpen = { startSlideshow = false; viewerId = it.id },
                     onToggle = {},
-                    onLongPress = { viewerId = it.id },
+                    onLongPress = { startSlideshow = false; viewerId = it.id },
                     onZoomIn = {
                         val i = ColumnSteps.indexOf(columns).coerceAtLeast(0)
                         columns = ColumnSteps[(i - 1).coerceAtLeast(0)]
@@ -144,7 +148,22 @@ internal fun CollectionDetailScreen(
             isTrash && list.isNotEmpty() -> stringResource(R.string.trash_note)
             else -> context.resources.getQuantityString(R.plurals.items_count, list.size, Formatters.count(list.size, locale))
         }
-        DetailHeader(backdrop = backdrop, title = title, subtitle = subtitle, topInset = topInset, onBack = onBack)
+        DetailHeader(
+            backdrop = backdrop,
+            title = title,
+            subtitle = subtitle,
+            topInset = topInset,
+            onBack = onBack,
+            playLabel = if (MemoryBuilder.isMemoryKey(collectionKey) && !list.isNullOrEmpty()) {
+                stringResource(R.string.video_play)
+            } else null,
+            onPlay = {
+                list?.firstOrNull()?.let { first ->
+                    startSlideshow = true
+                    viewerId = first.id
+                }
+            }
+        )
 
         ProgressiveBlurEdge(
             backdrop = backdrop,
@@ -167,8 +186,12 @@ internal fun CollectionDetailScreen(
                 ViewerScreen(
                     items = shown,
                     startId = startId,
-                    onClose = { viewerId = null },
-                    mode = mode
+                    onClose = {
+                        viewerId = null
+                        startSlideshow = false
+                    },
+                    mode = mode,
+                    startSlideshow = startSlideshow
                 )
             }
         }
@@ -234,7 +257,9 @@ private fun DetailHeader(
     title: String,
     subtitle: String,
     topInset: androidx.compose.ui.unit.Dp,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    playLabel: String? = null,
+    onPlay: (() -> Unit)? = null
 ) {
     Box(Modifier.fillMaxWidth()) {
         ProgressiveBlurEdge(
@@ -247,13 +272,27 @@ private fun DetailHeader(
                 .fillMaxWidth()
                 .padding(top = topInset + 8.dp, start = 14.dp, end = GalleryDimens.ScreenPadding)
         ) {
-            GlassIconButton(
-                backdrop = backdrop,
-                icon = GalleryIcons.Back,
-                contentDescription = stringResource(R.string.viewer_back),
-                onClick = onBack,
-                tint = GalleryColors.TextPrimary
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = GalleryIcons.Back,
+                    contentDescription = stringResource(R.string.viewer_back),
+                    onClick = onBack,
+                    tint = GalleryColors.TextPrimary
+                )
+                if (playLabel != null && onPlay != null) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = playLabel,
+                        onClick = onPlay,
+                        textColor = GalleryColors.TextPrimary
+                    )
+                }
+            }
             Column(Modifier.padding(start = 6.dp, top = 8.dp)) {
                 BasicText(
                     title,
