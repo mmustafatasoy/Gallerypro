@@ -112,7 +112,7 @@ class UpdateManager(
         connection.setRequestProperty("Accept", "application/vnd.github+json")
         connection.setRequestProperty("User-Agent", "Gallerypro-Android-Updater")
         try {
-            check(connection.responseCode == 200)
+            if (connection.responseCode != 200) error("GitHub sürüm sorgusu başarısız")
             val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
             val version = UpdateLogic.versionOf(json.optString("name")) ?: return null
             if (!UpdateLogic.isNewer(BuildConfig.VERSION_NAME, version)) return null
