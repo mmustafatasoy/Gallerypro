@@ -96,6 +96,10 @@ import com.atasoy.gallerypro.data.media.MediaDetailsReader
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaThumb
 import com.atasoy.gallerypro.data.media.contentUri
+import com.atasoy.gallerypro.data.memories.Memory
+import com.atasoy.gallerypro.data.memories.MemoryBuilder
+import com.atasoy.gallerypro.data.memories.MemoryFormat
+import com.atasoy.gallerypro.data.memories.MemoryKind
 import com.atasoy.gallerypro.data.places.PlaceGroup
 import com.atasoy.gallerypro.data.places.PlacesLogic
 import com.atasoy.gallerypro.designsystem.GalleryColors
@@ -124,7 +128,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /**
- * Koleksiyonlar sekmesi. Bölümler: Son Günler, Sabitlenenler, Albümler, Yerler,
+ * Koleksiyonlar sekmesi. Bölümler: Son Günler, Anılar, Sabitlenenler, Albümler, Yerler,
  * Medya Türleri, Araçlar. "⋯" ile sıraları ve görünürlükleri değiştirilir.
  */
 @Composable
@@ -135,6 +139,7 @@ fun CollectionsScreen(
     val content by viewModel.content.collectAsStateWithLifecycle()
     val sections by viewModel.sections.collectAsStateWithLifecycle()
     val places by viewModel.places.collectAsStateWithLifecycle()
+    val memories by viewModel.memories.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Yerler için fotoğrafların konumu gerekir (Android konumu izinsiz gizler).
     var locationGranted by remember { mutableStateOf(MediaDetailsReader.hasLocationPermission(context)) }
@@ -237,6 +242,17 @@ fun CollectionsScreen(
                                         topPadding = top,
                                         onOpenAll = { push(CollectionKeys.AllAlbums) },
                                         onOpen = { push(CollectionKeys.album(it.path)) }
+                                    )
+                                }
+                            }
+                            SectionId.Memories -> if (memories.isNotEmpty()) {
+                                first = false
+                                item(key = setting.id.name) {
+                                    MemoriesSection(
+                                        memories = memories,
+                                        locale = locale,
+                                        topPadding = top,
+                                        onOpen = { push(it.key) }
                                     )
                                 }
                             }
@@ -389,7 +405,7 @@ fun CollectionsScreen(
                         CollectionDetailScreen(
                             viewModel = viewModel,
                             collectionKey = entry,
-                            title = collectionTitle(entry, content, places, now, zone, locale),
+                            title = collectionTitle(entry, content, places, memories, now, zone, locale),
                             onBack = ::pop
                         )
                     }
@@ -489,6 +505,50 @@ private fun DayCard(cover: MediaItem, title: String, count: String, onClick: () 
             BasicText(count, style = GalleryType.Duration.copy(color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium))
         }
     }
+}
+
+/** Anılar: Bu Gün, geziler ve yılın özeti; yatay kartlar. */
+@Composable
+private fun MemoriesSection(
+    memories: List<Memory>,
+    locale: Locale,
+    topPadding: Dp,
+    onOpen: (Memory) -> Unit
+) {
+    Column {
+        SectionHeader(stringResource(R.string.section_memories), topPadding, null)
+        LazyRow(
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(memories, key = { it.key }) { memory ->
+                DayCard(
+                    cover = memory.cover,
+                    title = memoryTitle(memory),
+                    count = memorySubtitle(memory, locale),
+                    onClick = { onOpen(memory) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun memoryTitle(memory: Memory): String = when (memory.kind) {
+    MemoryKind.OnThisDay -> stringResource(R.string.memory_on_this_day)
+    MemoryKind.Trip -> memory.place
+    MemoryKind.Year -> stringResource(R.string.memory_year, memory.year)
+}
+
+@Composable
+private fun memorySubtitle(memory: Memory, locale: Locale): String = when (memory.kind) {
+    MemoryKind.OnThisDay -> MemoryFormat.dayMonth(memory.startDay, locale)
+    MemoryKind.Trip -> MemoryFormat.range(memory.startDay, memory.endDay, locale)
+    MemoryKind.Year -> LocalContext.current.resources.getQuantityString(
+        R.plurals.items_count,
+        memory.itemIds.size,
+        Formatters.count(memory.itemIds.size, locale)
+    )
 }
 
 /** Fotoğrafların çekildiği iller/eyaletler; en son gidilen önce. İzin yoksa izin kartı. */
@@ -828,6 +888,7 @@ private fun sectionTitle(id: SectionId): String = stringResource(
         SectionId.MediaTypes -> R.string.section_media_types
         SectionId.Utilities -> R.string.section_utilities
         SectionId.Places -> R.string.section_places
+        SectionId.Memories -> R.string.section_memories
     }
 )
 
@@ -982,10 +1043,14 @@ private fun collectionTitle(
     key: String,
     content: CollectionsContent,
     places: List<PlaceGroup>,
+    memories: List<Memory>,
     now: Long,
     zone: ZoneId,
     locale: Locale
 ): String {
+    if (MemoryBuilder.isMemoryKey(key)) {
+        return memories.firstOrNull { it.key == key }?.let { memoryTitle(it) } ?: stringResource(R.string.section_memories)
+    }
     PlacesLogic.groupOf(key)?.let { group ->
         return places.firstOrNull { it.key == group }?.title ?: group.substringBefore('|')
     }

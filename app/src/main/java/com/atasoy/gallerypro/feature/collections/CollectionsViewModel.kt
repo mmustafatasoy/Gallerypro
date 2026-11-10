@@ -9,6 +9,8 @@ import com.atasoy.gallerypro.data.collections.SectionSetting
 import com.atasoy.gallerypro.data.index.IndexStore
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaRepository
+import com.atasoy.gallerypro.data.memories.Memory
+import com.atasoy.gallerypro.data.memories.MemoryBuilder
 import com.atasoy.gallerypro.data.places.PlaceGroup
 import com.atasoy.gallerypro.data.places.PlacesLogic
 import kotlinx.coroutines.Dispatchers
@@ -44,12 +46,26 @@ class CollectionsViewModel(
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Anılar: Bu Gün, geziler, yılın özeti (cihazda kurulur). */
+    val memories: StateFlow<List<Memory>> =
+        combine(repository.items, index.places, index.vectors) { items, places, vectors ->
+            MemoryBuilder.build(items.orEmpty(), places, vectors, System.currentTimeMillis(), zone)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val sections: StateFlow<List<SectionSetting>> = sectionPrefs.sections
 
     fun setSections(list: List<SectionSetting>) = sectionPrefs.set(list)
 
     /** Bir koleksiyonun öğeleri; MediaStore değişince kendiliğinden güncellenir. */
     fun items(key: String): Flow<List<MediaItem>> {
+        if (MemoryBuilder.isMemoryKey(key)) {
+            return combine(repository.items, memories) { items, list ->
+                val ids = list.firstOrNull { it.key == key }?.itemIds?.toHashSet() ?: emptySet()
+                items.orEmpty().filter { it.id in ids }
+            }.flowOn(Dispatchers.Default)
+        }
         PlacesLogic.groupOf(key)?.let { group ->
             return combine(repository.items, index.places) { items, places ->
                 PlacesLogic.itemsIn(group, items.orEmpty(), places)

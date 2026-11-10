@@ -112,8 +112,11 @@ class CityIndex(cities: List<City>) {
 /** Yer adlarının gösterimi ve aranabilir metni. */
 object PlaceNames {
 
-    fun country(code: String, locale: Locale): String =
-        if (code.isEmpty()) "" else Locale("", code).getDisplayCountry(locale).ifEmpty { code }
+    fun country(code: String, locale: Locale): String {
+        if (code.isEmpty()) return ""
+        val region = runCatching { Locale.Builder().setRegion(code).build() }.getOrNull() ?: return code
+        return region.getDisplayCountry(locale).ifEmpty { code }
+    }
 
     /** "Kadıköy, Istanbul" (il, şehirle aynıysa bir kez). */
     fun cityLine(entry: PlaceEntry): String = when {
