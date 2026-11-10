@@ -190,6 +190,7 @@ fun ViewerScreen(
     var videoChrome by remember { mutableStateOf(true) }
     // Açık düzenleme ekranı (4. aşama).
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var trimId by rememberSaveable { mutableStateOf<Long?>(null) }
     var metadataId by rememberSaveable { mutableStateOf<Long?>(null) }
     var metadataRevision by remember { mutableIntStateOf(0) }
     var metadataDates by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
@@ -296,7 +297,6 @@ fun ViewerScreen(
     val deletedForeverText = stringResource(R.string.toast_deleted_forever)
     val hiddenText = stringResource(R.string.toast_hidden)
     val unhiddenText = stringResource(R.string.toast_unhidden)
-    val videoEditText = stringResource(R.string.coming_video_edit)
     val recoverLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -323,12 +323,8 @@ fun ViewerScreen(
     }
 
     fun edit(item: MediaItem) {
-        if (item.isVideo) {
-            toast = videoEditText
-        } else {
-            playingId = null
-            editingId = item.id
-        }
+        playingId = null
+        if (item.isVideo) trimId = item.id else editingId = item.id
     }
 
     fun toggleFavorite(item: MediaItem) {
@@ -402,7 +398,7 @@ fun ViewerScreen(
             }
         }
 
-        BackHandler(enabled = editingId == null && metadataId == null) {
+        BackHandler(enabled = editingId == null && metadataId == null && trimId == null) {
             when {
                 confirmDelete -> confirmDelete = false
                 menuOpen -> menuOpen = false
@@ -802,7 +798,7 @@ fun ViewerScreen(
         ) {
             val opened = remember { video }
             val target = video ?: opened
-            if (target != null) {
+            if (target != null && trimId == null) {
                 VideoPlayerScreen(
                     item = target,
                     title = dayTitle(target.takenAtMillis, zone, locale),
@@ -840,6 +836,19 @@ fun ViewerScreen(
                     }
                 )
             }
+        }
+
+        // ---------------------------------------------------------------- video kırpma (7e): eski oynatıcı askıda değil, tamamen kapalı
+        val trimming = trimId?.let { id -> items.firstOrNull { it.id == id } }
+        if (trimming != null) {
+            VideoTrimScreen(
+                item = trimming,
+                onSaved = {
+                    trimId = null
+                    toast = context.getString(R.string.video_trim_saved)
+                },
+                onClose = { trimId = null }
+            )
         }
 
         // ---------------------------------------------------------------- JPEG tarih ve konum bilgilerini ayarla (7d)

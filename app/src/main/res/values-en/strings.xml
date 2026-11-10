@@ -256,4 +256,19 @@
     <string name="metadata_permission_required">Photo location access is required to safely preserve existing location data.</string>
     <string name="metadata_saved">Date and location information saved.</string>
     <string name="metadata_saving">Saving…</string>
+    <!-- Video trimming 7e -->
+    <string name="video_trim_title">Trim Video</string>
+    <string name="video_trim_save">Trim and Save</string>
+    <string name="video_trim_cancel_export">Cancel</string>
+    <string name="video_trim_start">Start: %1$s</string>
+    <string name="video_trim_end">End: %1$s</string>
+    <string name="video_trim_selected">Selected clip: %1$s</string>
+    <string name="video_trim_preview">Preview: %1$s</string>
+    <string name="video_trim_handles">Drag the start and end handles</string>
+    <string name="video_trim_original_note">The original video stays intact. The selected clip is added to the album as a new MP4.</string>
+    <string name="video_trim_processing">Creating your video… Keep the app open.</string>
+    <string name="video_trim_short">This video is too short to trim or has unknown duration.</string>
+    <string name="video_trim_select_range">Move the start or end handle to trim. Select at least 1 second.</string>
+    <string name="video_trim_error">Could not save the video. The original was not changed.</string>
+    <string name="video_trim_saved">Trimmed video saved as a new MP4.</string>
 </resources>

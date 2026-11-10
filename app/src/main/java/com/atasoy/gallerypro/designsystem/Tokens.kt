@@ -45,6 +45,11 @@ object GalleryColors {
 
 object GalleryDimens {
     val PreviewHeight = 420.dp
+    val VideoTrimStripHeight = 64.dp
+    val VideoTrimHandleWidth = 9.dp
+    val VideoTrimHandleRadius = 5.dp
+    val VideoTrimGap = 12.dp
+    const val VideoTrimFramePixels = 64
     val DuplicateThumb = 104.dp
     val MetadataInputHeight = 56.dp
     val PreviewAlbumListHeight = 380.dp

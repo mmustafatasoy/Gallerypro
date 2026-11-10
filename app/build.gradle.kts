@@ -11,8 +11,8 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.8.5"
+        versionCode = 20
+        versionName = "0.8.6"
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
         // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. AAB'de (Play) Play kendisi böler;
         // -PaabBuild=true ile derlenirken süzgeç uygulanmaz.
@@ -109,6 +109,7 @@ dependencies {
 
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.androidx.media3.transformer)
 
     // 5. aşama: cihaz içi yapay zekâ (modeller APK'nın içinde, internet yok) ve arka plan dizinleme.
     implementation(libs.androidx.work.runtime)
