@@ -4,7 +4,7 @@ Bu projeyi Claude yazdı. Devralan araç (Codex, ChatGPT…) **yalnızca aşağ�
 Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 
 ## Devralma (kullanıcı için)
-1. Önce `asama-5b-cumleyle-arama` PR'ı (#2) `main`'e birleştirilir; yoksa devralan araç bu notun eski hâlini okur.
+1. PR #2 (`asama-5b-cumleyle-arama`, 0.6.0) `main`'e birleştirildi (bu notu `main`'de okuyorsan birleşmiştir). Yeni işler her zaman güncel `main`'den dal açılarak başlar.
 2. Codex'e GitHub bağlanır, `mmustafatasoy/Gallerypro` seçilir, ilk mesaj olarak `CODEX-ILK-MESAJ.md` içeriği (İngilizce) verilir.
 3. Actions kırmızıysa PR birleştirilmez. Uygulama çökerse açılıştaki hata raporu devralan araca aynen yapıştırılır.
 
@@ -16,23 +16,28 @@ Kısa kurallar `AGENTS.md`'de (Codex onu kendiliğinden okur); ayrıntı burada.
 ## Şu anki durum
 | Dal | İçerik | Durum |
 | --- | --- | --- |
-| `main` | Aşama 1–4 + 5. aşama ilk adım (cihaz içi dizin + arama), sürüm 0.5.2 (hızlı release APK) | GitHub Actions yeşil (48 test) |
-| `asama-5b-cumleyle-arama` | Cümleyle arama (CLIP, Türkçe dahil), sürüm 0.6.0 | PR açık; kullanıcı birleştirecek |
+| `main` | Aşama 1–4 + 5a (cihaz içi dizin + arama) + 5b cümleyle arama (CLIP, Türkçe dahil), sürüm 0.6.0 | PR #2 ile girdi |
+| `asama-5b-cihaz-ici-arama` | **TERK EDİLDİ — kullanma, birleştirme, üstüne iş yapma.** Eski `main`'den (0.5.2) açıldı; 5b zaten bittiği hâlde aynı işi MobileCLIP + LiteRT ile baştan kurmaya çalışır. Çalışan özellik içermez. | Yalnızca geçmiş için duruyor |
 | `asama-2…`, `asama-3…`, `asama-4…`, `asama-5a-arama` | Bitbucket'tan taşınan aşama dalları (geçmiş için) | — |
 
 ## Hemen yapılacak (sırayla)
 **Uygulamanın bitişine kadar tam yol haritası (görev 1–8, ayrıntılı, İngilizce): `CODEX-ILK-MESAJ.md`.** Aşağıdaki maddeler onun özetidir; çelişirse o dosya geçerlidir.
 
-1. Kullanıcı 0.6.0'ı dener (dal APK'sı: https://github.com/mmustafatasoy/Gallerypro/releases/download/asama-5b-cumleyle-arama/Gallerypro.apk).
+1. Kullanıcı 0.6.0'ı dener (APK: https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk).
    Aramada "Şimdi incele" → tüm fotoğraflar yeniden incelenir (etiketi olanlara yalnızca anlam vektörü eklenir).
    Çökme olursa uygulama bir sonraki açılışta hata raporunu gösterir; yığın izinde adı geçen satırı düzelt, tahminle başka dosyaya dokunma.
 2. Derleme kırmızıysa sadece hata veren satırı düzelt; başka dosyaya dokunma.
-3. Kullanıcı PR'ı birleştirince sıradaki iş **5b-2: Bilgi panelinde "Benzer Fotoğraflar"** (ayrı dal `asama-5b2-benzer`):
+3. Sıradaki iş **5b-2: Bilgi panelinde "Benzer Fotoğraflar"** (ayrı dal `asama-5b2-benzer`):
    `IndexStore.vectors`'tan açık fotoğrafın vektörüne en yakın 12 öğe (`VectorMath.nearest`, kendisi hariç, eşik ~0,80),
    yatay küçük resim şeridi; vektör yoksa kart gizli. Yeni kütüphane yok.
 4. Sonra 5c: Anılar (tarih + yer kümeleri), yer adıyla arama (EXIF konumu → çevrimdışı şehir listesi), Kişiler.
    **Kişiler için yüz modeli lisansı önce kullanıcıya sorulur** (ML Kit yüz algılama yüzü bulur ama tanımaz; tanıma modeli
    seçimi lisans kararıdır). Video anahtar kareleri ve "Akıllı Etiketler" kartı da 5c'de.
+
+## Dikkat: 5b'yi yeniden yapma
+Cümleyle arama `main`'de hazır: `data/clip/` (ClipEncoders, WordPieceTokenizer, VectorMath), `IndexStore.vectors`,
+`scripts/models/export_clip.py`. Model ve çalıştırıcı seçimi kapanmış karardır; MobileCLIP'e dönülmez, LiteRT eklenmez,
+`data/semantic/` gibi ikinci bir vektör katmanı açılmaz. Benzer Fotoğraflar mevcut `VectorMath.nearest` ile yapılır.
 
 ## Kurallar (değişmez)
 - Sürümler `gradle/libs.versions.toml` içinde; **yükseltme yok**. Yeni kütüphane sadece dokümandaki tablodan.
