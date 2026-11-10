@@ -264,3 +264,14 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - `versionCode 24`, `versionName 0.9.2`. Test APK'sı önceki sabit imza ile güncellenebilir; gerçek Play upload anahtarı geliştirici tarafından yönetilmelidir.
 - Yayına geçmeden kullanıcıdan **gerçek yükleme anahtarı ve mağaza kimliği**, halka açık gizlilik sayfasının yayını ve SFace modelinin ticari dağıtım haklarına ilişkin doğrulama gerekir. Play Console incelemesi, gerçek cihaz testi ve mağaza varlıkları tamamlanmadan “Google Play'de yayımlandı” denmez.
 - Her aşama yeşil CI + APK + kaynak ZIP + SHA-256 sonrası otomatik `main` dalına birleştirilir. AAB doğrulaması da ayrıca yeşil olmalıdır.
+
+## Aşama 9a — Büyük fotoğraflar için bölgesel yükleme (0.9.3, `asama-093-buyuk-fotograf-tile`)
+
+- Kullanıcı önce özelliğin amacını öğrendi ve açıkça uygulanmasını istedi. Orijinal fotoğrafı yeniden sıkıştırmadan, görüntüleyicinin bellek tüketimini azaltmak hedeflendi.
+- `ViewerPage.kt`: 4096px üzeri JPEG/PNG/WebP için fotoğrafın tamamı çözünürlükte açılmaz. Önce Coil ile **2048px önizleme** çizilir. 1,25× üstü yakınlaştırmada ekranın gördüğü orijinal piksel alanı hesaplanır; Android `BitmapRegionDecoder.decodeRegion` ile yalnızca bu alan en fazla 2048px kenarlı örneklenerek `Dispatchers.IO` üzerinde çözülür ve aynı ZoomState grafiğinin içinde üstüne çizilir.
+- Kaydırma/yakınlaştırma `snapshotFlow + debounce + collectLatest` üzerinden işlenir, hızlı hareket sırasında eski bölgelerden gereksiz decode sürdürülmez; fotoğraf veya sayfa değişiminde parça bellekte tutulmaz. Orijinal dosyaya yazma ve internet yok.
+- `LargePhotoTileMath` saf Kotlin viewport/taşma/örnekleme hesabı, EXIF 0/90/180/270 derece ham koordinat dönüşümü, `LargePhotoTileMathTest` JVM testleri; `LargePhotoRegionDecoder` hasarlı dosyada düşük çözünürlüklü önizlemeye döner.
+- Küçük/orta fotoğrafların var olan Coil 4096px yüksek çözünürlük yolu, çift dokunma, pinch-to-zoom, fotoğraf sayfalama, cam düğmeler ve video görüntüleyicisi değiştirilmedi. Kullanıcının onayladığı Motion Glass ölçüleri korunuyor.
+- Bilinçli sınır: HEIC/RAW/GIF için bölgesel decoder desteği garanti olmadığından mevcut akış kalır; bazı fotoğraflarda MediaStore boyutu ham dosyayla uyuşmazsa yalnızca önizleme gösterilir.
+- Yayın öncesi **gerçek 48/108/200 MP JPEG**, döndürülmüş çekim, panorama, düşük RAM, hızlı yakınlaştırma ve sayfalama testleri yapılmalı. GitHub Actions başarılı test + APK + tam kaynak ZIP + SHA-256 doğrulamadan main'e birleştirme yapılmaz.
+- Sıradaki ertelenenler: video pinch-to-zoom, Samsung hareketli fotoğraf video bölümü, ızgaradan açılış animasyonu (bunların kapsamına bu aşamada girilmez).

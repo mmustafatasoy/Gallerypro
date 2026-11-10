@@ -1,5 +1,6 @@
 package com.atasoy.gallerypro.feature.viewer
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -27,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,6 +44,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Precision
@@ -52,9 +58,13 @@ import com.atasoy.gallerypro.data.media.displayWidth
 import com.atasoy.gallerypro.designsystem.Glyph
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
-/** Yakınlaştırınca yüklenen yüksek çözünürlüklü kopyanın en uzun kenarı. */
+/** Küçük/orta fotoğraflarda mevcut Coil yakınlaştırma davranışı korunur. */
 private const val HiResMaxPx = 4096
 
 /**
@@ -64,6 +74,7 @@ private const val HiResMaxPx = 4096
  * iki parmak → yakınlaştır/kaydır, dikey sürükleme → [onVerticalDrag]
  * (yukarı: Bilgi paneli, aşağı: kapat). Yatay sürükleme sayfalayıcıya kalır.
  */
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
 internal fun ViewerPage(
     item: MediaItem,
@@ -104,13 +115,48 @@ internal fun ViewerPage(
     }
 
     val hiRes by remember { derivedStateOf { zoom.scale > 1.6f } }
-    // Düzenlenince dosya değişir; sürüm anahtara girer ki eski görüntü önbellekten gelmesin.
+    // Yalnızca büyük ve Android'in bölgesel decode desteklediği medya biçimleri.
+    val tileEnabled = LargePhotoTileMath.supported(
+        item.width, item.height, item.isVideo, item.mimeType
+    ) && item.orientation % 90 == 0
+
+    // Düzenlenince kaynak dosya değişir; sürüm önbellek ve parça anahtarına girer.
     val version = item.modifiedMillis
-    val fullRequest = remember(uri, version) {
+    val fullRequest = remember(uri, version, tileEnabled) {
         ImageRequest.Builder(context)
             .data(uri)
-            .memoryCacheKey("$uri@$version")
+            .memoryCacheKey("$uri@$version" + if (tileEnabled) "#preview" else "")
+            .apply {
+                if (tileEnabled) {
+                    // 108 MP JPEG'nin tamamını belleğe açma: ekrana sığan önizleme.
+                    size(LargePhotoTileMath.PreviewPx)
+                    precision(Precision.INEXACT)
+                }
+            }
             .build()
+    }
+
+    var visibleTile by remember(item.id, version) { mutableStateOf<DecodedPhotoTile?>(null) }
+    LaunchedEffect(item.id, version, isCurrent, tileEnabled) {
+        if (!tileEnabled || !isCurrent) {
+            visibleTile = null
+            return@LaunchedEffect
+        }
+        // Pan/zoom sürerken her pikselde decode başlatma. Son konuma ait
+        // isteği işle; önceki isteği collectLatest ile iptal et.
+        snapshotFlow {
+            LargePhotoTileMath.visibleRect(
+                item.displayWidth, item.displayHeight,
+                zoom.container.width, zoom.container.height,
+                zoom.scale, zoom.offset.x, zoom.offset.y
+            )
+        }
+            .distinctUntilChanged()
+            .debounce(140)
+            .collectLatest { region ->
+                visibleTile = if (region == null) null
+                else LargePhotoRegionDecoder.decode(context, item, region)
+            }
     }
     val hiResRequest = remember(uri, version) {
         ImageRequest.Builder(context)
@@ -175,11 +221,13 @@ internal fun ViewerPage(
                     contentScale = ContentScale.Fit,
                     onSuccess = { state ->
                         val image = state.result.image
-                        zoom.content = Size(image.width.toFloat(), image.height.toFloat())
+                        if (!tileEnabled) {
+                            zoom.content = Size(image.width.toFloat(), image.height.toFloat())
+                        }
                     },
                     modifier = Modifier.fillMaxSize()
                 )
-                if (hiRes) {
+                if (hiRes && !tileEnabled) {
                     AsyncImage(
                         model = hiResRequest,
                         contentDescription = null,
@@ -187,6 +235,37 @@ internal fun ViewerPage(
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
+                }
+                // Kaynak önizleme arka planda kalır; yalnızca ekrandaki orijinal
+                // piksel bölgesi GPU üzerinde aynı Fit koordinatlarında üstüne çizilir.
+                // Zaten ViewerPage'in graphicsLayer'ı altında olduğundan cam tasarım
+                // ve mevcut hareket kontrolleri hiçbir şekilde değişmez.
+                val tile = visibleTile
+                if (tileEnabled && tile != null) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        val photoWidth = item.displayWidth.toFloat()
+                        val photoHeight = item.displayHeight.toFloat()
+                        val fitted = ZoomMath.fit(
+                            Size(size.width, size.height),
+                            Size(photoWidth, photoHeight)
+                        )
+                        val dx = (size.width - fitted.width) / 2f +
+                            fitted.width * tile.displayRect.left / photoWidth
+                        val dy = (size.height - fitted.height) / 2f +
+                            fitted.height * tile.displayRect.top / photoHeight
+                        val dw = fitted.width * tile.displayRect.width / photoWidth
+                        val dh = fitted.height * tile.displayRect.height / photoHeight
+                        if (dw > 0f && dh > 0f) {
+                            drawImage(
+                                image = tile.bitmap,
+                                srcSize = IntSize(tile.bitmap.width, tile.bitmap.height),
+                                dstOffset = IntOffset(dx.roundToInt(), dy.roundToInt()),
+                                dstSize = IntSize(dw.roundToInt().coerceAtLeast(1),
+                                    dh.roundToInt().coerceAtLeast(1)),
+                                filterQuality = FilterQuality.Medium
+                            )
+                        }
+                    }
                 }
             }
         }
