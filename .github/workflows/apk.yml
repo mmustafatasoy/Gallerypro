@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -123,3 +125,38 @@ jobs:
           gh release create "$TAG" Gallerypro.apk --target "$GITHUB_SHA" --prerelease \
             --title "Gallerypro $VERSION ($GITHUB_REF_NAME)" \
             --notes "Hızlı (release) APK, sabit deneme anahtarıyla imzalı. Derleme: $GITHUB_SHA. Doğrudan indirme: https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Gallerypro.apk"
+      
+      # Her başarılı aşamada indirilebilir tam kaynak ZIP'i ve SHA-256 doğrulaması.
+      - name: Tam kaynak ZIP yedeği
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/gallerypro-source"
+          mkdir -p "$ROOT/Gallerypro"
+          git archive HEAD | tar -x -C "$ROOT/Gallerypro"
+          mkdir -p "$ROOT/Gallerypro/app/src/main/res/font"
+          cp -a app/src/main/res/font/. "$ROOT/Gallerypro/app/src/main/res/font/"
+          if [ -d app/src/main/assets/licenses ]; then
+            mkdir -p "$ROOT/Gallerypro/app/src/main/assets/licenses"
+            cp -a app/src/main/assets/licenses/. "$ROOT/Gallerypro/app/src/main/assets/licenses/"
+          fi
+          git bundle create "$ROOT/Gallerypro/Gallerypro-tum-gecmis.bundle" --all
+          cp DEVAM-NOTU.md "$ROOT/DEVAM-NOTU.md"
+          (cd "$ROOT" && zip -qr "$GITHUB_WORKSPACE/Gallerypro-kaynak.zip" Gallerypro DEVAM-NOTU.md)
+          unzip -tqq Gallerypro-kaynak.zip
+          sha256sum Gallerypro-kaynak.zip > Gallerypro-kaynak.zip.sha256
+          ls -lh Gallerypro-kaynak.zip Gallerypro-kaynak.zip.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gallerypro-tam-kaynak
+          path: |
+            Gallerypro-kaynak.zip
+            Gallerypro-kaynak.zip.sha256
+
+      - name: ZIP yedeğini Releases'a ekle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then TAG=son-surum; else TAG="$GITHUB_REF_NAME"; fi
+          gh release upload "$TAG" Gallerypro-kaynak.zip Gallerypro-kaynak.zip.sha256 --clobber
+

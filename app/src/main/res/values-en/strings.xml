@@ -211,4 +211,10 @@
         <item quantity="one">%1$s album</item>
         <item quantity="other">%1$s albums</item>
     </plurals>
+    <string name="preview_add_album">Add to album</string>
+    <string name="preview_select_album">Choose album</string>
+    <string name="preview_no_albums">No compatible albums</string>
+    <string name="preview_copying">Copying…</string>
+    <string name="preview_copied">Copied to album</string>
+    <string name="preview_failed">Couldn\'t copy to album</string>
 </resources>

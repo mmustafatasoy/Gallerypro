@@ -16,6 +16,7 @@ object GalleryColors {
     val Delete = Color(0xFFFF453A)
     val EditAccent = Color(0xFFFFD84D)
 
+    val PreviewScrim = Color(0xC9000000)
     val LightBackground = Color(0xFFFFFFFF)
     val DarkBackground = Color(0xFF000000)
 
@@ -43,6 +44,8 @@ object GalleryColors {
 }
 
 object GalleryDimens {
+    val PreviewHeight = 420.dp
+    val PreviewAlbumListHeight = 380.dp
     val ScreenPadding = 16.dp
     val TitleStartPadding = 20.dp
 

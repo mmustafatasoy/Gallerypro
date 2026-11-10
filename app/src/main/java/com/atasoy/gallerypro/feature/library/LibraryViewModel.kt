@@ -4,6 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.atasoy.gallerypro.data.edit.EditStore
+import com.atasoy.gallerypro.data.collections.Album
+import com.atasoy.gallerypro.data.collections.CollectionsLogic
 import com.atasoy.gallerypro.data.media.LibraryFilter
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaRepository
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -74,6 +77,12 @@ class LibraryViewModel(
                 SharingStarted.WhileSubscribed(5_000),
                 LibraryContent(loading = true, items = emptyList(), months = emptyList(), years = emptyList())
             )
+
+    /** Mevcut koleksiyon mantığı kullanılır; MediaStore'a ikinci bir sorgu atılmaz. */
+    val albums: StateFlow<List<Album>> = repository.items
+        .map { CollectionsLogic.albums(it.orEmpty()) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setMode(mode: LibraryMode) = _ui.update { it.copy(mode = mode, menuOpen = false) }
 
