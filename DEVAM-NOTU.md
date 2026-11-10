@@ -254,3 +254,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Bu ekranlarda kaynak `Box(Modifier.layerBackdrop(...).background(...))` artık yalnızca zemin çiziyor; cam butonlar/alanlar üstteki **kardeş composable öğeler** olarak çiziliyor. `CollectionDetailScreen` Kopyalar görünümünde de `DuplicateGroupsContent` cam butonları yakalayan backdrop'un dışına taşındı. Orijinal Gallery Motion Glass tasarımının ikonları, boyutları ve renk tokenları değiştirilmedi.
 - Sadece Compose katmanlama değişikliği: yeni kütüphane, internet izni, model, video kodek sürümü veya API izni yok. `versionCode=23`, `versionName=0.9.1`.
 - Test ve APK + tam kaynak ZIP + SHA-256 başarılı olmadan `main` ile birleştirilmez. Gerçek Android 16 telefon testi gereklidir. Hâlâ kapanırsa cihazdan `logcat` fatal signal/tombstone kayıtları alınmalı; Java `CrashReporter` native SIGSEGV'i yakalayamaz.
+
+## Aşama 8a — Google Play güvenli AAB ön hazırlığı (0.9.2, `asama-play-yayin-hazirlik`)
+
+- Kullanıcı 0.9.1'in cihazda çalıştığını bildirdi; sıradaki adım Google Play yayınına **hazırlık**, henüz gönderim/yayın yapılmıyor.
+- `.github/workflows/aab.yml` güvenliğe alındı: asama-play-* dalına push ile yalnızca Actions artifact olarak **TEST AAB** (debug imzalı, Play için kullanılamaz), `workflow_dispatch publish=true` ile sadece `main` ve gerçek 4 GitHub Secrets varlığında imzalı yükleme AAB'si üretilir. Sessiz debug-key fallback ile Play'e hazırmış gibi AAB yayımlanmaz. Play Console'a otomatik gönderme yok.
+- 0.9.0'da eklenen **YuNet ve SFace FP32** resmi OpenCV Zoo ağırlıkları artık AAB'nin `base/assets/face` içinde, ilgili lisanslarla beraber; CLIP `modeller` install-time asset pack'te. AAB açılarak bütün model yolları ve JAR imzası doğrulanır. Git'e büyük model ağırlığı/özel anahtar eklenmez.
+- `play/privacy-policy.html` Türkçe+İngilizce sitene koyulmaya hazır politika taslağı (henüz canlı URL yok). `play/store-listing.md` mağaza metinleri ve `play/PLAY-CHECKLIST.md` imza, izin beyanları, SFace lisansı, kapalı test, varlıklar, veri güvenliği incelemesi.
+- `versionCode 24`, `versionName 0.9.2`. Test APK'sı önceki sabit imza ile güncellenebilir; gerçek Play upload anahtarı geliştirici tarafından yönetilmelidir.
+- Yayına geçmeden kullanıcıdan **gerçek yükleme anahtarı ve mağaza kimliği**, halka açık gizlilik sayfasının yayını ve SFace modelinin ticari dağıtım haklarına ilişkin doğrulama gerekir. Play Console incelemesi, gerçek cihaz testi ve mağaza varlıkları tamamlanmadan “Google Play'de yayımlandı” denmez.
+- Her aşama yeşil CI + APK + kaynak ZIP + SHA-256 sonrası otomatik `main` dalına birleştirilir. AAB doğrulaması da ayrıca yeşil olmalıdır.
