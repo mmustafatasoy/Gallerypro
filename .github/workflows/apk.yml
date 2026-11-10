@@ -166,13 +166,21 @@ jobs:
           cp app/build/outputs/apk/direct/app-direct.apk Gallerypro.apk
           APK_SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n1)"
           AAPT="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name aapt | sort -V | tail -n1)"
-          test -x "$APK_SIGNER"
-          test -x "$AAPT"
+          echo "APK $(stat -c%s Gallerypro.apk) bayt"
+          echo "apksigner yolu: $APK_SIGNER"
+          echo "aapt yolu: $AAPT"
+          test -x "$APK_SIGNER" || { echo "::error::apksigner bulunamadı."; exit 1; }
+          test -x "$AAPT" || { echo "::error::aapt bulunamadı."; exit 1; }
           "$APK_SIGNER" verify --print-certs Gallerypro.apk > /tmp/gallerypro-cert.txt
+          cat /tmp/gallerypro-cert.txt | head -n 12
           export CERT_HASH="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' /tmp/gallerypro-cert.txt | head -n1)"
-          test "${#CERT_HASH}" -eq 64
-          "$AAPT" dump permissions Gallerypro.apk | grep -F 'android.permission.INTERNET'
-          "$AAPT" dump permissions Gallerypro.apk | grep -F 'android.permission.REQUEST_INSTALL_PACKAGES'
+          test "${#CERT_HASH}" -eq 64 || { echo "::error::İmza sertifikası özeti bulunamadı."; exit 1; }
+          "$AAPT" dump permissions Gallerypro.apk > /tmp/gallerypro-permissions.txt
+          cat /tmp/gallerypro-permissions.txt
+          grep -F 'android.permission.INTERNET' /tmp/gallerypro-permissions.txt ||
+            { echo "::error::Doğrudan APK'da INTERNET izni eksik."; exit 1; }
+          grep -F 'android.permission.REQUEST_INSTALL_PACKAGES' /tmp/gallerypro-permissions.txt ||
+            { echo "::error::Doğrudan APK'da REQUEST_INSTALL_PACKAGES eksik."; exit 1; }
           export CODE="$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts)"
           export VERSION="$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)"
           test -n "$CODE"
