@@ -137,7 +137,7 @@
     <string name="settings_index_labels">%1$s öğe incelendi.</string>
     <string name="settings_index_semantic">%1$s öğe incelendi; %2$s öğe cümleyle aramaya hazır.</string>
     <string name="settings_privacy">Gizlilik</string>
-    <string name="settings_privacy_body">Uygulamanın internet izni yoktur. Fotoğraf inceleme, arama, yer adları ve anılar tamamen bu telefonda çalışır; hiçbir veri dışarı gönderilmez.</string>
+    <string name="settings_privacy_body">Fotoğraf inceleme, arama, yer adları ve anılar cihaz içinde çalışır. Kişisel APK sürümünde yalnızca açık GitHub sürüm bilgisi kontrol edilir; hiçbir fotoğraf veya yüz verisi gönderilmez. Google Play sürümünde internet izni bulunmaz.</string>
     <string name="settings_licenses">Açık Kaynak Lisansları</string>
     <string name="settings_appearance">Görünüm</string>
     <string name="settings_effects">Tam cam efektleri</string>
@@ -291,4 +291,18 @@
     <string name="people_unnamed">İsimsiz Kişi</string>
     <string name="people_name">Kişiye İsim Ver</string>
     <string name="people_photo_count">%1$d fotoğraf</string>
+    <string name="updates_title">Uygulama Güncellemesi</string>
+    <string name="updates_check">Güncellemeleri Denetle</string>
+    <string name="updates_checking">Yeni sürüm kontrol ediliyor…</string>
+    <string name="updates_current">GalleryPro güncel.</string>
+    <string name="updates_available">Yeni sürüm: %1$s</string>
+    <string name="updates_failed">Güncelleme kontrol edilemedi. İnternet bağlantını kontrol et.</string>
+    <string name="updates_download">Güncellemeyi İndir</string>
+    <string name="updates_downloading">İndiriliyor: %1$d%%</string>
+    <string name="updates_ready">Sürüm %1$s indirildi ve doğrulandı.</string>
+    <string name="updates_install">Kuruluma Geç</string>
+    <string name="updates_later">Sonra</string>
+    <string name="updates_download_failed">APK indirilemedi veya SHA-256 kontrolü başarısız.</string>
+    <string name="updates_privacy">Yalnızca GitHub sürüm bilgileri kontrol edilir. Fotoğraf ve yüz verilerin gönderilmez. Google Play sürümünde bu sistem kapalıdır.</string>
+    <string name="updates_unknown_sources">Android kurulum izni isterse bu uygulamaya bir defalık izin verip tekrar Kuruluma Geç'e bas.</string>
 </resources>

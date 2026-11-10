@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.atasoy.gallerypro.data.update.UpdateCheck
+import com.atasoy.gallerypro.data.update.UpdateDownload
+import com.atasoy.gallerypro.feature.update.UpdatePrompt
+import com.atasoy.gallerypro.feature.update.UpdateReadyPrompt
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +57,10 @@ fun GalleryRoot(container: AppContainer) {
     var permanentlyDenied by remember { mutableStateOf(false) }
     // Önceki oturum çöktüyse ayrıntısı bir kez gösterilir.
     var crashReport by remember { mutableStateOf(CrashReporter.pending(context)) }
+    val updateState by container.updates.check.collectAsStateWithLifecycle()
+    val downloadState by container.updates.download.collectAsStateWithLifecycle()
+    var readyDismissed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) { container.updates.checkNow() }
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -137,6 +146,29 @@ fun GalleryRoot(container: AppContainer) {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     SearchScreen(searchViewModel, onClose = { searchOpen = false })
+                }
+            }
+            if (BuildConfig.SIDELOAD_UPDATER && crashReport == null) {
+                val ready = downloadState as? UpdateDownload.Ready
+                val update = (updateState as? UpdateCheck.Available)?.release
+                if (ready != null && !readyDismissed) {
+                    UpdateReadyPrompt(
+                        version = ready.version,
+                        onInstall = {
+                            container.updates.install()
+                            readyDismissed = true
+                        },
+                        onLater = { readyDismissed = true }
+                    )
+                } else if (ready == null && update != null && container.updates.shouldSuggest(update)) {
+                    UpdatePrompt(
+                        update = update,
+                        onDownload = {
+                            container.updates.beginDownload(update)
+                            container.updates.dismiss(update)
+                        },
+                        onLater = { container.updates.dismiss(update) }
+                    )
                 }
             }
             crashReport?.let { report ->

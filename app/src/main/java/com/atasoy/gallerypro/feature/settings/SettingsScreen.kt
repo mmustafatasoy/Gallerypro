@@ -47,6 +47,8 @@ import com.atasoy.gallerypro.data.LocalGalleryStores
 import com.atasoy.gallerypro.data.clip.ClipAssets
 import com.atasoy.gallerypro.data.index.IndexScheduler
 import com.atasoy.gallerypro.data.media.Formatters
+import com.atasoy.gallerypro.data.update.UpdateManager
+import com.atasoy.gallerypro.feature.update.SettingsUpdateSection
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryPerformance
@@ -122,6 +124,13 @@ fun SettingsScreen(onClose: () -> Unit) {
                             RowItem(
                                 stringResource(R.string.settings_version),
                                 "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+                            )
+                        }
+                    }
+                    if (BuildConfig.SIDELOAD_UPDATER) {
+                        item {
+                            SettingsUpdateSection(
+                                manager = (context.applicationContext as com.atasoy.gallerypro.GalleryApp).container.updates
                             )
                         }
                     }

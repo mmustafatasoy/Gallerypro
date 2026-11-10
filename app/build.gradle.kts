@@ -3,6 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Play AAB için internet ve sideload izinleri hiçbir zaman bulunmaz.
+val playBuild = project.findProperty("aabBuild") == "true"
+
 android {
     namespace = "com.atasoy.gallerypro"
     compileSdk = 37
@@ -11,8 +14,12 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 25
-        versionName = "0.9.3"
+        versionCode = 26
+        versionName = "0.9.4"
+        // GitHub APK: geçici, kullanıcı onaylı güncelleme.
+        // Google Play AAB: internet ve başka APK kurma yetkisi kaldırılır.
+        manifestPlaceholders["updaterPermissionRule"] = if (playBuild) "remove" else "merge"
+        buildConfigField("boolean", "SIDELOAD_UPDATER", if (playBuild) "false" else "true")
         // Deneme APK'sı yalnızca 64 bit ARM telefonlar için (Samsung ve Tecno bu türde): ML Kit'in yerel
         // kütüphaneleri dört işlemci türü için ayrı ayrı yer kaplamasın. AAB'de (Play) Play kendisi böler;
         // -PaabBuild=true ile derlenirken süzgeç uygulanmaz.

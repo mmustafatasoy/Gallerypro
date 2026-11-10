@@ -275,3 +275,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Bilinçli sınır: HEIC/RAW/GIF için bölgesel decoder desteği garanti olmadığından mevcut akış kalır; bazı fotoğraflarda MediaStore boyutu ham dosyayla uyuşmazsa yalnızca önizleme gösterilir.
 - Yayın öncesi **gerçek 48/108/200 MP JPEG**, döndürülmüş çekim, panorama, düşük RAM, hızlı yakınlaştırma ve sayfalama testleri yapılmalı. GitHub Actions başarılı test + APK + tam kaynak ZIP + SHA-256 doğrulamadan main'e birleştirme yapılmaz.
 - Sıradaki ertelenenler: video pinch-to-zoom, Samsung hareketli fotoğraf video bölümü, ızgaradan açılış animasyonu (bunların kapsamına bu aşamada girilmez).
+
+## Aşama 9b — Kişisel APK için geçici, güvenli güncelleme (0.9.4)
+
+- Kullanıcı, GalleryPro'yu şu anda doğrudan APK'dan kullandığı için **geçici uygulama içi güncelleme** istedi; Google Play AAB'ye geçince kaldırılacak. Bu karar, önceki "hiç internet izni yok" kuralını yalnızca **kişisel APK paketi** için dar kapsamlı biçimde değiştirir.
+- AndroidManifest'te \`tools:node="\${updaterPermissionRule}"\` kullanılır. Varsayılan GitHub APK'da \`INTERNET\` + kullanıcı onaylı kurulum için \`REQUEST_INSTALL_PACKAGES\` izinleri eklenir. **\`-PaabBuild=true\`** ile yapılan Play AAB'de iki izin \`remove\` olur ve \`BuildConfig.SIDELOAD_UPDATER=false\` ile güncelleme ekranları gösterilmez; Play'de kendi APK'sını güncelleme özelliği bulunmaz.
+- \`data/update/UpdateLogic.kt\` saf Kotlin: GitHub \`son-surum\` release başlığından yalnızca \`Gallerypro X.Y.Z (main)\` sürümünü kabul eder; sabit, HTTPS, resmî APK bağlantısı ve 64 haneli SHA-256 yoksa indirme sunmaz. \`UpdateLogicTest\` eklendi.
+- \`UpdateManager\` yalnızca \`https://api.github.com/repos/mmustafatasoy/Gallerypro/releases/tags/son-surum\` isteğini yapar (fotoğraf, yüz, medya verisi, kimlik bilgisi göndermez). Açılışta sürüm kontrolü + 30 dakika yerel önbellek; kullanıcı Ayarlar'dan elle kontrol edebilir.
+- Kullanıcı onayı sonrası Android \`DownloadManager\` indirir; APK boyutu ve SHA-256 doğrulanmadan \`UpdateDownload.Ready\` durumuna geçilmez. Kurulum Android sistem ekranından ve kullanıcının \`Bilinmeyen uygulamaları yükle\` onayıyla gerçekleşir. Eski APK imzasının aynı olması Android tarafından ayrıca kontrol edilir.
+- Uygulama açıldığında sürüm varsa öneri gösterilir, Ayarlar > Uygulama Güncellemesi altında durum, indir, kur seçenekleri bulunur. Başarısız indirme veya ağ hatası mevcut galeriyi etkilemez.
+- Test: GitHub Actions \`testDebugUnitTest assembleRelease\` ve APK + kaynak ZIP + SHA-256; Google Play \`bundleRelease -PaabBuild=true\` ayrıca doğrulanmalı. Play politikasına göre \`REQUEST_INSTALL_PACKAGES\` kesinlikle Play AAB'de bulunmamalı.
