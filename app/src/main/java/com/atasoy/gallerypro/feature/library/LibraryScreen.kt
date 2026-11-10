@@ -13,6 +13,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -56,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atasoy.gallerypro.R
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LibraryFilter
+import com.atasoy.gallerypro.data.media.ManageMedia
 import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.shareItems
 import com.atasoy.gallerypro.designsystem.GalleryColors
@@ -73,13 +77,14 @@ import com.atasoy.gallerypro.designsystem.GlassToast
 import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import com.atasoy.gallerypro.feature.settings.SettingsScreen
+import com.atasoy.gallerypro.feature.viewer.DeleteCard
 import com.atasoy.gallerypro.feature.viewer.ViewerScreen
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun LibraryScreen(
@@ -111,6 +116,8 @@ fun LibraryScreen(
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
     var revealId by remember { mutableStateOf<Long?>(null) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var manageGranted by remember { mutableStateOf(false) }
     LaunchedEffect(revealId) {
         val id = revealId ?: return@LaunchedEffect
         val index = content.items.indexOfFirst { it.id == id }
@@ -172,7 +179,8 @@ fun LibraryScreen(
         }
     }
 
-    BackHandler(enabled = viewerId == null && !settingsOpen && (ui.selecting || ui.menuOpen || ui.mode != LibraryMode.All)) {
+    BackHandler(enabled = confirmDelete) { confirmDelete = false }
+    BackHandler(enabled = viewerId == null && !settingsOpen && !confirmDelete && (ui.selecting || ui.menuOpen || ui.mode != LibraryMode.All)) {
         when {
             ui.menuOpen -> viewModel.closeMenu()
             ui.selecting -> viewModel.stopSelecting()
@@ -475,16 +483,13 @@ fun LibraryScreen(
                     icon = GalleryIcons.Trash,
                     contentDescription = stringResource(R.string.action_delete),
                     onClick = {
-                        val chosen = content.items.filter { it.id in ui.selected }
-                        if (chosen.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            val pending = MediaStore.createTrashRequest(
-                                context.contentResolver,
-                                chosen.map { it.contentUri() },
-                                true
-                            )
-                            trashLauncher.launch(IntentSenderRequest.Builder(pending.intentSender).build())
-                        } else if (chosen.isNotEmpty()) {
-                            toast = needsAndroid11
+                        if (ui.selected.isNotEmpty()) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                manageGranted = ManageMedia.granted(context)
+                                confirmDelete = true
+                            } else {
+                                toast = needsAndroid11
+                            }
                         }
                     },
                     size = GalleryDimens.ToolbarButton,
@@ -548,6 +553,52 @@ fun LibraryScreen(
                     viewerId = null
                     revealId = lastId
                 }
+            )
+        }
+
+        // ---------------------------------------------------------------- silme onayı (seçilenler)
+        AnimatedVisibility(
+            visible = confirmDelete,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(interactionSource = null, indication = null) { confirmDelete = false }
+            )
+        }
+        AnimatedVisibility(
+            visible = confirmDelete,
+            enter = fadeIn() + slideInVertically { it / 2 },
+            exit = fadeOut() + slideOutVertically { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = 12.dp, end = 12.dp, bottom = 28.dp)
+        ) {
+            val count = ui.selected.size
+            val res = context.resources
+            DeleteCard(
+                message = res.getQuantityString(R.plurals.delete_selected_message, count.coerceAtLeast(1), count),
+                action = res.getQuantityString(R.plurals.delete_selected_action, count.coerceAtLeast(1), count),
+                backdrop = backdrop,
+                showAccessHint = !manageGranted && ManageMedia.supported,
+                onGrantAccess = {
+                    confirmDelete = false
+                    ManageMedia.request(context)
+                },
+                onConfirm = {
+                    confirmDelete = false
+                    val chosen = content.items.filter { it.id in ui.selected }
+                    if (chosen.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val pending = MediaStore.createTrashRequest(context.contentResolver, chosen.map { it.contentUri() }, true)
+                        trashLauncher.launch(IntentSenderRequest.Builder(pending.intentSender).build())
+                    }
+                },
+                onCancel = { confirmDelete = false }
             )
         }
 
