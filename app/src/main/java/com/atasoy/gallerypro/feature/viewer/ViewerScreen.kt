@@ -48,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -189,6 +190,9 @@ fun ViewerScreen(
     var videoChrome by remember { mutableStateOf(true) }
     // Açık düzenleme ekranı (4. aşama).
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var metadataId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var metadataRevision by remember { mutableIntStateOf(0) }
+    var metadataDates by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
 
     var infoProgress by remember { mutableFloatStateOf(0f) }
     var dismissOffset by remember { mutableFloatStateOf(0f) }
@@ -398,7 +402,7 @@ fun ViewerScreen(
             }
         }
 
-        BackHandler(enabled = editingId == null) {
+        BackHandler(enabled = editingId == null && metadataId == null) {
             when {
                 confirmDelete -> confirmDelete = false
                 menuOpen -> menuOpen = false
@@ -498,7 +502,7 @@ fun ViewerScreen(
 
         // ---------------------------------------------------------------- Bilgi paneli
         if (infoVisible && current != null) {
-            val details by produceState<MediaDetails?>(null, current.id, locationGranted) {
+            val details by produceState<MediaDetails?>(null, current.id, locationGranted, metadataRevision) {
                 value = withContext(Dispatchers.IO) { MediaDetailsReader.read(context, current) }
             }
             // Akıllı Etiketler ve Benzer Fotoğraflar: cihaz içi dizinden (yalnızca normal görünümde).
@@ -538,6 +542,10 @@ fun ViewerScreen(
                         caption = it
                         captions.set(current.id, it)
                     },
+                    dateMillis = metadataDates[current.id] ?: current.takenAtMillis,
+                    onAdjustMetadata = if (mode == ViewerMode.Normal) {
+                        { metadataId = current.id }
+                    } else null,
                     onRequestLocation = { locationLauncher.launch(Manifest.permission.ACCESS_MEDIA_LOCATION) },
                     onOpenMap = { lat, lon ->
                         if (!context.openMap(lat, lon, current.displayName.orEmpty())) toast = noAppText
@@ -830,6 +838,31 @@ fun ViewerScreen(
                             )
                         }
                     }
+                )
+            }
+        }
+
+        // ---------------------------------------------------------------- JPEG tarih ve konum bilgilerini ayarla (7d)
+        val metadataItem = metadataId?.let { id -> items.firstOrNull { it.id == id } }
+        AnimatedVisibility(
+            visible = metadataItem != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val opened = remember { metadataItem }
+            val target = metadataItem ?: opened
+            if (target != null) {
+                MetadataEditorScreen(
+                    item = target,
+                    onSaved = { timestamp ->
+                        metadataDates = metadataDates + (target.id to timestamp)
+                        metadataRevision++
+                        metadataId = null
+                        toast = context.getString(R.string.metadata_saved)
+                        IndexScheduler.runNow(context)
+                    },
+                    onClose = { metadataId = null }
                 )
             }
         }

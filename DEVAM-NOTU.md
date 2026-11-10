@@ -206,3 +206,14 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - `CollectionsViewModel` mevcut `MediaRepository.items` + `IndexStore.vectors` akışını arka plan `Dispatchers.Default` üzerinde birleştirir; kullanıcıya ait veriler cihaz dışına çıkmaz. `DuplicateReviewLogicTest` saf JVM testleri eklendi.
 - GitHub Actions başarılı olduğunda otomatik kaynak ZIP + SHA-256 aynı sürümün Releases sayfasına yüklenir. ZIP'de Git geçmişi `.bundle` dosyası da vardır.
 - Sıradaki aşama **7d Tarih/konum düzenle**. Kullanıcı onayı, yeşil CI ve ZIP yedeği olmadan `main` ile birleştirilmez.
+
+## Aşama 7d — JPEG tarih ve konum bilgilerini düzenleme (0.8.5, `asama-7d-tarih-konum`)
+
+- PR #12 / 7c, başarılı GitHub Actions testi ve ZIP yedeği doğrulanarak `main`'e birleştirildi (commit `00e3f9d923a3a00b9a6063839844987d5b03676b`).
+- Bilgi panelindeki **Ayarla** yalnızca normal görüntüleyicide **JPEG** fotoğraflarda görünür. HEIC/PNG/RAW/video ve Gizli/Son Silinenler için gösterilmez.
+- Açılan formda çekim tarihi/saat, enlem-boylam girilir veya konum açık onayla kaldırılır. Geçersiz tarih ve aralık dışı koordinatlar yazmadan önce reddedilir (`MetadataEditLogicTest`).
+- `android.media.ExifInterface` ile geçici JPEG üzerinde `DateTime`, `DateTimeOriginal`, `DateTimeDigitized` ve isteğe bağlı GPS değiştirilir; geçici dosya doğrulanmadan orijinale yazılmaz. Android'in `MediaStore.createWriteRequest` sistem izni ve `ACCESS_MEDIA_LOCATION` gerekir.
+- Tam dosya önce `EditStore.backupFile(id)` üzerinden `files/originals/<id>` konumuna birebir yedeklenir; mevcut yedeklerin üzerine yazılmaz. Hatalı yazmada o anki fotoğraf geçici kopyadan geri yüklenmeye çalışılır; geri yükleme de başarısızsa kalıcı yedek **silinmez**.
+- Disk işlemleri `Dispatchers.IO` üzerinde yapılır; internet erişimi, yeni bağımlılık, yeni veritabanı veya Worker yoktur. Kaydedildikten sonra mevcut MediaStore taraması ve dizinleme isteği kullanılır.
+- GitHub Actions başarılı APK + testleri sonrasında `Gallerypro-kaynak.zip` ve SHA-256 aynı sürümde yayımlanır. Başarılı olduğunda PR kullanıcı talimatı gereği otomatik `main` dalına birleştirilir.
+- Sıradaki aşama **7e Video kırpma** için **Media3 Transformer** adlı yeni kütüphane gerekir: başlanmadan önce kullanıcı kararı alınmalıdır.
