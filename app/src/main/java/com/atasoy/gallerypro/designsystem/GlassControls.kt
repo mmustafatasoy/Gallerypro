@@ -308,7 +308,7 @@ fun GlassTabBar(
             backdrop = backdrop,
             icon = GalleryIcons.Search,
             contentDescription = searchLabel,
-            onClick = LocalSearchLauncher.current ?: onSearch,
+            onClick = LocalSearchLauncher.current?.let { launcher -> { launcher.open(null) } } ?: onSearch,
             size = GalleryDimens.TabBarHeight,
             iconSize = 26.dp,
             tint = GalleryColors.IconOnLight

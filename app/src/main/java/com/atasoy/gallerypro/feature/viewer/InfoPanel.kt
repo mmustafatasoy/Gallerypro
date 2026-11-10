@@ -7,6 +7,8 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +53,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.atasoy.gallerypro.R
+import com.atasoy.gallerypro.data.index.IndexEntry
+import com.atasoy.gallerypro.data.index.LabelDictionary
+import com.atasoy.gallerypro.data.index.SearchText
 import com.atasoy.gallerypro.data.media.DetailFormat
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
@@ -75,8 +82,8 @@ private val LinkBlue = Color(0xFF8CBCFF)
 
 /**
  * Bilgi paneli içeriği (koyu cam yüzey dışarıda çizilir).
- * Sıra dokümandaki gibi: başlık → tarih → kamera kartı → konum kartı → dosya kartı.
- * Akıllı Etiketler kartı 5. aşamada (yapay zekâ) eklenecek.
+ * Sıra: başlık → tarih → kamera kartı → konum kartı → Akıllı Etiketler → Benzer Fotoğraflar → dosya kartı.
+ * Son ikisi cihaz içi dizinden gelir; dizinde yoksa gösterilmez.
  */
 @Composable
 internal fun InfoPanelContent(
@@ -86,6 +93,10 @@ internal fun InfoPanelContent(
     onCaptionChange: (String) -> Unit,
     onRequestLocation: () -> Unit,
     onOpenMap: (Double, Double) -> Unit,
+    smart: IndexEntry?,
+    similar: List<MediaItem>,
+    onOpenSimilar: (MediaItem) -> Unit,
+    onSearchLabel: ((String) -> Unit)?,
     onHandleDrag: (Float) -> Unit,
     onHandleDragEnd: (Float) -> Unit,
     bottomPadding: Dp,
@@ -145,11 +156,114 @@ internal fun InfoPanelContent(
                 LocationCard(item, details, locale, onRequestLocation, onOpenMap)
             }
 
+            if (smart != null && (smart.labels.isNotEmpty() || smart.text.isNotBlank())) {
+                Spacer(Modifier.height(12.dp))
+                SmartLabelsCard(smart, locale, onSearchLabel)
+            }
+
+            if (similar.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                SimilarCard(similar, onOpenSimilar)
+            }
+
             Spacer(Modifier.height(12.dp))
             FileCard(item)
         }
     }
 }
+
+/** Fotoğrafta tanınan nesneler (dokununca o sözcükle aranır) ve fotoğraftaki yazının başı. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SmartLabelsCard(entry: IndexEntry, locale: Locale, onSearch: ((String) -> Unit)?) {
+    val turkishUi = locale.language == "tr"
+    val words = remember(entry.labels, turkishUi) {
+        entry.labels.map { SearchText.capitalize(LabelDictionary.display(it, turkishUi), locale) }.distinct()
+    }
+    val text = remember(entry.text) { entry.text.trim().replace(Regex("\\s+"), " ").take(MaxTextPreview) }
+    Card {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            BasicText(
+                stringResource(R.string.info_smart_labels),
+                style = GalleryType.Duration.copy(color = Secondary)
+            )
+            if (words.isNotEmpty()) {
+                FlowRow(
+                    Modifier.padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    words.forEach { word ->
+                        BasicText(
+                            word,
+                            style = GalleryType.Chip.copy(color = Color.White),
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.14f))
+                                .then(
+                                    if (onSearch != null) {
+                                        Modifier.clickable(role = Role.Button) { onSearch(word) }
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .padding(horizontal = 12.dp, vertical = 7.dp)
+                        )
+                    }
+                }
+            }
+            if (text.isNotEmpty()) {
+                BasicText(
+                    stringResource(R.string.info_text_in_photo),
+                    style = GalleryType.Duration.copy(color = Secondary),
+                    modifier = Modifier.padding(top = if (words.isNotEmpty()) 14.dp else 8.dp)
+                )
+                BasicText(
+                    if (entry.text.length > text.length) "$text…" else text,
+                    style = GalleryType.Chip.copy(color = Color.White, fontWeight = FontWeight.Medium),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+    }
+}
+
+/** Görünüşçe benzeyen fotoğraflar; dokununca görüntüleyici o fotoğrafa geçer. */
+@Composable
+private fun SimilarCard(list: List<MediaItem>, onOpen: (MediaItem) -> Unit) {
+    val imageLoader = LocalGalleryImageLoader.current
+    Card {
+        BasicText(
+            stringResource(R.string.info_similar),
+            style = GalleryType.Duration.copy(color = Secondary),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp)
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            items(list, key = { it.id }) { other ->
+                val uri = remember(other.id, other.isVideo) { other.contentUri() }
+                AsyncImage(
+                    model = MediaThumb(uri, 256, other.modifiedMillis),
+                    contentDescription = null,
+                    imageLoader = imageLoader,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(SimilarThumb)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .clickable(role = Role.Button) { onOpen(other) }
+                )
+            }
+        }
+    }
+}
+
+private const val MaxTextPreview = 120
+private val SimilarThumb = 76.dp
 
 @Composable
 private fun CaptionField(caption: String, onCaptionChange: (String) -> Unit) {

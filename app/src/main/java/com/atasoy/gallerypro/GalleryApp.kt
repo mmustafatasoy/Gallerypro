@@ -43,8 +43,8 @@ class AppContainer(context: Context) {
     val captions = CaptionStore(context)
     val edits = EditStore(context)
     val sections = SectionPrefs(context)
-    val stores = GalleryStores(captions, edits, hidden)
     val index = IndexStore(context)
+    val stores = GalleryStores(captions, edits, hidden, index)
     val searchHistory = SearchHistory(context)
 
     /** Cümleyle arama metin modeli; ilk aramada yüklenir. */

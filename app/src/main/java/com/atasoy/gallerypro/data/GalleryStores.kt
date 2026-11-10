@@ -2,6 +2,7 @@ package com.atasoy.gallerypro.data
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.atasoy.gallerypro.data.edit.EditStore
+import com.atasoy.gallerypro.data.index.IndexStore
 import com.atasoy.gallerypro.data.media.CaptionStore
 import com.atasoy.gallerypro.data.media.HiddenStore
 
@@ -9,7 +10,8 @@ import com.atasoy.gallerypro.data.media.HiddenStore
 class GalleryStores(
     val captions: CaptionStore,
     val edits: EditStore,
-    val hidden: HiddenStore
+    val hidden: HiddenStore,
+    val index: IndexStore
 )
 
 val LocalGalleryStores = staticCompositionLocalOf<GalleryStores> {

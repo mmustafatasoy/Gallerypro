@@ -81,6 +81,9 @@
     <string name="info_video">Video</string>
     <string name="info_megapixels">%1$s MP</string>
     <string name="info_file">Dosya</string>
+    <string name="info_smart_labels">Akıllı Etiketler</string>
+    <string name="info_text_in_photo">Fotoğraftaki yazı</string>
+    <string name="info_similar">Benzer Fotoğraflar</string>
     <string name="info_open_map">Haritada aç</string>
     <string name="info_location_permission">Çekildiği yeri göster</string>
     <string name="info_location_allow">İzin ver</string>

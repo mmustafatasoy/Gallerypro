@@ -42,6 +42,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -84,7 +85,9 @@ import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.GlassIconButton
 import com.atasoy.gallerypro.designsystem.GlassTone
 import com.atasoy.gallerypro.designsystem.Glyph
+import com.atasoy.gallerypro.designsystem.LocalSearchLauncher
 import com.atasoy.gallerypro.designsystem.ProgressiveBlurEdge
+import com.atasoy.gallerypro.designsystem.SearchLauncher
 import com.atasoy.gallerypro.designsystem.glass
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import com.atasoy.gallerypro.feature.viewer.ViewerScreen
@@ -132,7 +135,24 @@ fun SearchScreen(viewModel: SearchViewModel, onClose: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        runCatching { focus.requestFocus() }
+        // Bilgi panelindeki bir etiketten açıldıysa o sözcükle arar; yoksa klavye açılır.
+        val pending = viewModel.takePendingQuery()
+        if (pending != null) {
+            setText(pending)
+            filter = FilterAll
+        } else {
+            runCatching { focus.requestFocus() }
+        }
+    }
+    // Arama sonucundan açılan görüntüleyicide etikete dokununca: görüntüleyici kapanır, o sözcük aranır.
+    val searchFromViewer = remember {
+        SearchLauncher { q ->
+            if (q != null) {
+                viewerId = null
+                filter = FilterAll
+                setText(q)
+            }
+        }
     }
     BackHandler(enabled = viewerId == null) { onClose() }
 
@@ -301,11 +321,13 @@ fun SearchScreen(viewModel: SearchViewModel, onClose: () -> Unit) {
             val list = shown.orEmpty()
             if (list.isNotEmpty()) {
                 val startId = remember { viewerId ?: list.first().id }
-                ViewerScreen(
-                    items = list,
-                    startId = startId,
-                    onClose = { viewerId = null }
-                )
+                CompositionLocalProvider(LocalSearchLauncher provides searchFromViewer) {
+                    ViewerScreen(
+                        items = list,
+                        startId = startId,
+                        onClose = { viewerId = null }
+                    )
+                }
             }
         }
     }

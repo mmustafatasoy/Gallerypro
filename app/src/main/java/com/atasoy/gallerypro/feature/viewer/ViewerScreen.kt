@@ -83,7 +83,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import coil3.compose.AsyncImage
 import com.atasoy.gallerypro.R
 import com.atasoy.gallerypro.data.LocalGalleryStores
+import com.atasoy.gallerypro.data.clip.VectorEntry
+import com.atasoy.gallerypro.data.clip.VectorMath
 import com.atasoy.gallerypro.data.collections.CollectionsLogic
+import com.atasoy.gallerypro.data.index.IndexEntry
 import com.atasoy.gallerypro.data.media.Formatters
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
 import com.atasoy.gallerypro.data.media.MediaDetails
@@ -102,23 +105,19 @@ import com.atasoy.gallerypro.designsystem.GalleryMotion
 import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.GlassCapsule
 import com.atasoy.gallerypro.designsystem.GlassIconButton
-import com.atasoy.gallerypro.designsystem.GlassTextButton
 import com.atasoy.gallerypro.designsystem.GlassMenu
 import com.atasoy.gallerypro.designsystem.GlassMenuItem
+import com.atasoy.gallerypro.designsystem.GlassTextButton
 import com.atasoy.gallerypro.designsystem.GlassToast
 import com.atasoy.gallerypro.designsystem.GlassTone
 import com.atasoy.gallerypro.designsystem.Glyph
+import com.atasoy.gallerypro.designsystem.LocalSearchLauncher
 import com.atasoy.gallerypro.designsystem.glass
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
 import com.atasoy.gallerypro.feature.edit.EditScreen
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.shapes.RoundedRectangle
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -127,6 +126,14 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Bilgi panelinin ekran yüksekliğine oranı (tasarım: 563 / 915). */
 private const val InfoPanelFraction = 0.62f
@@ -485,6 +492,19 @@ fun ViewerScreen(
             val details by produceState<MediaDetails?>(null, current.id, locationGranted) {
                 value = withContext(Dispatchers.IO) { MediaDetailsReader.read(context, current) }
             }
+            // Akıllı Etiketler ve Benzer Fotoğraflar: cihaz içi dizinden (yalnızca normal görünümde).
+            val smart by produceState<IndexEntry?>(null, current.id, mode) {
+                if (mode != ViewerMode.Normal) return@produceState
+                stores.index.entries.map { it[current.id] }.distinctUntilChanged().collect { value = it }
+            }
+            val similar by produceState(emptyList<MediaItem>(), current.id, items, mode) {
+                if (mode != ViewerMode.Normal) return@produceState
+                val list = items
+                stores.index.vectors.collectLatest { vectors ->
+                    value = withContext(Dispatchers.Default) { similarTo(current, list, vectors) }
+                }
+            }
+            val searchLauncher = LocalSearchLauncher.current
             // Metin alanı yerel durumla çalışır (yazarken imleç kaymasın); her değişiklik kaydedilir.
             var caption by remember(current.id) { mutableStateOf(captions.caption(current.id)) }
             // Panelin alt köşeleri ekranın dışında kalsın diye köşe kadar aşağı taşar.
@@ -510,6 +530,16 @@ fun ViewerScreen(
                     onOpenMap = { lat, lon ->
                         if (!context.openMap(lat, lon, current.displayName.orEmpty())) toast = noAppText
                     },
+                    smart = smart,
+                    similar = similar,
+                    onOpenSimilar = { other ->
+                        val index = itemsState.value.indexOfFirst { it.id == other.id }
+                        if (index >= 0) {
+                            animateInfo(0f)
+                            scope.launch { pagerState.scrollToPage(index) }
+                        }
+                    },
+                    onSearchLabel = searchLauncher?.let { launcher -> { word: String -> launcher.open(word) } },
                     onHandleDrag = ::onVerticalDrag,
                     onHandleDragEnd = ::onVerticalDragEnd,
                     bottomPadding = bleed + 56.dp + 32.dp + bottomInset + 16.dp
@@ -1053,3 +1083,17 @@ internal fun dayTitle(millis: Long, zone: ZoneId, locale: Locale): String {
 /** "06:42" */
 internal fun clock(millis: Long, zone: ZoneId, locale: Locale): String =
     DateTimeFormatter.ofPattern("HH:mm", locale).format(Instant.ofEpochMilli(millis).atZone(zone))
+
+/** Açık öğeye görünüşçe benzeyenler; aday yalnızca görüntüleyicideki liste (Kütüphane'de tümü). */
+private fun similarTo(item: MediaItem, items: List<MediaItem>, vectors: Map<Long, VectorEntry>): List<MediaItem> {
+    val target = vectors[item.id]?.vector ?: return emptyList()
+    val byId = HashMap<Long, MediaItem>(items.size * 2)
+    val candidates = ArrayList<Pair<Long, FloatArray>>(minOf(items.size, vectors.size))
+    for (other in items) {
+        if (other.id == item.id) continue
+        val v = vectors[other.id] ?: continue
+        byId[other.id] = other
+        candidates += other.id to v.vector
+    }
+    return VectorMath.similar(target, candidates).mapNotNull { byId[it] }
+}
