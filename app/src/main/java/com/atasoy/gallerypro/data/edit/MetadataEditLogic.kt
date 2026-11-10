@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.ResolverStyle
 import java.util.Locale
 
 /** 7d: Yalnızca standart JPEG üzerinde EXIF tarih/konum düzenlenebilir. */
@@ -18,7 +19,7 @@ data class MetadataUpdate(
 }
 
 object MetadataEditLogic {
-    private val displayFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT)
+    private val displayFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm", Locale.ROOT).withResolverStyle(ResolverStyle.STRICT)
 
     fun isSupported(mime: String?, video: Boolean): Boolean =
         !video && mime?.lowercase(Locale.ROOT) == "image/jpeg"
