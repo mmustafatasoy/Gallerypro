@@ -58,7 +58,7 @@ internal object MotionPhotoLogic {
                 1L -> if (h.size >= 16) ulong(h, 8) else break
                 else -> shortSize
             }
-            if (atomSize < if (shortSize == 1L) 16L else 8L ||
+            if (atomSize < (if (shortSize == 1L) 16L else 8L) ||
                 atomSize > MaxClip || atomSize > fileSize - cursor) break
             if (type == "mdat") hasData = true
             if (type == "moov") hasMovie = true
