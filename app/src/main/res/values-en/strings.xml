@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="viewer_motion_preparing">Preparing Motion Photo…</string>
+    <string name="viewer_motion_failed">Could not open the Motion Photo video</string>
     <string name="library_title">Library</string>
     <string name="library_select">Select</string>
     <string name="library_cancel">Cancel</string>

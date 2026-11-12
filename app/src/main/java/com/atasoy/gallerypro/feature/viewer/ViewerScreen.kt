@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
@@ -96,6 +97,7 @@ import com.atasoy.gallerypro.data.media.ManageMedia
 import com.atasoy.gallerypro.data.media.MediaDetails
 import com.atasoy.gallerypro.data.media.MediaDetailsReader
 import com.atasoy.gallerypro.data.media.MediaItem
+import com.atasoy.gallerypro.data.media.MotionPhotoReader
 import com.atasoy.gallerypro.data.media.MediaThumb
 import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.copyToClipboard
@@ -188,6 +190,10 @@ fun ViewerScreen(
     var toast by remember { mutableStateOf<String?>(null) }
     // Açık video oynatıcı (3. aşama) ve onun kontrollerinin görünürlüğü.
     var playingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Gömülü hareketli fotoğraf MP4'ü yalnızca seçilen fotoğraf için cache'e alınır.
+    var motionVideoUri by remember { mutableStateOf<Uri?>(null) }
+    var motionVideoId by remember { mutableStateOf<Long?>(null) }
+    var motionPreparingId by remember { mutableStateOf<Long?>(null) }
     var videoChrome by remember { mutableStateOf(true) }
     // Açık düzenleme ekranı (4. aşama).
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -269,6 +275,8 @@ fun ViewerScreen(
     // ---------------------------------------------------------------- işlemler
     val trashedText = stringResource(R.string.toast_trashed)
     val noAppText = stringResource(R.string.toast_no_app)
+    val motionLoadingText = stringResource(R.string.viewer_motion_preparing)
+    val motionFailedText = stringResource(R.string.viewer_motion_failed)
     val trashLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -505,9 +513,34 @@ fun ViewerScreen(
                     onVerticalDrag = ::onVerticalDrag,
                     onVerticalDragEnd = ::onVerticalDragEnd,
                     onZoomChanged = { zoomed = it },
-                    onPlayVideo = {
-                        videoChrome = true
-                        playingId = item.id
+                    onPlayVideo = { segment ->
+                        if (item.isVideo) {
+                            motionVideoId = null
+                            motionVideoUri = null
+                            videoChrome = true
+                            playingId = item.id
+                        } else if (segment != null && motionPreparingId == null) {
+                            motionPreparingId = item.id
+                            toast = motionLoadingText
+                            scope.launch {
+                                try {
+                                    val uri = withContext(Dispatchers.IO) {
+                                        MotionPhotoReader.extract(context, item, segment)
+                                    }
+                                    if (uri != null && itemsState.value.getOrNull(pagerState.currentPage)?.id == item.id) {
+                                        motionVideoId = item.id
+                                        motionVideoUri = uri
+                                        videoChrome = true
+                                        toast = null
+                                        playingId = item.id
+                                    } else if (uri == null) {
+                                        toast = motionFailedText
+                                    }
+                                } finally {
+                                    motionPreparingId = null
+                                }
+                            }
+                        }
                     }
                 )
             }
@@ -818,11 +851,16 @@ fun ViewerScreen(
             if (target != null && trimId == null && pendingTrimId == null) {
                 VideoPlayerScreen(
                     item = target,
+                    sourceUri = if (motionVideoId == target.id) motionVideoUri else null,
                     title = dayTitle(target.takenAtMillis, zone, locale),
                     subtitle = remember(target.takenAtMillis) { clock(target.takenAtMillis, zone, locale) },
                     chromeVisible = videoChrome,
                     onChromeVisibleChange = { videoChrome = it },
-                    onClose = { playingId = null },
+                    onClose = {
+                        playingId = null
+                        motionVideoId = null
+                        motionVideoUri = null
+                    },
                     toolbar = { glassBackdrop ->
                         if (mode == ViewerMode.Trash) {
                             TrashToolbar(

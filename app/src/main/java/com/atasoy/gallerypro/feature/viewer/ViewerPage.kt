@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,12 +53,16 @@ import coil3.size.Precision
 import com.atasoy.gallerypro.data.media.LocalGalleryImageLoader
 import com.atasoy.gallerypro.data.media.MediaItem
 import com.atasoy.gallerypro.data.media.MediaThumb
+import com.atasoy.gallerypro.data.media.MotionPhotoReader
+import com.atasoy.gallerypro.data.media.MotionPhotoSegment
 import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.displayHeight
 import com.atasoy.gallerypro.data.media.displayWidth
 import com.atasoy.gallerypro.designsystem.Glyph
 import com.atasoy.gallerypro.designsystem.icons.GalleryIcons
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -86,13 +91,18 @@ internal fun ViewerPage(
     onVerticalDrag: (Float) -> Unit,
     onVerticalDragEnd: (Float) -> Unit,
     onZoomChanged: (Boolean) -> Unit,
-    onPlayVideo: () -> Unit,
+    onPlayVideo: (MotionPhotoSegment?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val imageLoader = LocalGalleryImageLoader.current
     val scope = rememberCoroutineScope()
     val uri = remember(item.id, item.isVideo) { item.contentUri() }
+    val motionSegment by produceState<MotionPhotoSegment?>(null, item.id, item.modifiedMillis, isCurrent) {
+        value = if (isCurrent && !item.isVideo) withContext(Dispatchers.IO) {
+            MotionPhotoReader.locate(context, item)
+        } else null
+    }
     val zoom = remember(item.id) {
         ZoomState(maxScale = if (item.isVideo) 1f else 8f).apply {
             if (item.displayWidth > 0 && item.displayHeight > 0) {
@@ -270,7 +280,7 @@ internal fun ViewerPage(
             }
         }
 
-        if (item.isVideo) {
+        if (item.isVideo || motionSegment != null) {
             Box(
                 Modifier
                     .align(Alignment.Center)
@@ -286,7 +296,7 @@ internal fun ViewerPage(
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.32f))
                     .border(0.5.dp, Color.White.copy(alpha = 0.45f), CircleShape)
-                    .clickable(role = Role.Button, onClick = onPlayVideo)
+                    .clickable(role = Role.Button, onClick = { onPlayVideo(motionSegment) })
                     .semantics { contentDescription = playLabel },
                 contentAlignment = Alignment.Center
             ) {

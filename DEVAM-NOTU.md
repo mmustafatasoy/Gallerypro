@@ -295,3 +295,10 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - `versionCode 27`, `versionName 0.9.5`. CI yeşil + APK + kaynak ZIP + SHA-256 sonrası PR ana dala alınabilir. Gerçek telefonda Media3 TextureView yakınlaştırma/gestures/Android 16 ve ekran döndürme testi gerekir.
 - Açık `PR #21` (Termux özel imza) mevcut `main` ile çatışıyor ve CI başarısız: **birleştirilmedi**. Özel imza değiştirmek kurulu 0.9.4 üstüne yüklemeyi engelleyebileceği için kullanıcı verisi yedeklenmeden zorla uygulanmayacak.
 - Sonraki ertelenenler: Samsung hareketli fotoğrafların video kısmı, ızgaradan açılma animasyonu. Google Play geçişinde kişisel APK'nın kendini güncelleme akışı kaldırılacak.
+
+## Aşama 9d — Samsung/Google Motion Photo gömülü MP4 oynatma (0.9.6)
+
+- Yalnızca açık olan JPEG/HEIC fotoğraf, asenkron olarak gömülü `ftyp` tabanlı MP4 bakımından taranır (`MotionPhotoLogic`, `MotionPhotoReader`). Tam 108 MP fotoğraf belleğe yüklenmez: 64 KiB'lık pencerelerle son 128 MiB taranır, kutu başlıkları doğrulanır ve `moov`+`mdat` aranır. Samsung `MotionPhoto_Data` işaretçisi eksik olsa da MP4 başlangıcı bulunabilir; SEF trailer MP4 dosyasına alınmaz. Bu, sınırsız tüm Samsung HEIC/AVIF varyantlarının çalışacağını garanti etmez.
+- Fotoğraf içinde gömülü video bulunduğunda mevcut Oynat düğmesi görünür. Kullanıcı bastığında yalnızca MP4 bölümü uygulamanın özel cache klasörüne geçici kopyalanır (yeniden kodlama yok, orijinal dosya değiştirilmez). Var olan ExoPlayer/TextureView, film şeridi, PiP, iki parmak video yakınlaştırma, cam kontroller tekrar kullanılır. Kamera sesleri kullanıcının var olan Ses düğmesiyle etkinleştirilebilir.
+- Gömülü MP4 bozuksa veya erişilemiyorsa fotoğraf normal statik görüntülenir; orijinal korunur. Ekran kaydırılırsa tamamlanan eski video otomatik açılmaz. `MotionPhotoLogicTest` işaretçili, işaretçisiz, SEF trailer ve bozuk veri örneklerini test eder.
+- Versiyon `0.9.6`, `versionCode 28`. Yeni kütüphane veya ağ izni yok; Play AAB sınırlamaları korunuyor. Gerçek Samsung Galaxy S24/S25/Fold Motion Photo örnekleri ile uçtan uca test ayrıca gereklidir.
