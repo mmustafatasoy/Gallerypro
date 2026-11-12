@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Gallerypro</string>
+    <string name="viewer_motion_preparing">Hareketli fotoğraf hazırlanıyor…</string>
+    <string name="viewer_motion_failed">Hareketli fotoğrafın videosu açılamadı</string>
 
     <!-- Kütüphane -->
     <string name="library_title">Kütüphane</string>

@@ -183,6 +183,7 @@ private class VideoPositions(context: Context) {
 @Composable
 internal fun VideoPlayerScreen(
     item: MediaItem,
+    sourceUri: Uri? = null,
     title: String,
     subtitle: String,
     chromeVisible: Boolean,
@@ -198,7 +199,7 @@ internal fun VideoPlayerScreen(
     val scope = rememberCoroutineScope()
     val locale = remember { Locale.getDefault() }
     val backdrop = rememberLayerBackdrop()
-    val uri = remember(item.id) { item.contentUri() }
+    val uri = remember(item.id, sourceUri) { sourceUri ?: item.contentUri() }
     val player = remember { SharedVideoPlayer.get(context) }
     val positions = remember { VideoPositions(context) }
     val setChrome by rememberUpdatedState(onChromeVisibleChange)
@@ -251,7 +252,7 @@ internal fun VideoPlayerScreen(
         onDispose { player.removeListener(listener) }
     }
 
-    DisposableEffect(item.id) {
+    DisposableEffect(item.id, uri) {
         failed = false
         firstFrame = false
         player.setAudioAttributes(AudioAttributes.DEFAULT, false)
@@ -379,9 +380,9 @@ internal fun VideoPlayerScreen(
 
     BackHandler { close() }
 
-    val frames by produceState(emptyList<ImageBitmap>(), item.id) {
+    val frames by produceState(emptyList<ImageBitmap>(), item.id, uri, durationMs) {
         value = withContext(Dispatchers.IO) {
-            extractFrames(context, uri, item.durationMs, with(density) { 48.dp.roundToPx() })
+            extractFrames(context, uri, durationMs, with(density) { 48.dp.roundToPx() })
         }
     }
 
