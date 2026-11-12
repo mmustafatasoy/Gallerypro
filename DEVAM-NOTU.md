@@ -302,3 +302,11 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Fotoğraf içinde gömülü video bulunduğunda mevcut Oynat düğmesi görünür. Kullanıcı bastığında yalnızca MP4 bölümü uygulamanın özel cache klasörüne geçici kopyalanır (yeniden kodlama yok, orijinal dosya değiştirilmez). Var olan ExoPlayer/TextureView, film şeridi, PiP, iki parmak video yakınlaştırma, cam kontroller tekrar kullanılır. Kamera sesleri kullanıcının var olan Ses düğmesiyle etkinleştirilebilir.
 - Gömülü MP4 bozuksa veya erişilemiyorsa fotoğraf normal statik görüntülenir; orijinal korunur. Ekran kaydırılırsa tamamlanan eski video otomatik açılmaz. `MotionPhotoLogicTest` işaretçili, işaretçisiz, SEF trailer ve bozuk veri örneklerini test eder.
 - Versiyon `0.9.6`, `versionCode 28`. Yeni kütüphane veya ağ izni yok; Play AAB sınırlamaları korunuyor. Gerçek Samsung Galaxy S24/S25/Fold Motion Photo örnekleri ile uçtan uca test ayrıca gereklidir.
+
+## Aşama 9e — Izgaradaki fotoğrafın yerinden büyüyerek açılması (0.9.7)
+
+- `LibraryGrid` yalnızca Kütüphane Tümü görünümünde dokunulan medya hücresinin `boundsInRoot()` konumunu tıklama anında iletir. Seçme/uzun basma, kaydırma ve sütun değiştirme işlemleri korunur; Kopyalar ve koleksiyonların `LibraryGrid` çağrılarına isteğe bağlı argüman gerekmez.
+- `LibraryScreen` tam ekran `ViewerScreen` katmanını dokunulan karenin merkezine ve boyutlarına göre `Animatable`/var olan `GalleryMotion.standard()` yay animasyonuyla büyütür; cam kontrollerin özellikleri değiştirilmez. Kaynak görünür değilse, bozuk/çok küçük ölçü gelirse sade açılış kullanılır. Kapanışta mevcut ızgaraya geri dönme/son görülen öğeyi ortaya alma korunur.
+- Geometri `GalleryEntranceMath` saf Kotlin, testler `GalleryEntranceMathTest` (merkez, kaynak konumu, NaN, aşırı ölçüler).
+- Yeni kitaplık/izin yok; cihaz içi fotoğraf düzenleme, Güncelleme, Samsung Motion Photo ve videoların 4× yakınlaştırma kodu korunuyor.
+- Sürüm `0.9.7` / versionCode 29. CI yeşil + kaynak ZIP/digest/APK sonrası ana dala birleştirme. Gerçek cihazda kaydırırken hücreye basma, hızlı kapatma, yön değişimi ve düşük RAM test edilmeli.

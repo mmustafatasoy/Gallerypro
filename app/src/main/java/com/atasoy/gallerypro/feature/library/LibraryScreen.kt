@@ -9,6 +9,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -49,7 +50,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -65,6 +68,7 @@ import com.atasoy.gallerypro.data.media.contentUri
 import com.atasoy.gallerypro.data.media.shareItems
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
+import com.atasoy.gallerypro.designsystem.GalleryMotion
 import com.atasoy.gallerypro.designsystem.GalleryType
 import com.atasoy.gallerypro.designsystem.GlassCapsule
 import com.atasoy.gallerypro.designsystem.GlassIconButton
@@ -115,6 +119,17 @@ fun LibraryScreen(
 
     // Açık görüntüleyicinin başladığı öğe. Kapanınca ızgara son bakılan öğeyi gösterir.
     var viewerId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var openingBounds by remember { mutableStateOf<Rect?>(null) }
+    val openingProgress = remember { Animatable(1f) }
+    LaunchedEffect(viewerId) {
+        if (viewerId != null && openingBounds != null) {
+            openingProgress.snapTo(0f)
+            openingProgress.animateTo(1f, GalleryMotion.standard())
+        } else {
+            openingProgress.snapTo(1f)
+            if (viewerId == null) openingBounds = null
+        }
+    }
     var previewItem by remember { mutableStateOf<MediaItem?>(null) }
     val albums by viewModel.albums.collectAsStateWithLifecycle()
     var revealId by remember { mutableStateOf<Long?>(null) }
@@ -250,7 +265,11 @@ fun LibraryScreen(
                             contentPadding = listPadding,
                             selecting = ui.selecting,
                             selected = ui.selected,
-                            onOpen = { viewerId = it.id },
+                            onOpen = { openingBounds = null; viewerId = it.id },
+                            onOpenBounds = { item, bounds ->
+                                openingBounds = bounds
+                                viewerId = item.id
+                            },
                             onToggle = { viewModel.toggle(it.id) },
                             onLongPress = {
                                 if (ui.selecting) viewModel.toggle(it.id) else previewItem = it
@@ -544,9 +563,24 @@ fun LibraryScreen(
         // ---------------------------------------------------------------- görüntüleyici
         AnimatedVisibility(
             visible = viewerId != null && content.items.isNotEmpty(),
-            enter = fadeIn() + scaleIn(initialScale = 0.94f),
+            enter = fadeIn(),
             exit = fadeOut() + scaleOut(targetScale = 0.94f),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val bounds = openingBounds
+                    val t = openingProgress.value.coerceIn(0f, 1f)
+                    if (bounds != null && viewerId != null) {
+                        val g = GalleryEntranceMath.start(
+                            bounds.left, bounds.top, bounds.width, bounds.height,
+                            size.width, size.height
+                        )
+                        scaleX = g.scaleX + (1f - g.scaleX) * t
+                        scaleY = g.scaleY + (1f - g.scaleY) * t
+                        translationX = g.translationX * (1f - t)
+                        translationY = g.translationY * (1f - t)
+                    }
+                }
         ) {
             val startId = remember { viewerId ?: content.items.last().id }
             ViewerScreen(
