@@ -18,7 +18,7 @@ Kişiler: İstediğinde yüz taraması başlat, benzer fotoğrafları kişi grup
 
 Fotoğraf bilgileri: Desteklenen JPEG dosyalarında tarih ve konum alanlarını düzenle. Uygulama orijinali korumak için yedekleme yaklaşımını kullanır.
 
-Video: Video oynatma, zaman çizelgesi ile kırpma ve seçili bölümü ayrı MP4 dosyası olarak kaydetme. Orijinal videon yerinde kalır.
+Video: Video oynatma, iki parmakla 4× yakınlaştırma ve zaman çizelgesi ile kırpma. Desteklenen Samsung hareketli fotoğrafların gömülü video kısmı da izlenebilir. Orijinal medya korunur.
 
 Gizlilik: Fotoğraf ve yüz verilerini işlemeye yönelik özellikler cihaz üzerinde çalışır. GalleryPro bir hesap gerektirmez; internet izni istemez.
 
@@ -42,7 +42,7 @@ Use People to scan faces when you choose, group similar-looking faces and name g
 
 View photo details and adjust supported JPEG date and location metadata with an original-file backup strategy.
 
-Play videos, select a start and end point and save your trimmed section as a separate MP4, preserving the original file.
+Play videos with pinch-to-zoom up to 4×, trim ranges into separate MP4 files, and play supported Samsung Motion Photo clips while preserving originals.
 
 GalleryPro does not require an account and does not request internet permission. Photos and face grouping data are processed on your device.
 

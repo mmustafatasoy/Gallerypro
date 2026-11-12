@@ -206,7 +206,7 @@ internal fun ViewerPage(
                     scaleX = zoom.scale
                     scaleY = zoom.scale
                     translationX = zoom.offset.x
-                    translationY = zoom.offset.y + infoShift(size.height, zoom.fitted.height, infoPanelHeightPx) * infoProgress()
+                    translationY = zoom.offset.y + infoShift(size.height, zoom.fitted.height, infoPanelHeightPx) * infoProgress().coerceIn(0f, 1f)
                 }
         ) {
             // Izgaradan gelen küçük resim hemen görünür; asıl görüntü üstüne yüklenir.
@@ -285,12 +285,12 @@ internal fun ViewerPage(
                 Modifier
                     .align(Alignment.Center)
                     .graphicsLayer {
-                        alpha = 1f - infoProgress()
+                        alpha = (1f - infoProgress().coerceIn(0f, 1f)).coerceIn(0f, 1f)
                         translationY = infoShift(
                             zoom.container.height,
                             zoom.fitted.height,
                             infoPanelHeightPx
-                        ) * infoProgress()
+                        ) * infoProgress().coerceIn(0f, 1f)
                     }
                     .size(76.dp)
                     .clip(CircleShape)

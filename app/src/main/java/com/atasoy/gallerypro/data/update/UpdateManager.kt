@@ -152,7 +152,11 @@ class UpdateManager(
 
     fun beginDownload(release: AvailableUpdate) {
         if (!BuildConfig.SIDELOAD_UPDATER || _download.value is UpdateDownload.Downloading) return
-        if (UpdateLogic.validDigest(release.sha256) == null) return
+        if (UpdateLogic.validDigest(release.sha256) == null ||
+            !UpdateLogic.isNewer(BuildConfig.VERSION_NAME, release.version) ||
+            release.sizeBytes !in 1_000_000L..2_000_000_000L) return
+        // Hızlı çift dokunuş iki ayrı indirme başlatmamalı.
+        _download.value = UpdateDownload.Downloading(0L, release.sizeBytes)
         scope.launch(Dispatchers.IO) {
             try {
                 val old = prefs.getLong("download_id", -1L)
@@ -240,14 +244,17 @@ class UpdateManager(
     /** Android kurulumu her zaman kullanıcı onayıyla gerçekleşir. */
     fun install() {
         val ready = _download.value as? UpdateDownload.Ready ?: return
-        if (!context.packageManager.canRequestPackageInstalls()) {
-            context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:" + context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            return
-        }
-        val uri = downloads.getUriForDownloadedFile(ready.id) ?: return
-        context.startActivity(Intent(Intent.ACTION_VIEW)
-            .setDataAndType(uri, "application/vnd.android.package-archive")
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
+        runCatching {
+            if (!context.packageManager.canRequestPackageInstalls()) {
+                context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:" + context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                return@runCatching
+            }
+            val uri = downloads.getUriForDownloadedFile(ready.id)
+                ?: error("DownloadManager APK yok")
+            context.startActivity(Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, "application/vnd.android.package-archive")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
+        }.onFailure { _download.value = UpdateDownload.Failed }
     }
 }

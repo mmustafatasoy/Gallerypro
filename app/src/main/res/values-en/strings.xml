@@ -35,7 +35,7 @@
     <string name="partial_access_action">Pick more</string>
 
     <string name="permission_title">Access to your photos</string>
-    <string name="permission_body">The gallery needs permission to show your photos and videos. Nothing leaves your device; the app does not even have internet access.</string>
+    <string name="permission_body">The gallery needs permission to show your photos and videos. Media and face data stay on your device. The personal APK connects to GitHub only to check for and download approved updates.</string>
     <string name="permission_allow">Allow</string>
     <string name="permission_settings">Open settings</string>
     <string name="permission_denied_hint">Permission is off. Turn it on in Settings › Permissions › Photos and videos.</string>

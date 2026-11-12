@@ -4,7 +4,7 @@
 
 ## Mevcut yapı
 - Paket: `com.atasoy.gallerypro` — mevcut kullanıcı sürümleriyle tutarlı tutulur.
-- Bu aşama: `0.9.2`, versionCode `24`.
+- Güncel son kararlılık adayı: `0.9.8`, versionCode `30`; mağaza yayını değil.
 - minSdk 29; targetSdk **36** — Google Play'in 31 Ağustos 2026 sonrası yeni uygulama hedef API düzeyiyle uyumlu.
 - Geliştirme APK'sı: sabit **deneme/debug imzası**, yalnızca GitHub üzerinden cihazda test içindir.
 - Play: `AAB` gerekir; gerçek **upload key** GitHub Secrets'da olmalı, Play App Signing ayrıca etkinleştirilir.
@@ -23,6 +23,7 @@
 - [ ] **Upload key** sahibi tarafından güvenli şekilde oluşturuldu; şifreler ve .jks dosyası Git deposuna konmadı. `RELEASE_KEYSTORE_B64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` GitHub Secrets olarak saklandı. Anahtar ayrıca kullanıcının güvenli çevrimdışı kasasında yedeklendi.
 - [ ] Play App Signing / upload key sertifikası uyumu Play Console'da doğrulandı; önceki GitHub debug-imzalı uygulamanın Play sürümüyle yerinde güncellenemeyebileceği test kullanıcılarına bildirildi.
 - [ ] `Play AAB` iş akışının **TEST** modu ve AAB paket içeriği yeşil. `publish=true` ancak tüm yukarıdaki maddeler tamamlandığında çalıştırılır.
+- [ ] Samsung Motion Photo, video yakınlaştırma, ızgaradan açılış animasyonu, çevrimdışı yüz tarama, Android 16 kurulum/güncelleme ve 108/200 MP fotoğraflar gerçek cihazlarda doğrulandı.
 - [ ] Play Console **internal testing / closed testing** üzerinde uygulama açılma, video kırpma, yüz indeksleme, EXIF yazma, gizli albüm ve kaldırma/yeniden kurma davranışları gerçek cihazlarda incelendi.
 - [ ] Play Console uygulama erişim, reklam, hedef kitle, içerik derecelendirme, veri güvenliği ve varsa finansal/biometrik sorular doğru dolduruldu.
 - [ ] İmzalı AAB'den üretilen Play split APK'larında **SFace FP32** ve `modeller` kurulum-anı varlıkları erişilebilir; `PeopleScanner` ile gerçek tarama başarılı.

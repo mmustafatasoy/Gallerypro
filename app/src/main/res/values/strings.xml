@@ -43,7 +43,7 @@
 
     <!-- İzin ekranı -->
     <string name="permission_title">Fotoğraflarına erişim</string>
-    <string name="permission_body">Galerinin fotoğraf ve videolarını gösterebilmesi için izin gerekiyor. Hiçbir şey cihazından dışarı çıkmaz; uygulamanın internet izni bile yok.</string>
+    <string name="permission_body">Fotoğraf ve videolarını görüntülemek için izin gerekiyor. Fotoğraf ve yüz bilgilerin cihazında işlenir; medya verilerin gönderilmez. Kişisel APK yalnızca GitHub sürüm denetimi ve kullanıcı onaylı güncelleme indirmesi için internete bağlanır.</string>
     <string name="permission_allow">İzin ver</string>
     <string name="permission_settings">Ayarları aç</string>
     <string name="permission_denied_hint">İzin kapalı. Ayarlar › İzinler › Fotoğraflar ve videolar bölümünden açabilirsin.</string>
