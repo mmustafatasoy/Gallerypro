@@ -682,7 +682,7 @@ fun ViewerScreen(
                     modifier = Modifier
                         .padding(top = topInset + 70.dp, start = 16.dp)
                         .height(26.dp)
-                        .graphicsLayer { alpha = chromeAlpha() * (1f - infoProgress) }
+                        .graphicsLayer { alpha = (chromeAlpha() * (1f - infoProgress)).coerceIn(0f, 1f) }
                 ) {
                     Spacer(Modifier.width(8.dp))
                     Glyph(GalleryIcons.Play, Color.White, size = 12.dp)

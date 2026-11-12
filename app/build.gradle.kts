@@ -14,8 +14,8 @@ android {
         applicationId = "com.atasoy.gallerypro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 29
-        versionName = "0.9.7"
+        versionCode = 30
+        versionName = "0.9.8"
         // GitHub APK: geçici, kullanıcı onaylı güncelleme.
         // Google Play AAB: internet ve başka APK kurma yetkisi kaldırılır.
         buildConfigField("boolean", "SIDELOAD_UPDATER", if (playBuild) "false" else "true")

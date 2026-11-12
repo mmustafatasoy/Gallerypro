@@ -7,7 +7,7 @@ değilsen kullanıcıya sor (iki seçenek sun, kararı bekle).
 ## Kısa kurallar
 - Kotlin + Jetpack Compose **foundation** (Material3 yok). minSdk 29, targetSdk 36, compileSdk 37.
 - Sürümler yalnızca `gradle/libs.versions.toml`; yükseltme yok, alfa/beta yok. Yeni kütüphane için önce sor.
-- **INTERNET izni yok** (manifestte `tools:node="remove"` ile kesin kapalı). Hiçbir veri cihazdan çıkmaz.
+- **Kullanıcı onaylı istisna (0.9.4+):** Kişisel GitHub APK'sı yalnızca GitHub sürüm kontrolü ve APK indirme için INTERNET ve REQUEST_INSTALL_PACKAGES kullanır. Play AAB'si farklı manifestle bu izinleri kaldırır ve kendini güncellemez. Fotoğraf/yüz/konum verisi gönderilmez.
 - Cam yalnızca `designsystem/Glass.kt` → `Modifier.glass(...)`. Renk/boyut/hareket yalnızca `designsystem/Tokens.kt`.
 - Ekrandaki her metin `res/values*/strings.xml` (Türkçe) ve `res/values-en/` (İngilizce) içinde; kodda sabit metin yok.
 - Animasyonlu `Dp`/`Float` değerleri `padding`/`size`/`Color.copy(alpha)`'ya verilmeden önce sınırlanır

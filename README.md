@@ -1,58 +1,37 @@
-# Gallerypro
+# GalleryPro — Atasoy Yazılım
 
-iOS 26 Fotoğraflar hissini (cam / Liquid Glass) Android'e taşıyan, internetsiz çalışan galeri uygulaması.
+Android için modern Motion Glass tasarımlı, cihaz içi akıllı arama ve fotoğraf/video düzenleme uygulaması.
 
-- Tasarım tuvali: https://claude.ai/artifact/J9L59HCcDDZVwuod8fYSiw
-- Proje dokümanı: https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9
+## İşlevler ve durum (0.9.8)
 
-## Durum
+- **Kütüphane:** tarihe göre ızgara, favoriler, albümler, sayfalama, izgaradaki konumdan büyüyerek fotoğraf açma.
+- **Fotoğraf:** kırpma, filtre, renk düzenleme, EXIF tarih/konum, yakınlaştırma; 48–200 MP destekli JPEG/PNG/WebP için bölgesel çözümleme.
+- **Video:** Media3 oynatıcı, ses, hız, 10 saniye ileri/geri, PiP, 4× yakınlaştırma, ayrı MP4 olarak kırpma.
+- **Hareketli fotoğraf:** desteklenen Samsung JPEG/HEIC içindeki gömülü MP4'ü tespit edip fotoğrafı değiştirmeden oynatma.
+- **Cihaz içi AI:** ML Kit etiket/OCR, Türkçe CLIP cümleyle arama, SFace FP32 yüz grupları, Anılar ve Yerler.
+- **Araçlar:** Gizli Albüm, Son Silinenler, Kopyalar, uzun basma/çoklu seçim.
 
-| Aşama | İçerik | Durum |
-| --- | --- | --- |
-| 1 · Temel | İskelet, izinler, MediaStore, cam bileşenleri, Kütüphane ekranı | tamam |
-| 2 · Cam ve görüntüleyici | Fotoğraf görüntüleyici, Bilgi paneli | tamam |
-| 3 · Video | Media3 oynatıcı, film şeridi | tamam |
-| 4 · Koleksiyonlar ve Düzenle | Koleksiyonlar sekmesi, Gizli/Son Silinenler, Düzenle ekranı | tamam (0.4.1: kararlılık + çökme raporu) |
-| 5 · Yapay zekâ | Cihaz içi dizin (nesne + yazı) ve arama ekranı (0.5.0); sırada cümleyle arama, Kişiler | devam ediyor |
-| 6 · Cila ve yayın | | |
+**Durum:** Kod aşamaları tamamlandı; Android telefonlarda bütün özelliklerin uçtan uca test edildiği veya Google Play'de yayımlandığı iddia edilmez. Son sürüm için GitHub Actions test sonucunu kontrol edin.
 
-## APK nasıl alınır (GitHub Actions)
+## APK, otomatik güncelleme ve kaynak yedeği
 
-`main` dalına ve `asama-…` dallarına her gönderimde GitHub APK'yı kendisi derler (depo herkese açık olduğu için ücretsiz, dakika sınırı yok).
+- [En güncel başarıyla derlenmiş APK](https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk)
+- [Releases — tam kaynak ZIP ve SHA-256](https://github.com/mmustafatasoy/Gallerypro/releases/tag/son-surum)
+- [GitHub Actions derleme/test](https://github.com/mmustafatasoy/Gallerypro/actions)
 
-- **Son sürüm, doğrudan indirme:** https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk
-- Bir aşama dalının APK'sı: **Releases** sayfasında dalın adıyla.
-- Derleme durumu: depoda **Actions** sekmesi. Elle başlatmak için Actions › APK › Run workflow.
+Kişisel GitHub APK'sı yalnızca GitHub sürüm kontrolü ve kullanıcı onaylı güncelleme indirmesi için internet kullanır; fotoğraf, yüz ve konum verilerini göndermez. APK SHA-256/boyutu doğrulanır; kurulum Android onayı gerektirir. **Play AAB derlemesinde INTERNET ve REQUEST_INSTALL_PACKAGES izinleri yoktur; uygulama içi APK güncellemesi kapalıdır.**
 
-APK hızlı (release, R8) türdendir ve sabit bir deneme anahtarıyla imzalanır; yeni sürüm eskisinin üstüne kurulur.
+Mevcut test APK'ları aynı deneme imzasını kullanır. İlerde özel imzaya geçmek mevcut uygulamanın üzerine kurulumu engelleyebilir: uygulamayı kaldırarak yerel verileri kaybetmeyin.
 
-Kodu başka bir yapay zekâyla sürdürmek için: `AGENTS.md` (kısa kurallar) ve `DEVAM-NOTU.md` (durum ve plan).
+## Google Play için tamamlanması gerekenler
 
-## Yerelde derleme (Android Studio / terminal)
+Gerçek upload imzası, geliştirici hesabı, halka açık HTTPS gizlilik politikası, SFace FP32 eğitim/veri lisansı doğrulaması, mağaza varlıkları, gerçek cihaz testleri ve Play Console incelemesi. Ayrıntılar: `play/PLAY-CHECKLIST.md`. Açık eski **PR #21** özel imza dalı mevcut `main` ile çakışır ve başarısız CI içerir, zorla birleştirilmeyecek.
 
-Inter yazı tipi depoda durmaz, derlemeden önce bir kez indirilir:
+## Teknoloji ve geliştirme
 
-```bash
-bash scripts/fetch-fonts.sh   # curl, python3 ve fonttools gerekir
-gradle assembleDebug          # veya Android Studio ile aç
-```
+Kotlin, Compose Foundation (Material3 yok), Kyant Backdrop, Coil 3, Media3, ML Kit ve LiteRT. Derleme önce `bash scripts/fetch-fonts.sh` ardından `gradle testDebugUnitTest assembleRelease`. Büyük AI model ağırlıkları Git'e eklenmez; CI'da resmi kaynaklardan alınır. Tam kaynak ZIP, Git geçmişi yedeğini içerir.
 
-Gradle sürümü `gradle/wrapper/gradle-wrapper.properties` içindedir (9.7.1).
-
-## Google Play hazırlığı (0.9.2)
-
-`.github/workflows/aab.yml` için `asama-play-*` aşama dalında otomatik **TEST AAB** üretilir; Play Console'a yüklemeyin. Gerçek imzalı yükleme AAB'si yalnızca `main` üzerinde, GitHub Actions → Play AAB → Run workflow → `publish=true` ve 4 yayın anahtarı Secret'ı mevcutsa oluşturulur. Bu işlem Play Console'a kendiliğinden yayımlamaz.
-
-Mağaza metinleri, gizlilik politikası ve yayımlama kontrol listesi `play/` klasöründedir. SFace yüz modelinin ticari dağıtım hakları ve mağaza görselleri tamamlanmadan genel yayın yapılmamalıdır.
-
-## Teknoloji
-
-Kotlin, Jetpack Compose, AGP 9.3.2, Kotlin 2.4.10, cam efekti için [Kyant Backdrop](https://github.com/Kyant0/AndroidLiquidGlass), küçük resimler için Coil 3. Tüm sürümler `gradle/libs.versions.toml` içinde.
-
-Cümleyle arama: OpenAI CLIP ViT-B/32 (MIT) ve `sentence-transformers/clip-ViT-B-32-multilingual-v1` (Apache-2.0), LiteRT ile telefonda, internetsiz. Modeller depoda değildir; `Modeller` iş akışı (`scripts/models/export_clip.py`) çevirip Releases'taki `modeller` sürümüne koyar, APK derlemesi oradan indirir. Lisans bildirimi: `scripts/models/NOTICE.txt` (APK'da `assets/licenses/clip-models.txt`).
-
-Yazı tipi: Inter (SIL Open Font License 1.1). Lisans metni derlemede `app/src/main/assets/licenses/inter-OFL.txt` olarak uygulamaya eklenir.
-
-## Geçmiş
-
-1. aşama GitHub'da yapıldı. Hesap bir süre askıya alınınca 2.–5. aşamalar Bitbucket'ta (`mmaapps/mmustafatasoy`) sürdü; hesap açılınca tüm geçmiş ve dallarla buraya geri taşındı (9 Kasım 2026).
+- `DEVAM-NOTU.md`: güncel aşamalar ve ertelenmiş kullanıcı/cihaz kararları
+- `AGENTS.md`: kodlama ve yayın kuralları
+- `CODEX-ILK-MESAJ.md`: tarihsel başlangıç görevleri
+- [Tasarım](https://claude.ai/artifact/J9L59HCcDDZVwuod8fYSiw) · [Proje dokümanı](https://claude.ai/artifact/7aviV7rE1kBvm4eBtUtzm9)

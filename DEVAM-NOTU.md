@@ -310,3 +310,12 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Geometri `GalleryEntranceMath` saf Kotlin, testler `GalleryEntranceMathTest` (merkez, kaynak konumu, NaN, aşırı ölçüler).
 - Yeni kitaplık/izin yok; cihaz içi fotoğraf düzenleme, Güncelleme, Samsung Motion Photo ve videoların 4× yakınlaştırma kodu korunuyor.
 - Sürüm `0.9.7` / versionCode 29. CI yeşil + kaynak ZIP/digest/APK sonrası ana dala birleştirme. Gerçek cihazda kaydırırken hücreye basma, hızlı kapatma, yön değişimi ve düşük RAM test edilmeli.
+
+## Aşama 10 — Son kararlılık, güvenlik ve dokümantasyon (0.9.8, `asama-098-son-kararlilik`)
+
+- Son kalan Samsung Motion Photo (0.9.6) ve gerçek ızgara açılış animasyonu (0.9.7) ayrı PR + GitHub Actions testleriyle işlendi. Bu aşama kod taraması ve güvenlik/tutarlılık denetimidir; yeni kütüphane kullanılmadı.
+- `UpdateManager.beginDownload` kullanıcı çift dokunuşunda iki APK indirmesi başlatmasın diye durumu senkron `Downloading` yapıyor; güncellik, boyut ve SHA-256 girişi yeniden doğrulanıyor. Android kurucu aktivitesi açılamazsa uygulamanın kapanmasını önlemek için `install()` hata yakalıyor.
+- `ViewerPage` ve `ViewerScreen` Motion Glass bilgi paneli yay animasyonlarında alfa ve panel ilerleme değerleri 0..1 aralığına alındı; uç değerlerde çizim kararlılığı artırıldı.
+- Kişisel APK'nın INTERNET izni kullandığı hâlde izin metninde internetsiz denmesi hatalıydı. Türkçe/İngilizce izin metinleri, `play/privacy-policy.html`, `README.md`, `AGENTS.md`, `play/store-listing.md`, `play/PLAY-CHECKLIST.md` güncellendi. Medya/yüz verileri GitHub'a gönderilmez; normal bağlantı meta verileri ağ sağlayıcısı ve GitHub tarafından işlenebilir.
+- `0.9.8` / versionCode30. GitHub Actions başarı + APK + kaynak ZIP + SHA-256 sonrası PR main'e alınabilir. CI gerçek Android cihaz testinin yerini tutmaz.
+- **Yayın bloke eden dış bağımlılıklar:** Play hesabı/gerçek özel imza, SFace modelinin ticari dağıtım hakkı, HTTPS'te yayınlanmış gizlilik politikası, gerçek Samsung Motion Photo/Android 16 video kırpma/108 MP cihaz testleri ve Play Console onayı. PR #21 mevcut test imzasını değiştirip kurulu kullanıcı verisini tehlikeye sokabilir; zorla birleştirme yok.
