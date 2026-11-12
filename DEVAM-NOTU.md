@@ -285,3 +285,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Kullanıcı isterse Android `DownloadManager` ile APK indirir. **SHA-256 ve boyut doğrulaması bitmeden kurulum ekranını açmaz.** Android 8+ bilinmeyen kaynak yükleme izni ve kullanıcının sistem kurulum onayı gerekir. Eski APK ile yeni APK imzası eşleşmezse Android kurulumunu reddeder.
 - `GalleryRoot` açılış uyarısı ve kurulum teklifi, `SettingsScreen` güncelleme kartı, Türkçe/İngilizce kaynaklar eklendi. Görsel/arayüz kodu Compose foundation; yeni kütüphane yok.
 - Google Play AAB'de `REQUEST_INSTALL_PACKAGES` yasak ve INTERNET izni yok; AAB manifesti ve Play derlemesi ayrı doğrulanmalıdır. CI `testDebugUnitTest assembleRelease` + tam kaynak ZIP + SHA-256 başarıyla tamamlanmadan ana dala birleştirilmez.
+
+## Aşama 9c — Video oynatıcıda iki parmakla yakınlaştırma (0.9.5, `asama-095-video-yakinlastirma`)
+
+- Kullanıcının `devam et` talebiyle, 0.9.4 güncelleme özelliğini ve geçici kişisel APK imzasını bozmadan sıradaki ertelenmiş özellik olan video pinch-to-zoom geliştirildi.
+- `VideoPlayerScreen` mevcut Media3 `TextureView` yüzeyini ve ilk kare küçük resmini **aynı grafik katmanında** 1–4× yakınlaştırır; genişletilmiş videoda tek parmakla kaydırır. Dikey `Crop` / yatay `Fit` görüntü düzeni ve cam Motion Glass kontrollere dokunulmadı. Çift dokunma ±10 sn, tek dokunma kontroller, normal ölçekte aşağı çekme kapat özelliği korunur. İki parmak sonrası kalan tek parmak yanlışlıkla kapatma başlatmaz.
+- `VideoZoomMath` ekran ve gerçek video yüzeyinin boyutlarına göre parmak merkezi korunarak dönüşüm ve pan sınırlarını hesaplar; sınırlı/bozuk sayılarda ekrana NaN gitmez. `VideoZoomMathTest` ile genişletme, kaydırma, Crop/Fit ve sıfırlama testleri.
+- Yeni kütüphane, ağ izni, model/üçüncü taraf SDK veya video düzenleme/kodlama algoritması eklenmedi. Var olan GitHub APK güncellemesi korunuyor; Play AAB kendini güncellemiyor.
+- `versionCode 27`, `versionName 0.9.5`. CI yeşil + APK + kaynak ZIP + SHA-256 sonrası PR ana dala alınabilir. Gerçek telefonda Media3 TextureView yakınlaştırma/gestures/Android 16 ve ekran döndürme testi gerekir.
+- Açık `PR #21` (Termux özel imza) mevcut `main` ile çatışıyor ve CI başarısız: **birleştirilmedi**. Özel imza değiştirmek kurulu 0.9.4 üstüne yüklemeyi engelleyebileceği için kullanıcı verisi yedeklenmeden zorla uygulanmayacak.
+- Sonraki ertelenenler: Samsung hareketli fotoğrafların video kısmı, ızgaradan açılma animasyonu. Google Play geçişinde kişisel APK'nın kendini güncelleme akışı kaldırılacak.

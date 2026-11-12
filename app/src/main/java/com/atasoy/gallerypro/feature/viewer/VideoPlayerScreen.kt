@@ -18,9 +18,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -61,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -68,7 +73,10 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -127,6 +135,7 @@ import kotlinx.coroutines.withContext
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -167,7 +176,8 @@ private class VideoPositions(context: Context) {
  * film şeridi, ses. Üstte çözünürlük rozeti ve hız çipi.
  *
  * Hareketler: dokun → kontrolleri gizle/göster, sağa/sola çift dokun → ±10 sn,
- * aşağı çek → kapat. Oynarken uygulamadan çıkınca Resim içinde Resim (Android 12+).
+ * aşağı çek → kapat, iki parmak → yakınlaştır; yakınlaşmış görüntüyü bir parmakla taşı.
+ * Oynarken uygulamadan çıkınca Resim içinde Resim (Android 12+).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -209,6 +219,8 @@ internal fun VideoPlayerScreen(
     var seekHint by remember { mutableIntStateOf(0) }
     var seekHintKey by remember { mutableIntStateOf(0) }
     val dismiss = remember { Animatable(0f) }
+    // Her video açılışında 1×; görüntü değiştirilmez, yalnızca TextureView katmanı ölçeklenir.
+    var videoZoom by remember(item.id) { mutableStateOf(VideoZoomTransform()) }
 
     // ---------------------------------------------------------------- oynatıcı
     DisposableEffect(player) {
@@ -280,6 +292,12 @@ internal fun VideoPlayerScreen(
             delay(650)
             seekHint = 0
         }
+    }
+
+    // Meta verideki kaba ölçüden oynatıcının gerçek çözünürlüğüne geçerken
+    // eski kaydırma koordinatları kalmasın.
+    LaunchedEffect(item.id, videoSize) {
+        videoZoom = VideoZoomTransform()
     }
 
     // Uygulamadan çıkınca (Resim içinde Resim değilse) duraklat; oynarken ekran kapanmasın.
@@ -389,6 +407,10 @@ internal fun VideoPlayerScreen(
         }
         val surfaceW = if (scale > 0f) (srcW * scale).dp else maxWidth
         val surfaceH = if (scale > 0f) (srcH * scale).dp else maxHeight
+        val viewportWidthPx = with(density) { maxWidth.toPx() }
+        val viewportHeightPx = with(density) { maxHeight.toPx() }
+        val contentWidthPx = with(density) { surfaceW.toPx() }
+        val contentHeightPx = with(density) { surfaceH.toPx() }
 
         Box(
             Modifier
@@ -398,23 +420,37 @@ internal fun VideoPlayerScreen(
                 .offset { IntOffset(0, dismiss.value.roundToInt()) },
             contentAlignment = Alignment.Center
         ) {
-            PlayerSurface(
-                player = player,
-                surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
-                modifier = Modifier.requiredSize(surfaceW, surfaceH)
-            )
-            if (!firstFrame) {
-                AsyncImage(
-                    model = MediaThumb(uri, 1080),
-                    contentDescription = null,
-                    imageLoader = imageLoader,
-                    contentScale = ContentScale.Crop,
+            // Video ve ilk kare aynı dönüşümü alır. Cam kontrolleri kardeş
+            // katman olarak sabit kalır; backdrop kendi Glass'ını örneklemez.
+            Box(
+                Modifier.fillMaxSize().graphicsLayer {
+                    scaleX = videoZoom.scale
+                    scaleY = videoZoom.scale
+                    translationX = videoZoom.x
+                    translationY = videoZoom.y
+                },
+                contentAlignment = Alignment.Center
+            ) {
+                PlayerSurface(
+                    player = player,
+                    surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
                     modifier = Modifier.requiredSize(surfaceW, surfaceH)
                 )
+                if (!firstFrame) {
+                    AsyncImage(
+                        model = MediaThumb(uri, 1080),
+                        contentDescription = null,
+                        imageLoader = imageLoader,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.requiredSize(surfaceW, surfaceH)
+                    )
+                }
             }
         }
 
-        // Dokunma katmanı (kontrollerin altında).
+        // Dokunma katmanı (kontrollerin altında): tek parmakta mevcut
+        // aşağı çekme hareketi, iki parmakta yakınlaştırma ve büyütülünce
+        // tek parmakla kaydırma. Kontrol butonlarının hareketleri korunur.
         Box(
             Modifier
                 .fillMaxSize()
@@ -422,16 +458,36 @@ internal fun VideoPlayerScreen(
                     onTap = { setChrome(!chromeNow) },
                     onDoubleTap = { left -> seekBy(if (left) -SeekStepMs else SeekStepMs) }
                 )
-                .pointerInputDismiss(
-                    onDrag = { dy -> scope.launch { dismiss.snapTo(max(0f, dismiss.value + dy)) } },
-                    onEnd = { velocity ->
-                        if (dismiss.value > with(density) { 120.dp.toPx() } || velocity > 1400f) {
-                            close()
-                        } else {
-                            scope.launch { dismiss.animateTo(0f, GalleryMotion.standard()) }
+                .pointerInput(item.id, viewportWidthPx, viewportHeightPx, contentWidthPx, contentHeightPx) {
+                    detectVideoZoomAndDismiss(
+                        zoomed = { videoZoom.scale > 1.01f },
+                        onTransform = { zoomFactor, pan, centroid ->
+                            videoZoom = VideoZoomMath.transform(
+                                videoZoom, zoomFactor, pan.x, pan.y,
+                                centroid.x, centroid.y,
+                                viewportWidthPx, viewportHeightPx,
+                                contentWidthPx, contentHeightPx
+                            )
+                        },
+                        onPan = { delta ->
+                            videoZoom = VideoZoomMath.pan(
+                                videoZoom, delta.x, delta.y,
+                                viewportWidthPx, viewportHeightPx,
+                                contentWidthPx, contentHeightPx
+                            )
+                        },
+                        onDismissDrag = { dy ->
+                            scope.launch { dismiss.snapTo(max(0f, dismiss.value + dy)) }
+                        },
+                        onDismissEnd = { velocity ->
+                            if (dismiss.value > with(density) { 120.dp.toPx() } || velocity > 1400f) {
+                                close()
+                            } else {
+                                scope.launch { dismiss.animateTo(0f, GalleryMotion.standard()) }
+                            }
                         }
-                    }
-                )
+                    )
+                }
         )
 
         // ±10 sn göstergesi
@@ -737,20 +793,88 @@ private fun Modifier.pointerInputTaps(onTap: () -> Unit, onDoubleTap: (left: Boo
         )
     }
 
-private fun Modifier.pointerInputDismiss(onDrag: (Float) -> Unit, onEnd: (Float) -> Unit): Modifier =
-    pointerInput("dismiss") {
+/** Tek parmakla aşağı çekme, iki parmakla yakınlaştırma ve yakınken taşıma.
+ * Fotoğraf görüntüleyicisindeki hareket modelini kullanır; çoklu dokunuş
+ * tamamlandıktan sonra son kalan parmak asla yanlışlıkla "kapat" tetiklemez.
+ */
+private enum class VideoGestureMode { Undecided, Transform, Pan, Vertical, Ignore }
+
+private suspend fun PointerInputScope.detectVideoZoomAndDismiss(
+    zoomed: () -> Boolean,
+    onTransform: (Float, Offset, Offset) -> Unit,
+    onPan: (Offset) -> Unit,
+    onDismissDrag: (Float) -> Unit,
+    onDismissEnd: (Float) -> Unit
+) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false)
         val tracker = VelocityTracker()
-        detectVerticalDragGestures(
-            onDragStart = { tracker.resetTracking() },
-            onDragEnd = { onEnd(tracker.calculateVelocity().y) },
-            onDragCancel = { onEnd(0f) },
-            onVerticalDrag = { change, amount ->
-                tracker.addPosition(change.uptimeMillis, change.position)
-                change.consume()
-                onDrag(amount)
+        tracker.addPosition(down.uptimeMillis, down.position)
+        var mode = VideoGestureMode.Undecided
+        var travelled = Offset.Zero
+        var hadTwoFingers = false
+
+        while (true) {
+            val event = awaitPointerEvent()
+            val pressed = event.changes.count { it.pressed }
+            if (pressed == 0) break
+
+            if (pressed >= 2 && mode != VideoGestureMode.Vertical) {
+                hadTwoFingers = true
+                mode = VideoGestureMode.Transform
+                val factor = event.calculateZoom()
+                val pan = event.calculatePan()
+                if (factor != 1f || pan != Offset.Zero) {
+                    onTransform(factor, pan, event.calculateCentroid(useCurrent = false))
+                }
+                event.changes.forEach { if (it.positionChanged()) it.consume() }
+                continue
             }
-        )
+
+            val change = event.changes.firstOrNull { it.pressed } ?: break
+            val delta = change.positionChange()
+            if (hadTwoFingers) {
+                // İkinci parmak kalktı diye videoyu yanlışlıkla kapatma.
+                if (zoomed()) {
+                    onPan(delta)
+                    change.consume()
+                }
+                continue
+            }
+
+            when (mode) {
+                VideoGestureMode.Undecided -> {
+                    if (change.isConsumed) break
+                    travelled += delta
+                    if (travelled.getDistance() > viewConfiguration.touchSlop) {
+                        mode = when {
+                            zoomed() -> VideoGestureMode.Pan
+                            abs(travelled.y) > abs(travelled.x) * 1.2f -> VideoGestureMode.Vertical
+                            else -> VideoGestureMode.Ignore
+                        }
+                        if (mode == VideoGestureMode.Ignore) break
+                        change.consume()
+                    }
+                }
+                VideoGestureMode.Pan, VideoGestureMode.Transform -> {
+                    if (zoomed()) {
+                        onPan(delta)
+                        change.consume()
+                    }
+                }
+                VideoGestureMode.Vertical -> {
+                    tracker.addPosition(change.uptimeMillis, change.position)
+                    onDismissDrag(delta.y)
+                    change.consume()
+                }
+                VideoGestureMode.Ignore -> break
+            }
+        }
+        if (mode == VideoGestureMode.Vertical) {
+            onDismissEnd(tracker.calculateVelocity().y)
+        }
     }
+}
 
 private fun Modifier.pointerInputScrub(
     onStart: () -> Unit,
