@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
@@ -37,6 +38,8 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -72,6 +75,8 @@ fun LibraryGrid(
     selecting: Boolean,
     selected: Set<Long>,
     onOpen: (MediaItem) -> Unit,
+    // Kütüphanede dokunulan küçük resmin konumu: tam ekrana açılış hareketi.
+    onOpenBounds: ((MediaItem, Rect) -> Unit)? = null,
     onToggle: (MediaItem) -> Unit,
     onLongPress: (MediaItem) -> Unit,
     onZoomIn: () -> Unit,
@@ -109,7 +114,13 @@ fun LibraryGrid(
                 showBadges = columns <= 5,
                 locale = locale,
                 zone = zone,
-                onClick = { if (selecting) onToggle(item) else onOpen(item) },
+                onClick = { bounds ->
+                    when {
+                        selecting -> onToggle(item)
+                        bounds != null && onOpenBounds != null -> onOpenBounds(item, bounds)
+                        else -> onOpen(item)
+                    }
+                },
                 onLongClick = { onLongPress(item) },
                 modifier = Modifier.animateItem(
                     fadeInSpec = null,
@@ -131,7 +142,7 @@ private fun MediaCell(
     showBadges: Boolean,
     locale: Locale,
     zone: ZoneId,
-    onClick: () -> Unit,
+    onClick: (Rect?) -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -139,6 +150,8 @@ private fun MediaCell(
     val haptics = LocalHapticFeedback.current
     val uri = remember(item.id, item.isVideo) { item.contentUri() }
     val context = LocalContext.current
+    // Recomposition oluşturmayan tek hücre koordinat önbelleği. Sadece tıklamada okunur.
+    val cellBounds = remember(item.id) { arrayOfNulls<Rect>(1) }
     // Animasyon değerleri sadece çizimde okunur: seçim animasyonu hücreyi yeniden oluşturmaz.
     val inset = animateFloatAsState(
         targetValue = if (isSelected) 0.9f else 1f,
@@ -154,9 +167,10 @@ private fun MediaCell(
     Box(
         modifier = modifier
             .aspectRatio(1f)
+            .onGloballyPositioned { cellBounds[0] = it.boundsInRoot() }
             .background(GalleryColors.CellPlaceholder)
             .combinedClickable(
-                onClick = onClick,
+                onClick = { onClick(cellBounds[0]) },
                 onLongClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     onLongClick()
