@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- GalleryPro temalı (tek renk) simge — scripts/generate-icon.py ile üretildi. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
-       android:pathData="M31,34h46a7,7 0,0 1,7 7v29a7,7 0,0 1,-7 7h-46a7,7 0,0 1,-7 -7v-29a7,7 0,0 1,7 -7z M31,41h46v29h-46z" />
-    <path android:fillColor="#FFFFFFFF"
-       android:pathData="M33,67l14,-18 11,12 7,-8 12,14z" />
-    <path android:fillColor="#FFFFFFFF"
-       android:pathData="M68,47a6,6 0,1 1,-12 0a6,6 0,1 1,12 0z" />
-    <path android:fillColor="#FFFFFFFF"
-       android:pathData="M34,31l7,-7 28,2 7,6 -5,2 -6,-3 -24,-2 -4,4z" />
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M38.0,40h31.0a7.5,7.5 0 0 1 7.5,7.5v20.0a7.5,7.5 0 0 1 -7.5,7.5h-31.0a7.5,7.5 0 0 1 -7.5,-7.5v-20.0a7.5,7.5 0 0 1 7.5,-7.5zM38.0,42.8h31.0a4.7,4.7 0 0 1 4.7,4.7v20.0a4.7,4.7 0 0 1 -4.7,4.7h-31.0a4.7,4.7 0 0 1 -4.7,-4.7v-20.0a4.7,4.7 0 0 1 4.7,-4.7z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M33.3,67.5 L39,62.5 L46,66 L54,59.5 L62.5,66.5 L69.5,62.5 L73.7,66.5 V73.2 H33.3z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M59.1,52.5a4.4,4.4 0 1 0 8.8,0a4.4,4.4 0 1 0 -8.8,0z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M74,30.5Q74.9,36.6 81,37.5Q74.9,38.4 74,44.5Q73.1,38.4 67,37.5Q73.1,36.6 74,30.5z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M65.5,28.6Q65.85,31.15 68.4,31.5Q65.85,31.85 65.5,34.4Q65.15,31.85 62.6,31.5Q65.15,31.15 65.5,28.6z" />
 </vector>

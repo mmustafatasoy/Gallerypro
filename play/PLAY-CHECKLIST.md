@@ -14,7 +14,7 @@
 
 ## Yayından önce çözülmesi gerekenler
 - [ ] **SFace FP32 model ağırlıklarının ticari dağıtım hakkı** ve eğitim verileri kaynağı yazılı olarak incelendi. OpenCV Zoo model dizini Apache-2.0 olarak işaretli olsa da köken/sublicensing konusunda açık sorular vardır. Hukuki teyit olmadan Play genel dağıtıma geçilmez.
-- [ ] Uygulama adı **GalleryPro**, mağaza ikonu, öne çıkan grafik, gerçek cihaz ekran görüntüleri ve destek bilgileri kesinleştirildi.
+- [ ] Uygulama adı **GalleryPro**, mağaza ikonu (hazır: `play/simge/gallerypro-play-simge-512.png`), öne çıkan grafik, gerçek cihaz ekran görüntüleri ve destek bilgileri kesinleştirildi.
 - [ ] `play/privacy-policy.html` dosyası herkese açık HTTPS URL'ye (ör. kullanıcının kendi sitesine) yüklendi, URL anonim tarayıcıda açılıyor; metin son Android/AAB özellikleriyle karşılaştırıldı.
 - [ ] Play Console **Data safety** formunda mevcut bağımlılıkların gerçek veri akışları doğrulandı. Uygulamanın yerel işlediği veriler otomatik olarak dışarı veri toplama sayılmaz; ama paket içindeki SDK'ler ve tüm sürümler denetlenmelidir.
 - [ ] `READ_MEDIA_IMAGES` ve `READ_MEDIA_VIDEO` için Play Console **Fotoğraf ve Video İzin Beyanı**: galerinin temel işlevi tüm kitaplığa erişim, arama ve albüm yönetimidir; sistem fotoğraf seçicisi sürekli galeri işlevi için yeterli değildir. Son karar Google Play incelemesine aittir.

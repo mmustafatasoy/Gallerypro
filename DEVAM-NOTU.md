@@ -338,3 +338,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - APK / AAB ortak AndroidManifest kullanır; `INTERNET` ve `REQUEST_INSTALL_PACKAGES` manifest merger üzerinden kaldırılır. `-PaabBuild=true` yalnızca varlık paketi / ABI için kullanılmaya devam eder.
 - `versionName=1.0.0`, `versionCode=32`, uygulama kimliği ve imza ayarı sabit. CI testleri, APK kaynak ZIP ve Play TEST AAB başarıyla tamamlanmadan yeni sürüm kararlı sayılmaz. Önceki **0.9.9 yükleme anahtarlı AAB**, 1.0.0 yerine Google Play'e yüklenmemelidir.
 - Gizlilik, README, Play checklist ve Türkçe/İngilizce uygulama kaynakları yeni çevrimdışı davranışa uyumlu güncellendi. SFace ticari model hakkı, kimlik onayı, gerçek cihaz ve Play Console testleri hâlâ yayın ön koşuludur.
+
+
+## 13 Kasım 2026 — Yeni GalleryPro simgesi (vektör, 1.0.0)
+
+- Kullanıcının isteğiyle Claude yeni, **tamamen vektör** bir uygulama simgesi tasarladı ve 0.9.9'daki 256 px WebP simgenin (bulanık, kendi çerçevesi adaptif maskeyle çift çerçeve yapıyordu) yerine koydu.
+- Tasarım: mor→pembe degrade zemin (sağ üstte turuncu, sol altta camgöbeği ışık), üst üste duran iki renkli sıvı cam kart, önde cam çerçeveli manzara fotoğrafı (gün batımı, güneş, dağlar), sağ üstte yapay zekâ kıvılcımları.
+- Dosyalar: `res/drawable/ic_launcher_background.xml`, `ic_gallerypro_foreground.xml`, `ic_gallerypro_monochrome.xml` (Android 13+ temalı simge). `drawable-nodpi/ic_gallerypro_foreground.webp` ve kullanılmayan `drawable/ic_launcher_foreground.xml` silindi. `mipmap-anydpi-v26/ic_launcher.xml` ve manifest değişmedi.
+- Kaynak: `scripts/generate-icon.py` (tek tanımdan SVG + VectorDrawable üretir; XML'leri elle değil bu betikle değiştirin: `python3 scripts/generate-icon.py <klasör>` sonra üç XML'i `res/drawable/`'a kopyalayın).
+- Google Play: `play/simge/gallerypro-play-simge-512.png` (512 × 512, tam kare, sRGB — Play köşeleri kendisi yuvarlar), ayrıca `gallerypro-simge-1024.png` ve katmanlı SVG.
+- Sürüm, paket kimliği, izinler ve imza değişmedi (`1.0.0` / versionCode 32). Simgenin gerçek cihazda (Samsung One UI, Tecno HiOS) görünümü kontrol edilmeli.
