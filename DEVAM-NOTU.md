@@ -338,3 +338,10 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - APK / AAB ortak AndroidManifest kullanır; `INTERNET` ve `REQUEST_INSTALL_PACKAGES` manifest merger üzerinden kaldırılır. `-PaabBuild=true` yalnızca varlık paketi / ABI için kullanılmaya devam eder.
 - `versionName=1.0.0`, `versionCode=32`, uygulama kimliği ve imza ayarı sabit. CI testleri, APK kaynak ZIP ve Play TEST AAB başarıyla tamamlanmadan yeni sürüm kararlı sayılmaz. Önceki **0.9.9 yükleme anahtarlı AAB**, 1.0.0 yerine Google Play'e yüklenmemelidir.
 - Gizlilik, README, Play checklist ve Türkçe/İngilizce uygulama kaynakları yeni çevrimdışı davranışa uyumlu güncellendi. SFace ticari model hakkı, kimlik onayı, gerçek cihaz ve Play Console testleri hâlâ yayın ön koşuludur.
+
+
+## 13 Kasım 2026 — Açık renkli Galeri Simgesi (kullanıcı görseli)
+
+- Kullanıcının son seçtiği beyaz/buz mavisi fotoğraf simgesi esas alınarak Android için ölçeklenebilir uyarlama hazırlandı: yumuşak beyaz zemin, mavi degradeli fotoğraf karesi, iki dağ ve güneş.
+- Adaptif başlatıcı simgesi `ic_launcher.xml` artık `drawable/ic_launcher_foreground.xml` vektörünü kullanır; arka plan açık renk, temalı simge tek renkli fotoğraf motifiyle tutarlıdır. Önceki koyu simge dosyası şimdilik geçmiş için korunur.
+- Bu dal yalnızca başlatıcı simgesi ve notu içerir. Paket adı, sürüm kodu, uygulama özellikleri, izinler, imza ve arayüz değiştirilmedi. Derleme başarısı ve gerçek cihaz simge görünümü birleştirme öncesi kontrol edilmeli.
