@@ -2,7 +2,7 @@
 
 Android için modern Motion Glass tasarımlı, cihaz içi akıllı arama ve fotoğraf/video düzenleme uygulaması.
 
-## İşlevler ve durum (0.9.8)
+## İşlevler ve durum (1.0.0)
 
 - **Kütüphane:** tarihe göre ızgara, favoriler, albümler, sayfalama, izgaradaki konumdan büyüyerek fotoğraf açma.
 - **Fotoğraf:** kırpma, filtre, renk düzenleme, EXIF tarih/konum, yakınlaştırma; 48–200 MP destekli JPEG/PNG/WebP için bölgesel çözümleme.
@@ -13,19 +13,19 @@ Android için modern Motion Glass tasarımlı, cihaz içi akıllı arama ve foto
 
 **Durum:** Kod aşamaları tamamlandı; Android telefonlarda bütün özelliklerin uçtan uca test edildiği veya Google Play'de yayımlandığı iddia edilmez. Son sürüm için GitHub Actions test sonucunu kontrol edin.
 
-## APK, otomatik güncelleme ve kaynak yedeği
+## APK ve kaynak yedeği
 
 - [En güncel başarıyla derlenmiş APK](https://github.com/mmustafatasoy/Gallerypro/releases/download/son-surum/Gallerypro.apk)
 - [Releases — tam kaynak ZIP ve SHA-256](https://github.com/mmustafatasoy/Gallerypro/releases/tag/son-surum)
 - [GitHub Actions derleme/test](https://github.com/mmustafatasoy/Gallerypro/actions)
 
-Kişisel GitHub APK'sı yalnızca GitHub sürüm kontrolü ve kullanıcı onaylı güncelleme indirmesi için internet kullanır; fotoğraf, yüz ve konum verilerini göndermez. APK SHA-256/boyutu doğrulanır; kurulum Android onayı gerektirir. **Play AAB derlemesinde INTERNET ve REQUEST_INSTALL_PACKAGES izinleri yoktur; uygulama içi APK güncellemesi kapalıdır.**
+**1.0.0'dan itibaren** uygulama içi GitHub sürüm denetimi, APK indirme/kurma akışı ve ilgili izinler hem kişisel APK'dan hem Play AAB'den tamamen kaldırıldı. Güncellemeleri Play Store dağıtımı için Google Play yönetir. GitHub Releases yalnızca test APK'ları ve kaynak ZIP yedeği dağıtımı içindir. Ayarlar'da sürüm, güncelleme veya lisans listesi gösterilmez; `Ayarlar → Uygulama Hakkında` altında `v1.0.0` ve Açık Kaynak Lisansları bağlantısı bulunur.
 
 Mevcut test APK'ları aynı deneme imzasını kullanır. İlerde özel imzaya geçmek mevcut uygulamanın üzerine kurulumu engelleyebilir: uygulamayı kaldırarak yerel verileri kaybetmeyin.
 
 ## Google Play için tamamlanması gerekenler
 
-Gerçek upload imzası, geliştirici hesabı, halka açık HTTPS gizlilik politikası, SFace FP32 eğitim/veri lisansı doğrulaması, mağaza varlıkları, gerçek cihaz testleri ve Play Console incelemesi. Ayrıntılar: `play/PLAY-CHECKLIST.md`. Açık eski **PR #21** özel imza dalı mevcut `main` ile çakışır ve başarısız CI içerir, zorla birleştirilmeyecek.
+1.0.0 için yeniden üretilecek upload anahtarıyla imzalı AAB, Play Console geliştirici kimlik onayı, halka açık HTTPS gizlilik politikası, SFace FP32 eğitim/veri lisansı doğrulaması, mağaza varlıkları, gerçek cihaz testleri ve Play Console incelemesi. Ayrıntılar: `play/PLAY-CHECKLIST.md`. Açık eski **PR #21** özel imza dalı mevcut `main` ile çakışır ve başarısız CI içerir, zorla birleştirilmeyecek.
 
 ## Teknoloji ve geliştirme
 

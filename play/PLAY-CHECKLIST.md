@@ -4,7 +4,7 @@
 
 ## Mevcut yapı
 - Paket: `com.atasoy.gallerypro` — mevcut kullanıcı sürümleriyle tutarlı tutulur.
-- Güncel son kararlılık adayı: `0.9.8`, versionCode `30`; mağaza yayını değil.
+- Yeni geliştirme sürümü: `1.0.0`, versionCode `32`; henüz Play Console'da onaylanmadı. Daha önce oluşturulan `0.9.9` yükleme AAB'si bu sürümün yerine kullanılamaz.
 - minSdk 29; targetSdk **36** — Google Play'in 31 Ağustos 2026 sonrası yeni uygulama hedef API düzeyiyle uyumlu.
 - Geliştirme APK'sı: sabit **deneme/debug imzası**, yalnızca GitHub üzerinden cihazda test içindir.
 - Play: `AAB` gerekir; gerçek **upload key** GitHub Secrets'da olmalı, Play App Signing ayrıca etkinleştirilir.
@@ -35,3 +35,10 @@
 - Data safety: https://support.google.com/googleplay/android-developer/answer/10144311
 - Kapalı test: https://support.google.com/googleplay/android-developer/answer/14151465
 - Asset packs: https://developer.android.com/guide/playcore/asset-delivery
+
+## 13 Kasım 2026 — 1.0.0 yayın uyumluluğu
+- [ ] `1.0.0` için GitHub Actions APK testleri ve Play TEST AAB başarılı. APK ve AAB birleşik manifestlerinde `INTERNET` / `REQUEST_INSTALL_PACKAGES` olmadığı `bundletool` / merged manifest ile doğrulandı.
+- [ ] Gizlilik politikası 1.0.0 içerik değişiklikleriyle güncellendi; HTTPS'te yayımlandı.
+- [ ] `1.0.0` gerçek upload-key AAB'si test ve yasal incelemeler sonrası üretildi. Önceki 0.9.9 Play paketi artık güncel değil.
+- [ ] Yeni `Uygulama Hakkında` ekranı, sürüm ve lisans alt ekranı gerçek Android cihazında test edildi.
+- [ ] Güncelleme API çağrısı, otomatik APK indirme/kurma veya GitHub yükseltme ekranı bulunmadığı doğrulandı.

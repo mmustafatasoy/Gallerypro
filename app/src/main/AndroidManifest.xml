@@ -18,11 +18,9 @@
     <!-- Gizli albüm parmak izi, yüz veya ekran kilidiyle açılır. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- Yalnızca GitHub APK kurulumlarında geçici güncelleme izinleri.
-         -PaabBuild=true ile üretilen Google Play AAB'de ikisi de kesin çıkarılır.
-         Fotoğraflar ve yüz bilgileri hiçbir güncelleme isteğine eklenmez. -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Güncelleme sistemi kaldırıldı; kütüphaneler eklese bile her iki izin engellenir. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
 
     <application
         android:name=".GalleryApp"

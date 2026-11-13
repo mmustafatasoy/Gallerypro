@@ -328,3 +328,13 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - App icon görüntüsü, onaylı yüksek çözünürlüklü simgenin Android'e uygun boyuta yeniden örneklenmiş ve WebP olarak optimize edilmiş hâlidir; logo web sürümü ayrıca Google Play Console için 512 × 512 sRGB PNG olarak hazırlanmıştır.
 - `versionCode 31`, `versionName 0.9.9`; mevcut paket kimliği ve imza/izin/özellikler değiştirilmedi. 0.9.8 üstüne güncelleme mümkün olmalıdır (kurulmuş APK aynı anahtarla imzalıysa).
 - Yeni bir SDK/kütüphane eklenmedi. Test + APK + kaynak ZIP ve SHA-256 işlemleri GitHub Actions yeşil olmadan son sürüm olarak ilan edilmez. Fiziksel cihaz ve Google Play inceleme adımları ayrıca gereklidir.
+
+
+## 13 Kasım 2026 — Kullanıcı onaylı Ayarlar / Uygulama Hakkında ve mağazaya geçiş (1.0.0)
+
+- Kullanıcının gerçek 0.9.9 cihaz görüntülerine göre Ayarlar ana sayfasındaki üstteki sürüm, GitHub sürüm kontrolü bölümü ve alttaki lisans listesi kaldırıldı.
+- Ayarlar'da **Uygulama Hakkında** alt sayfası eklendi: `Sürüm v1.0.0` (kod numarası kullanıcıya gösterilmez), `Açık Kaynak Lisansları` alt menüsü ve her lisansın metni; sistem/ekran geri hareketleri hiyerarşik çalışır.
+- Geçici GitHub güncelleme modülü APK ve Play için tamamen kaldırıldı: `UpdateManager`, `UpdateLogic`, `UpdateUi`, `UpdateLogicTest`, `GalleryRoot` pop-up ve başlangıç kontrolü, `GalleryApp` yöneticisi, ilgili strings ve manifest izinleri. GitHub Releases'ta APK üretimi yedekleme ve cihaz testi amaçlı **sürer**, uygulama içi güncelleme değildir.
+- APK / AAB ortak AndroidManifest kullanır; `INTERNET` ve `REQUEST_INSTALL_PACKAGES` manifest merger üzerinden kaldırılır. `-PaabBuild=true` yalnızca varlık paketi / ABI için kullanılmaya devam eder.
+- `versionName=1.0.0`, `versionCode=32`, uygulama kimliği ve imza ayarı sabit. CI testleri, APK kaynak ZIP ve Play TEST AAB başarıyla tamamlanmadan yeni sürüm kararlı sayılmaz. Önceki **0.9.9 yükleme anahtarlı AAB**, 1.0.0 yerine Google Play'e yüklenmemelidir.
+- Gizlilik, README, Play checklist ve Türkçe/İngilizce uygulama kaynakları yeni çevrimdışı davranışa uyumlu güncellendi. SFace ticari model hakkı, kimlik onayı, gerçek cihaz ve Play Console testleri hâlâ yayın ön koşuludur.

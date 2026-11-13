@@ -47,8 +47,6 @@ import com.atasoy.gallerypro.data.LocalGalleryStores
 import com.atasoy.gallerypro.data.clip.ClipAssets
 import com.atasoy.gallerypro.data.index.IndexScheduler
 import com.atasoy.gallerypro.data.media.Formatters
-import com.atasoy.gallerypro.data.update.UpdateManager
-import com.atasoy.gallerypro.feature.update.SettingsUpdateSection
 import com.atasoy.gallerypro.designsystem.GalleryColors
 import com.atasoy.gallerypro.designsystem.GalleryDimens
 import com.atasoy.gallerypro.designsystem.GalleryPerformance
@@ -64,8 +62,8 @@ import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
- * Ayarlar ve Hakkında: sürüm, akıllı arama durumu ve "Yeniden incele", gizlilik notu,
- * açık kaynak lisansları (APK'daki assets/licenses). Kütüphane "⋯" menüsünden açılır.
+ * Ayarlar: akıllı arama, görünüm ve gizlilik; sürüm ve açık kaynak lisansları
+ * yalnızca Ayarlar > Uygulama Hakkında sayfasında görünür.
  */
 @Composable
 fun SettingsScreen(onClose: () -> Unit) {
@@ -78,15 +76,23 @@ fun SettingsScreen(onClose: () -> Unit) {
     val vectors by stores.index.vectors.collectAsStateWithLifecycle()
     val semantic = remember { ClipAssets.available(context) }
     var requested by remember { mutableStateOf(false) }
+    var showAbout by rememberSaveable { mutableStateOf(false) }
+    var showLicenses by rememberSaveable { mutableStateOf(false) }
     var openLicense by rememberSaveable { mutableStateOf<String?>(null) }
 
     val licenses by produceState(emptyList<Pair<String, String>>()) {
         value = withContext(Dispatchers.IO) { Licenses.list(context) }
     }
 
-    BackHandler {
-        if (openLicense != null) openLicense = null else onClose()
+    val goBack: () -> Unit = {
+        when {
+            openLicense != null -> openLicense = null
+            showLicenses -> showLicenses = false
+            showAbout -> showAbout = false
+            else -> onClose()
+        }
     }
+    BackHandler { goBack() }
 
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -117,23 +123,55 @@ fun SettingsScreen(onClose: () -> Unit) {
                         )
                     }
                 }
-            } else {
+            } else if (showLicenses) {
                 LazyColumn(contentPadding = PaddingValues(top = topInset + 72.dp, bottom = bottomInset + 24.dp)) {
                     item {
                         Group {
-                            RowItem(
-                                stringResource(R.string.settings_version),
-                                "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-                            )
+                            licenses.forEachIndexed { i, (file, title) ->
+                                if (i > 0) Divider()
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable(role = Role.Button) { openLicense = file }
+                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BasicText(title, style = GalleryType.Body, modifier = Modifier.weight(1f))
+                                    Glyph(GalleryIcons.ChevronRight, GalleryColors.Chevron, size = 18.dp)
+                                }
+                            }
                         }
                     }
-                    if (BuildConfig.SIDELOAD_UPDATER) {
-                        item {
-                            SettingsUpdateSection(
-                                manager = (context.applicationContext as com.atasoy.gallerypro.GalleryApp).container.updates
-                            )
+                }
+            } else if (showAbout) {
+                LazyColumn(contentPadding = PaddingValues(top = topInset + 72.dp, bottom = bottomInset + 24.dp)) {
+                    item {
+                        Group {
+                            RowItem(stringResource(R.string.settings_version), "v${BuildConfig.VERSION_NAME}")
                         }
                     }
+                    item {
+                        SectionTitle(stringResource(R.string.settings_licenses))
+                        Group {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button) { showLicenses = true }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                BasicText(
+                                    stringResource(R.string.settings_licenses),
+                                    style = GalleryType.Body,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Glyph(GalleryIcons.ChevronRight, GalleryColors.Chevron, size = 18.dp)
+                            }
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(contentPadding = PaddingValues(top = topInset + 72.dp, bottom = bottomInset + 24.dp)) {
                     item {
                         val total = indexed.size
                         val body = when {
@@ -210,23 +248,22 @@ fun SettingsScreen(onClose: () -> Unit) {
                             )
                         }
                     }
-                    if (licenses.isNotEmpty()) {
-                        item {
-                            SectionTitle(stringResource(R.string.settings_licenses))
-                            Group {
-                                licenses.forEachIndexed { i, (file, title) ->
-                                    if (i > 0) Divider()
-                                    Row(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .clickable(role = Role.Button) { openLicense = file }
-                                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        BasicText(title, style = GalleryType.Body, modifier = Modifier.weight(1f))
-                                        Glyph(GalleryIcons.ChevronRight, GalleryColors.Chevron, size = 18.dp)
-                                    }
-                                }
+                    item {
+                        SectionTitle(stringResource(R.string.settings_about))
+                        Group {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button) { showAbout = true }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                BasicText(
+                                    stringResource(R.string.settings_about),
+                                    style = GalleryType.Body,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Glyph(GalleryIcons.ChevronRight, GalleryColors.Chevron, size = 18.dp)
                             }
                         }
                     }
@@ -251,13 +288,18 @@ fun SettingsScreen(onClose: () -> Unit) {
                 backdrop = backdrop,
                 icon = GalleryIcons.Back,
                 contentDescription = stringResource(R.string.viewer_back),
-                onClick = { if (openLicense != null) openLicense = null else onClose() },
+                onClick = goBack,
                 tint = GalleryColors.TextPrimary
             )
             Spacer(Modifier.width(12.dp))
             BasicText(
-                openLicense?.let { file -> licenses.firstOrNull { it.first == file }?.second }
-                    ?: stringResource(R.string.settings_title),
+                when {
+                    openLicense != null ->
+                        licenses.firstOrNull { it.first == openLicense }?.second ?: stringResource(R.string.settings_licenses)
+                    showLicenses -> stringResource(R.string.settings_licenses)
+                    showAbout -> stringResource(R.string.settings_about)
+                    else -> stringResource(R.string.settings_title)
+                },
                 style = GalleryType.SectionTitle.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold)
             )
         }
