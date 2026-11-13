@@ -319,3 +319,12 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Kişisel APK'nın INTERNET izni kullandığı hâlde izin metninde internetsiz denmesi hatalıydı. Türkçe/İngilizce izin metinleri, `play/privacy-policy.html`, `README.md`, `AGENTS.md`, `play/store-listing.md`, `play/PLAY-CHECKLIST.md` güncellendi. Medya/yüz verileri GitHub'a gönderilmez; normal bağlantı meta verileri ağ sağlayıcısı ve GitHub tarafından işlenebilir.
 - `0.9.8` / versionCode30. GitHub Actions başarı + APK + kaynak ZIP + SHA-256 sonrası PR main'e alınabilir. CI gerçek Android cihaz testinin yerini tutmaz.
 - **Yayın bloke eden dış bağımlılıklar:** Play hesabı/gerçek özel imza, SFace modelinin ticari dağıtım hakkı, HTTPS'te yayınlanmış gizlilik politikası, gerçek Samsung Motion Photo/Android 16 video kırpma/108 MP cihaz testleri ve Play Console onayı. PR #21 mevcut test imzasını değiştirip kurulu kullanıcı verisini tehlikeye sokabilir; zorla birleştirme yok.
+
+
+## 13 Kasım 2026 — Onaylanan GalleryPro simgesi (0.9.9)
+
+- Kullanıcının onayladığı, **yazısız, renkli 3B galeri logosu** uygulama başlatıcı simgesi yapıldı; tasarımın kompozisyonu değiştirilmedi.
+- Android 10+ adaptif simge: `mipmap-anydpi-v26/ic_launcher.xml`, koyu arka plan ve güvenli alanlı `drawable-nodpi/ic_gallerypro_foreground.webp`; Android temalı simge için ayrı tek renkli vektör.
+- App icon görüntüsü, onaylı yüksek çözünürlüklü simgenin Android'e uygun boyuta yeniden örneklenmiş ve WebP olarak optimize edilmiş hâlidir; logo web sürümü ayrıca Google Play Console için 512 × 512 sRGB PNG olarak hazırlanmıştır.
+- `versionCode 31`, `versionName 0.9.9`; mevcut paket kimliği ve imza/izin/özellikler değiştirilmedi. 0.9.8 üstüne güncelleme mümkün olmalıdır (kurulmuş APK aynı anahtarla imzalıysa).
+- Yeni bir SDK/kütüphane eklenmedi. Test + APK + kaynak ZIP ve SHA-256 işlemleri GitHub Actions yeşil olmadan son sürüm olarak ilan edilmez. Fiziksel cihaz ve Google Play inceleme adımları ayrıca gereklidir.
