@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Gallerypro</string>
+    <string name="app_name">GalleryPro</string>
     <string name="viewer_motion_preparing">Hareketli fotoğraf hazırlanıyor…</string>
     <string name="viewer_motion_failed">Hareketli fotoğrafın videosu açılamadı</string>
 
@@ -43,7 +43,7 @@
 
     <!-- İzin ekranı -->
     <string name="permission_title">Fotoğraflarına erişim</string>
-    <string name="permission_body">Fotoğraf ve videolarını görüntülemek için izin gerekiyor. Fotoğraf ve yüz bilgilerin cihazında işlenir; medya verilerin gönderilmez. Kişisel APK yalnızca GitHub sürüm denetimi ve kullanıcı onaylı güncelleme indirmesi için internete bağlanır.</string>
+    <string name="permission_body">Fotoğraf ve videolarını görüntülemek ve yönetmek için izin gerekiyor. Fotoğraf ve yüz verilerin yalnızca cihazında işlenir; dışarı gönderilmez.</string>
     <string name="permission_allow">İzin ver</string>
     <string name="permission_settings">Ayarları aç</string>
     <string name="permission_denied_hint">İzin kapalı. Ayarlar › İzinler › Fotoğraflar ve videolar bölümünden açabilirsin.</string>
@@ -133,13 +133,14 @@
     <string name="memory_on_this_day">Bu Gün</string>
     <string name="memory_year">%1$d Özeti</string>
     <string name="settings_title">Ayarlar</string>
+    <string name="settings_about">Uygulama Hakkında</string>
     <string name="settings_version">Sürüm</string>
     <string name="settings_reindex">Yeniden incele</string>
     <string name="settings_index_none">Henüz hiçbir fotoğraf incelenmedi.</string>
     <string name="settings_index_labels">%1$s öğe incelendi.</string>
     <string name="settings_index_semantic">%1$s öğe incelendi; %2$s öğe cümleyle aramaya hazır.</string>
     <string name="settings_privacy">Gizlilik</string>
-    <string name="settings_privacy_body">Fotoğraf inceleme, arama, yer adları ve anılar cihaz içinde çalışır. Kişisel APK sürümünde yalnızca açık GitHub sürüm bilgisi kontrol edilir; hiçbir fotoğraf veya yüz verisi gönderilmez. Google Play sürümünde internet izni bulunmaz.</string>
+    <string name="settings_privacy_body">Fotoğraf inceleme, akıllı arama, yer adları, anılar ve yüz gruplama yalnızca cihazında çalışır. GalleryPro fotoğraf veya yüz verilerini dışarı göndermez ve internet izni istemez.</string>
     <string name="settings_licenses">Açık Kaynak Lisansları</string>
     <string name="settings_appearance">Görünüm</string>
     <string name="settings_effects">Tam cam efektleri</string>
@@ -293,18 +294,4 @@
     <string name="people_unnamed">İsimsiz Kişi</string>
     <string name="people_name">Kişiye İsim Ver</string>
     <string name="people_photo_count">%1$d fotoğraf</string>
-    <string name="updates_title">Uygulama Güncellemesi</string>
-    <string name="updates_check">Güncellemeleri Denetle</string>
-    <string name="updates_checking">Yeni sürüm kontrol ediliyor…</string>
-    <string name="updates_current">GalleryPro güncel.</string>
-    <string name="updates_available">Yeni sürüm: %1$s</string>
-    <string name="updates_failed">Güncelleme kontrol edilemedi. İnternet bağlantını kontrol et.</string>
-    <string name="updates_download">Güncellemeyi İndir</string>
-    <string name="updates_downloading">İndiriliyor: %1$d%%</string>
-    <string name="updates_ready">Sürüm %1$s indirildi ve doğrulandı.</string>
-    <string name="updates_install">Kuruluma Geç</string>
-    <string name="updates_later">Sonra</string>
-    <string name="updates_download_failed">APK indirilemedi veya SHA-256 kontrolü başarısız.</string>
-    <string name="updates_privacy">Yalnızca GitHub sürüm bilgileri kontrol edilir. Fotoğraf ve yüz verilerin gönderilmez. Google Play sürümünde bu sistem kapalıdır.</string>
-    <string name="updates_unknown_sources">Android kurulum izni isterse bu uygulamaya izin verip Kuruluma Geç düğmesine tekrar bas.</string>
 </resources>
