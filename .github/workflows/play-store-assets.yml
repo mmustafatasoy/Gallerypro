@@ -31,6 +31,6 @@ jobs:
           name: GalleryPro-Play-Magaza-Gorselleri
           path: |
             play/generated/GalleryPro-feature-1024x500.png
-            play/simge/gallerypro-play-simge-512.png
+            play/generated/GalleryPro-play-icon-512-RGBA.png
           if-no-files-found: error
           retention-days: 30
