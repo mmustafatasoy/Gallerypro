@@ -114,6 +114,9 @@ jobs:
       - name: Testler ve APK
         run: gradle --no-daemon testDebugUnitTest assembleRelease
 
+      - name: APK birleşik izin denetimi
+        run: python3 scripts/play/verify_play_manifest.py
+
       - name: Test özeti
         if: always()
         run: |
