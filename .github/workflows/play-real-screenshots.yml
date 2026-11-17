@@ -1,0 +1,68 @@
+name: Play Real Emulator Screenshots
+
+on:
+  push:
+    branches: ["asama-play-100-son-kontrol"]
+    paths:
+      - 'scripts/play/capture_emulator_screenshots.sh'
+      - 'scripts/play/create_emulator_sample_media.py'
+      - '.github/workflows/play-real-screenshots.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    name: GalleryPro Android emulator screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Gradle version
+        id: gradle
+        run: echo "version=$(sed -n 's/.*gradle-\\([0-9.]*\\)-bin\\.zip.*/\\1/p' gradle/wrapper/gradle-wrapper.properties)" >> "$GITHUB_OUTPUT"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.gradle.outputs.version }}
+      - name: Prepare Android SDK licenses
+        run: bash scripts/accept-android-licenses.sh
+      - name: Prepare fonts and original sample media
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends python3-fonttools python3-brotli > /dev/null
+          python3 -m pip install --user --break-system-packages Pillow==11.3.0
+          bash scripts/fetch-fonts.sh
+          python3 scripts/play/create_emulator_sample_media.py
+      - name: Enable KVM for emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Launch real Android and capture actual GalleryPro screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          ram-size: 3072M
+          heap-size: 512M
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          script: bash scripts/play/capture_emulator_screenshots.sh
+      - name: Actual screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GalleryPro-Gercek-Emulator-Ekran-Goruntuleri
+          path: |
+            build/store-screenshots/*.png
+            build/store-screenshots/android-runtime.txt
+          if-no-files-found: warn
+          retention-days: 30
