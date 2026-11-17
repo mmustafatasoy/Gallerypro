@@ -373,3 +373,17 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Google Play geliştirici kimlik doğrulaması 17.11.2026 Google Play Console e-postasıyla başarılı. Ancak Play Console form/yayın ve hesap türüne bağlı 12/14 kapalı test otomatik tamamlanmış değildir.
 - **Açık engeller:** SFace 2021dec FP32 ONNX ağırlığının ticari dağıtım ve eğitim verisi hakları; gerçek cihaz video kırpma/yüz indeksleme/Motion Photo/EXIF/gizli albüm testleri; canlı HTTPS gizlilik bağlantısı; gerçek ekran görüntüleri; Play Console formları ve gerekiyorsa kapalı test. Genel halka açık dağıtım bunlar çözülmeden yapılmaz.
 - Bu ek belgeler ve arayüz bağlantısı sonrası **yeniden APK/Play AAB CI** başarılı olmadan kullanıcıya son sürüm/kararlı yayın onayı verilmez; proje kuralı gereği PR #31'i kullanıcı birleştirir.
+
+## 17 Kasım 2026 — Play için kaynak lisansı ve ana dal AAB hazırlığı (son inceleme)
+- Google Play 2026 hedef API politikası doğrulandı; `targetSdk=36`, `compileSdk=37`, paket `com.atasoy.gallerypro`, sürüm `1.0.0 (32)` korunuyor.
+- Gizlilik URL'si `https://atasoyyazilim.com/gallerypro-gizlilik.html` anonim HTTPS üzerinden GitHub Actions testinde doğrulandı: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44066256630
+- Gerçek Android emülatöründe uygulama açılıp Kütüphane ve Koleksiyonlar ekranları alındı; emülatör test iş akışı yeşil: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44064352135. Fiziksel cihazda kapsamlı medya testleri ayrıca gerekli.
+- OpenCV Zoo model ağırlıklarını derleme sırasında SHA-256 ile kesin doğrulama eklendi:
+  - YuNet `8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4`
+  - SFace FP32 `0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79`
+  - Lisansların yanı sıra `scripts/play/SFACE-MODEL-PROVENANCE.txt` pakete ekleniyor; Ayarlar > Uygulama Hakkında > Açık kaynak lisansları bölümünde OpenCV lisans ve kaynak bağlantıları gösteriliyor.
+- **SFace riski:** Apache-2.0 model dosyaları için OpenCV Zoo resmi README beyanı var; ancak tam ağırlıkların eğitim veri lisanslarının geçmişi ilgili issue #313'te belirsiz. Kaynak gösterme yeterli olduğu garanti edilemez; gerekli hukuki inceleme notu korunur.
+- `play/PLAY-FORMLARI-2026.md` Play Console için 2026 form ve izin açıklamalarını barındırıyor; bir formun doldurulduğu iddia edilmez.
+- `.github/workflows/aab.yml` ana dala yalnızca **[PLAY-UPLOAD-1.0.0]** içeren merge başlığıyla geçişte tek seferlik gerçek upload key AAB'yi ön sürüm GitHub Release'ine koyacak şekilde hazırlandı; normal main push'larda özel imzalı yayın üretmeyecek. Ayrıca manuel `workflow_dispatch publish=true` hâlâ var.
+- Mevcut upload anahtarı GitHub Secrets'ta; yeni anahtar yok, secret açıklanmıyor. Main final iş akışı yeşil olmadan 'yayına hazır' deme.
+- Play Console'da AAB yüklemek / içerik beyanları / üretim erişimi / olası 12 testçi-14 gün / gerçek telefon testleri kullanıcı hesabıyla yapılmalı. **AAB yayınlanması Google Play'e yükleme veya genel yayın değildir.**
