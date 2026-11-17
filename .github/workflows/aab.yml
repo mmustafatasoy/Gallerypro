@@ -79,7 +79,10 @@ jobs:
             printf '%s' "$RELEASE_KEYSTORE_B64" | base64 -d > app/release.jks
             test -s app/release.jks
             keytool -list -keystore app/release.jks -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" > /dev/null
-            echo "Mevcut gerçek yükleme anahtarı ve alias doğrulandı (özel anahtar loglanmaz)."
+            # Public certificate only: safe to upload to Play Console, no private key included.
+            keytool -exportcert -rfc -keystore app/release.jks -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" -file Gallerypro-upload-cert.pem > /dev/null
+            test -s Gallerypro-upload-cert.pem
+            echo "Mevcut gerçek yükleme anahtarı ve alias doğrulandı; yalnızca açık sertifika dışarı aktarıldı."
           else
             mkdir -p ~/.android
             base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
@@ -179,6 +182,7 @@ jobs:
           path: |
             Gallerypro.aab
             Gallerypro.aab.sha256
+            Gallerypro-upload-cert.pem
           retention-days: 14
 
       - name: TEST AAB — sadece Actions içinde (Google Play'e YÜKLEMEYİN)
@@ -199,6 +203,10 @@ jobs:
           set -euo pipefail
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
           TAG="play-upload-v$VERSION-$GITHUB_RUN_NUMBER"
-          gh release create "$TAG" Gallerypro.aab Gallerypro.aab.sha256 --target "$GITHUB_SHA" --prerelease \
+          gh release create "$TAG" Gallerypro.aab Gallerypro.aab.sha256 Gallerypro-upload-cert.pem --target "$GITHUB_SHA" --prerelease \
             --title "Play Console yükleme paketi $VERSION" \
             --notes "Yükleme anahtarıyla imzalandı. Play Console'a otomatik yüklenmedi. Ticari SFace model hakları, gizlilik, ekran görüntüleri ve izin beyanları yayın öncesinde kontrol edilmeli."
+
+      - name: Geçici özel anahtar dosyasını temizle
+        if: always()
+        run: rm -f app/release.jks
