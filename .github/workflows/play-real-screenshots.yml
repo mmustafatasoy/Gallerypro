@@ -23,12 +23,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Gradle version
-        id: gradle
-        run: echo "version=$(sed -n 's/.*gradle-\\([0-9.]*\\)-bin\\.zip.*/\\1/p' gradle/wrapper/gradle-wrapper.properties)" >> "$GITHUB_OUTPUT"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: ${{ steps.gradle.outputs.version }}
+          gradle-version: '9.7.1'
       - name: Prepare Android SDK licenses
         run: bash scripts/accept-android-licenses.sh
       - name: Prepare fonts and original sample media
