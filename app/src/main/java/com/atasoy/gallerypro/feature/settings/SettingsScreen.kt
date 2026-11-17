@@ -408,7 +408,10 @@ object Licenses {
     private val titles = mapOf(
         "inter-OFL.txt" to "Inter (SIL Open Font License 1.1)",
         "clip-models.txt" to "CLIP modelleri (MIT, Apache-2.0)",
-        "geonames.txt" to "GeoNames (CC BY 4.0)"
+        "geonames.txt" to "GeoNames (CC BY 4.0)",
+        "sface-apache-2.0.txt" to "OpenCV SFace (Apache 2.0)",
+        "yunet-mit.txt" to "OpenCV YuNet (MIT)",
+        "face-model-provenance.txt" to "Yüz modelleri: kaynak ve lisans bilgisi"
     )
 
     fun list(context: android.content.Context): List<Pair<String, String>> =
