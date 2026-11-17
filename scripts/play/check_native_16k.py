@@ -13,8 +13,14 @@ def check_shared_libraries(archive):
     count = 0
     problems = []
     with zipfile.ZipFile(archive) as z:
+        # Google Play 16 KiB requirement concerns 64-bit device native libraries.
+        # 32-bit armeabi-v7a / x86 .so files can legitimately be 4 KiB aligned.
         libs = sorted(name for name in z.namelist()
-                      if name.endswith('.so') and '/lib/' in f'/{name}')
+                      if name.endswith('.so')
+                      and any('/' + abi + '/' in f'/{name}'
+                              for abi in ('arm64-v8a', 'x86_64')))
+        if not libs:
+            raise ValueError('No 64-bit native libraries found in bundle')
         with tempfile.TemporaryDirectory() as tmpdir:
             for index, member in enumerate(libs):
                 count += 1
