@@ -348,3 +348,12 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Kaynak: `scripts/generate-icon.py` (tek tanımdan SVG + VectorDrawable üretir; XML'leri elle değil bu betikle değiştirin: `python3 scripts/generate-icon.py <klasör>` sonra üç XML'i `res/drawable/`'a kopyalayın).
 - Google Play: `play/simge/gallerypro-play-simge-512.png` (512 × 512, tam kare, sRGB — Play köşeleri kendisi yuvarlar), ayrıca `gallerypro-simge-1024.png` ve katmanlı SVG.
 - Sürüm, paket kimliği, izinler ve imza değişmedi (`1.0.0` / versionCode 32). Simgenin gerçek cihazda (Samsung One UI, Tecno HiOS) görünümü kontrol edilmeli.
+
+## 17 Kasım 2026 — Google Play 1.0.0 son paket kontrolü (asama-play-100-son-kontrol)
+
+- Güncel `main`'den yeni çalışma dalı oluşturuldu. Sürüm ve uygulama kodu değiştirilmedi (`1.0.0` / `versionCode 32`).
+- `scripts/play/verify_play_manifest.py` eklendi: debug/kaynak manifest yerine **Gradle ile gerçekten üretilen release birleşik manifest** denetlenir. `INTERNET` veya `REQUEST_INSTALL_PACKAGES` görülürse hata verir, galeri için `READ_MEDIA_IMAGES` ve `READ_MEDIA_VIDEO` yoksa da derlemeyi durdurur; manifest üretilemediyse kontrol atlanmaz.
+- Hem `.github/workflows/apk.yml`, hem `.github/workflows/aab.yml` bu denetimi derlemeden sonra çalıştırır. TEST AAB hâlâ deneme anahtarıyla üretilir ve Play'e yüklenmez; gerçek yayın `publish=true` koşuluna dokunulmadı.
+- `play/PHOTO-VIDEO-IZIN-BEYANI.md`: Google Play fotoğraf/video izinleri gerekçesi için Türkçe taslak hazırlandı.
+- **Derleme tamamlanmadan onay iddiası yok.** Dalın GitHub Actions APK ve Play AAB sonuçları, sürüm ve paketteki izinler kontrol edilecek. PR ana dala yalnızca CI başarılı olunca ve kullanıcı kararıyla birleştirilecek.
+- **Dışa bağımlı kalanlar:** SFace FP32 model ağırlığı ve eğitim verilerinin ticari dağıtım hakkı; gerçek upload anahtarlı yeni AAB (mevcut 0.9.9 AAB kullanılmaz); canlı HTTPS gizlilik bağlantısı ve Play Console formları, kullanıcı kimlik doğrulaması, gerçek Android cihazda video kırpma/yüz tanıma testleri, gerekirse kapalı test. Bu adımlar otomatik tamamlanmış sayılmaz.
