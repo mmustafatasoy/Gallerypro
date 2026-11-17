@@ -125,6 +125,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon -PaabBuild=true testDebugUnitTest bundleRelease
 
+      - name: Play AAB birleşik izin denetimi
+        run: python3 scripts/play/verify_play_manifest.py
+
       - name: AAB paketini ve tüm modelleri doğrula
         run: |
           set -euo pipefail
