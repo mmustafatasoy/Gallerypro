@@ -6,7 +6,7 @@ name: Play AAB
 
 on:
   push:
-    branches: ["asama-play-*"]
+    branches: [main, "asama-play-*"]
   workflow_dispatch:
     inputs:
       publish:
@@ -24,11 +24,12 @@ concurrency:
 
 jobs:
   bundle:
+    if: github.ref_name != 'main' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[PLAY-UPLOAD-1.0.0]'))
     name: Play paketi (AAB)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      PLAY_SIGNED_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true }}
+      PLAY_SIGNED_RELEASE: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish == true) || (github.event_name == 'push' && github.ref_name == 'main' && contains(github.event.head_commit.message, '[PLAY-UPLOAD-1.0.0]')) }}
       # Bu tek Play hazırlık dalında eski yükleme anahtarını doğrula; herhangi bir yere yayımlama.
       PLAY_SIGNED_QA: ${{ github.event_name == 'push' && github.ref_name == 'asama-play-100-son-kontrol' }}
     steps:
