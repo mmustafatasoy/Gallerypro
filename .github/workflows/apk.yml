@@ -114,6 +114,13 @@ jobs:
       - name: Testler ve APK
         run: gradle --no-daemon testDebugUnitTest assembleRelease
 
+      - name: 16 KB yerel kütüphane uyumluluğu (APK)
+        run: |
+          python3 scripts/play/check_native_16k.py app/build/outputs/apk/release/app-release.apk
+          ZIPALIGN=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -type f -name zipalign | sort -V | tail -n 1)
+          test -x "$ZIPALIGN"
+          "$ZIPALIGN" -c -P 16 -v 4 app/build/outputs/apk/release/app-release.apk | tail -n 4
+
       - name: APK birleşik izin denetimi
         run: python3 scripts/play/verify_play_manifest.py
 
