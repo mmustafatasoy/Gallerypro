@@ -1,0 +1,40 @@
+name: Verify GalleryPro Privacy URL
+
+on:
+  push:
+    branches: ["asama-play-100-son-kontrol"]
+    paths: ['.github/workflows/verify-privacy-url.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: HTTPS erişimi ve gizlilik metnini kontrol et
+        run: |
+          python3 - <<'PY'
+          from urllib.request import Request,urlopen
+          from urllib.error import URLError,HTTPError
+          from ssl import create_default_context
+          import sys
+          url="https://atasoyyazilim.com/gallerypro-gizlilik.html"
+          try:
+              request=Request(url,headers={"User-Agent":"GalleryPro-PlayPrivacyVerification/1.0","Cache-Control":"no-cache"})
+              with urlopen(request,timeout=18,context=create_default_context()) as resp:
+                  body=resp.read(131072).decode("utf-8",errors="replace")
+                  code=resp.status
+                  final=resp.geturl()
+                  print("HTTPS status:",code,"final URL:",final,"body bytes:",len(body.encode()))
+                  for phrase in ("GalleryPro","Privacy Policy","Gizlilik Politikası","destek@atasoyyazilim.com"):
+                      if phrase not in body:
+                          sys.exit("FAILED: missing expected privacy text: "+phrase)
+                  if code!=200 or "gallerypro-gizlilik.html" not in final:
+                      sys.exit("FAILED: unexpected HTTP status or redirect.")
+                  print("PASS: Public GalleryPro privacy URL returns complete TR+EN content over HTTPS.")
+          except (URLError,HTTPError,OSError) as e:
+              sys.exit(f"FAILED: public HTTPS URL not accessible: {type(e).__name__}: {e}")
+          PY
