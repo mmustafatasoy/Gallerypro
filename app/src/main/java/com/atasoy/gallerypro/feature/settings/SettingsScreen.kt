@@ -1,5 +1,7 @@
 package com.atasoy.gallerypro.feature.settings
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +70,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(onClose: () -> Unit) {
     val context = LocalContext.current
+    val privacyPolicyUrl = stringResource(R.string.settings_privacy_policy_url)
     val locale = remember { Locale.getDefault() }
     val backdrop = rememberLayerBackdrop()
     val stores = LocalGalleryStores.current
@@ -246,6 +249,30 @@ fun SettingsScreen(onClose: () -> Unit) {
                                 style = GalleryType.Body.copy(color = GalleryColors.TextSecondary),
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
                             )
+                            Divider()
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button) {
+                                        // ACTION_VIEW lets the user's browser load the page.
+                                        // GalleryPro itself retains zero INTERNET permission.
+                                        runCatching {
+                                            context.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl))
+                                                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                                            )
+                                        }
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                BasicText(
+                                    stringResource(R.string.settings_privacy_policy),
+                                    style = GalleryType.Body,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Glyph(GalleryIcons.ChevronRight, GalleryColors.Chevron, size = 18.dp)
+                            }
                         }
                     }
                     item {
