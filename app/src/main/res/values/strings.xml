@@ -140,6 +140,8 @@
     <string name="settings_index_labels">%1$s öğe incelendi.</string>
     <string name="settings_index_semantic">%1$s öğe incelendi; %2$s öğe cümleyle aramaya hazır.</string>
     <string name="settings_privacy">Gizlilik</string>
+    <string name="settings_privacy_policy">Gizlilik Politikası</string>
+    <string name="settings_privacy_policy_url" translatable="false">https://atasoyyazilim.com/gallerypro-gizlilik.html</string>
     <string name="settings_privacy_body">Fotoğraf inceleme, akıllı arama, yer adları, anılar ve yüz gruplama yalnızca cihazında çalışır. GalleryPro fotoğraf veya yüz verilerini dışarı göndermez ve internet izni istemez.</string>
     <string name="settings_licenses">Açık Kaynak Lisansları</string>
     <string name="settings_appearance">Görünüm</string>
