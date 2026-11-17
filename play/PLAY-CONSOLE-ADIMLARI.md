@@ -13,8 +13,8 @@
 - Yeni 1.0.0 gerçek upload-key **QA AAB**: Play AAB GitHub Actions içinde oluşturuldu; sertifikası 0.9.9 ile **SHA-256 olarak aynı**. Güncel signed QA ve APK kontrolü başarılı olmadan sürüm kararlı ilan edilmez.
 - Kamera/Fotoğraf/Video izinleri: release birleşik manifest denetimi var. `INTERNET` / `REQUEST_INSTALL_PACKAGES` yok.
 - 16 KB: 64-bit .so ELF kontrolü Play AAB ve APK iş akışlarında.
-- Play 512 × 512 icon: `play/simge/gallerypro-play-simge-512.png`
-- Feature graphic: `play/generated/GalleryPro-feature-1024x500.png` dosyası **Play Store Assets** iş akışında gerçek onaylı simgeden üretilir.
+- Play 512 × 512 simge: onaylı kaynak `play/simge/gallerypro-play-simge-512.png` (24-bit), Google Play'e yüklemek için **32-bit RGBA** çıktı `play/generated/GalleryPro-play-icon-512-RGBA.png` (piksel içeriği değişmeden yalnızca alpha kanalı eklenir).
+- Feature graphic: `play/generated/GalleryPro-feature-1024x500.png` dosyası **Play Store Assets** iş akışında onaylı simgeden **24-bit RGB** üretilir; Play Console'da iki dosya farklı alanlara yüklenir.
 - TR ve EN mağaza başlıkları/açıklamaları: `play/store-listing.md`
 - Fotoğraf/video izin beyanı taslağı: `play/PHOTO-VIDEO-IZIN-BEYANI.md`
 
