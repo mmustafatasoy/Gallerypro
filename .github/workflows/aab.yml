@@ -6,7 +6,7 @@ name: Play AAB
 
 on:
   push:
-    branches: ["asama-play-*"]
+    branches: [main, "asama-play-*"]
   workflow_dispatch:
     inputs:
       publish:
@@ -24,11 +24,14 @@ concurrency:
 
 jobs:
   bundle:
+    if: github.ref_name != 'main' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[PLAY-UPLOAD-1.0.0]'))
     name: Play paketi (AAB)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      PLAY_SIGNED_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true }}
+      PLAY_SIGNED_RELEASE: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish == true) || (github.event_name == 'push' && github.ref_name == 'main' && contains(github.event.head_commit.message, '[PLAY-UPLOAD-1.0.0]')) }}
+      # Bu tek Play hazırlık dalında eski yükleme anahtarını doğrula; herhangi bir yere yayımlama.
+      PLAY_SIGNED_QA: ${{ github.event_name == 'push' && github.ref_name == 'asama-play-100-son-kontrol' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,8 +65,8 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ "$PLAY_SIGNED_RELEASE" = "true" ]; then
-            if [ "$GITHUB_REF_NAME" != "main" ]; then
+          if [ "$PLAY_SIGNED_RELEASE" = "true" ] || [ "$PLAY_SIGNED_QA" = "true" ]; then
+            if [ "$PLAY_SIGNED_RELEASE" = "true" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
               echo "::error::İmzalı yükleme AAB'si yalnızca main dalından hazırlanır."
               exit 1
             fi
@@ -73,9 +76,14 @@ jobs:
                 exit 1
               fi
             done
+            umask 077
             printf '%s' "$RELEASE_KEYSTORE_B64" | base64 -d > app/release.jks
             test -s app/release.jks
-            echo "Gerçek yükleme anahtarı kontrol edildi."
+            keytool -list -keystore app/release.jks -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" > /dev/null
+            # Public certificate only: safe to upload to Play Console, no private key included.
+            keytool -exportcert -rfc -keystore app/release.jks -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" -file Gallerypro-upload-cert.pem > /dev/null
+            test -s Gallerypro-upload-cert.pem
+            echo "Mevcut gerçek yükleme anahtarı ve alias doğrulandı; yalnızca açık sertifika dışarı aktarıldı."
           else
             mkdir -p ~/.android
             base64 -d scripts/debug-keystore.b64 > ~/.android/debug.keystore
@@ -107,6 +115,11 @@ jobs:
           test "$(stat -c%s app/src/main/assets/face/face_recognition_sface_2021dec.onnx)" -gt 30000000
           curl -fL --retry 3 "$LICENSE_BASE/face_recognition_sface/LICENSE" -o app/src/main/assets/licenses/sface-apache-2.0.txt
           curl -fL --retry 3 "$LICENSE_BASE/face_detection_yunet/LICENSE" -o app/src/main/assets/licenses/yunet-mit.txt
+          printf '%s  %s\n' \
+            '8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4' 'app/src/main/assets/face/face_detection_yunet_2023mar.onnx' \
+            '0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79' 'app/src/main/assets/face/face_recognition_sface_2021dec.onnx' | sha256sum -c -
+          cp scripts/play/SFACE-MODEL-PROVENANCE.txt app/src/main/assets/licenses/face-model-provenance.txt
+          test -s app/src/main/assets/licenses/face-model-provenance.txt
           sha256sum app/src/main/assets/face/*.onnx
 
       - name: Yer adları (GeoNames)
@@ -125,6 +138,12 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon -PaabBuild=true testDebugUnitTest bundleRelease
 
+      - name: 16 KB yerel kütüphane uyumluluğu (AAB)
+        run: python3 scripts/play/check_native_16k.py app/build/outputs/bundle/release/app-release.aab
+
+      - name: Play AAB birleşik izin denetimi
+        run: python3 scripts/play/verify_play_manifest.py
+
       - name: AAB paketini ve tüm modelleri doğrula
         run: |
           set -euo pipefail
@@ -138,6 +157,7 @@ jobs:
                   'base/assets/face/face_recognition_sface_2021dec.onnx',
                   'base/assets/licenses/sface-apache-2.0.txt',
                   'base/assets/licenses/yunet-mit.txt',
+                  'base/assets/licenses/face-model-provenance.txt',
               ]
               for name in required:
                   assert name in names, f'AAB eksik: {name}'
@@ -150,8 +170,30 @@ jobs:
           jarsigner -verify Gallerypro.aab >/dev/null
           sha256sum Gallerypro.aab > Gallerypro.aab.sha256
 
+      - name: 0.9.9 yükleme sertifikasıyla karşılaştır
+        if: env.PLAY_SIGNED_RELEASE == 'true' || env.PLAY_SIGNED_QA == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/onceki-imza"
+          gh release download play-upload-v0.9.9-4 -p Gallerypro.aab -D "$RUNNER_TEMP/onceki-imza" --clobber
+          test -s "$RUNNER_TEMP/onceki-imza/Gallerypro.aab"
+          python3 scripts/play/verify_upload_certificate.py "$RUNNER_TEMP/onceki-imza/Gallerypro.aab" Gallerypro.aab
+
+      - name: İmzalı AAB doğrulama çıktısı (QA) — Play'e otomatik yüklenmez
+        if: env.PLAY_SIGNED_QA == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gallerypro-1.0.0-IMZALI-QA-PLAY-ONCESI
+          path: |
+            Gallerypro.aab
+            Gallerypro.aab.sha256
+            Gallerypro-upload-cert.pem
+          retention-days: 14
+
       - name: TEST AAB — sadece Actions içinde (Google Play'e YÜKLEMEYİN)
-        if: env.PLAY_SIGNED_RELEASE != 'true'
+        if: env.PLAY_SIGNED_RELEASE != 'true' && env.PLAY_SIGNED_QA != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Gallerypro-AAB-TEST-PLAYE-YUKLEMEYIN
@@ -168,6 +210,10 @@ jobs:
           set -euo pipefail
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
           TAG="play-upload-v$VERSION-$GITHUB_RUN_NUMBER"
-          gh release create "$TAG" Gallerypro.aab Gallerypro.aab.sha256 --target "$GITHUB_SHA" --prerelease \
+          gh release create "$TAG" Gallerypro.aab Gallerypro.aab.sha256 Gallerypro-upload-cert.pem --target "$GITHUB_SHA" --prerelease \
             --title "Play Console yükleme paketi $VERSION" \
             --notes "Yükleme anahtarıyla imzalandı. Play Console'a otomatik yüklenmedi. Ticari SFace model hakları, gizlilik, ekran görüntüleri ve izin beyanları yayın öncesinde kontrol edilmeli."
+
+      - name: Geçici özel anahtar dosyasını temizle
+        if: always()
+        run: rm -f app/release.jks

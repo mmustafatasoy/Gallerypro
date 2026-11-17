@@ -37,8 +37,23 @@
 - Asset packs: https://developer.android.com/guide/playcore/asset-delivery
 
 ## 13 Kasım 2026 — 1.0.0 yayın uyumluluğu
-- [ ] `1.0.0` için GitHub Actions APK testleri ve Play TEST AAB başarılı. APK ve AAB birleşik manifestlerinde `INTERNET` / `REQUEST_INSTALL_PACKAGES` olmadığı `bundletool` / merged manifest ile doğrulandı.
+- [x] `1.0.0` için GitHub Actions APK testleri ve Play AAB başarılı. APK ve AAB birleşik manifestlerinde `INTERNET` / `REQUEST_INSTALL_PACKAGES` olmadığı release merged manifest üzerinden doğrulandı (17.11.2026; imzalı QA iş akışı dahil).
 - [ ] Gizlilik politikası 1.0.0 içerik değişiklikleriyle güncellendi; HTTPS'te yayımlandı.
 - [ ] `1.0.0` gerçek upload-key AAB'si test ve yasal incelemeler sonrası üretildi. Önceki 0.9.9 Play paketi artık güncel değil.
 - [ ] Yeni `Uygulama Hakkında` ekranı, sürüm ve lisans alt ekranı gerçek Android cihazında test edildi.
 - [ ] Güncelleme API çağrısı, otomatik APK indirme/kurma veya GitHub yükseltme ekranı bulunmadığı doğrulandı.
+
+## 17 Kasım 2026 — gerçek durum (PR #31)
+
+- [x] Google Play Console geliştirici kimliği doğrulandı (17.11.2026 Google e-postası). **Üretim erişimi ve kapalı test şartı bundan ayrıdır.**
+- [x] 1.0.0 APK ve Play **imzalı QA AAB**, GitHub Actions üzerinde başarıyla oluşturuldu; 16 KB (64-bit), release merged manifest, model içerikleri doğrulandı: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44057117430
+- [x] Upload sertifika parmak izi eski 0.9.9 ile birebir eşleşti: `2bdfaeac96e36faf05141c320b8ebc64fd1e6c258436e44f34eec4311aa2c28a`.
+- [x] Mevcut 512 × 512 simgeye dokunulmadan Google Play 1024 × 500 tanıtım görseli üretildi; ilk iş akışı başarılı: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44058293205
+- [x] TR/EN mağaza metinleri, fotoğraf/video izin beyanı taslağı ve Play Console adım rehberi hazır.
+- [x] Ayarlar → Gizlilik bölümüne gerçek gizlilik politikasını **harici tarayıcıda** açan bağlantı eklendi; GalleryPro'ya `INTERNET` izni verilmedi. **Gerçek cihaz testi hâlâ bekliyor.**
+- [ ] Site gizlilik sayfası `https://atasoyyazilim.com/gallerypro-gizlilik.html` canlı olarak anonim HTTPS'te açılıyor; site PR #36 henüz birleştirilmedi.
+- [ ] Gerçek 1.0.0 telefon ekran görüntüleri, içeriğin Play Console'a yüklenmesi ve uygulama içi bağlantı testi.
+- [ ] SFace FP32 modelinin ticari ağırlık/eğitim verisi izni **netleştirildi**. OpenCV Zoo'da Apache-2.0 lisansı mevcut, ancak ilgili ticari köken soruları açık; kesin hukukî değerlendirme yapılmadı.
+- [ ] Gerçek cihazda video kırpma, yüz tanıma, albüm gizleme, EXIF, Motion Photo ve yüksek MP fotoğraf testleri tamamlandı.
+- [ ] Gerçek Play App Signing/Play Console sertifikası hesabın ilgili uygulamasında karşılaştırıldı; Data Safety, izin, içerik derecelendirme, hedef kitle ve hesap türüne göre kapalı test formları dolduruldu.
+- [ ] **Son main AAB:** bütün engeller kalkınca `workflow_dispatch publish=true` ile 1.0.0 üretim yükleme paketi oluşturuldu; QA artifact veya eski 0.9.9 AAB doğrudan üretim yayını için kullanılmaz.

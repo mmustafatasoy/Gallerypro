@@ -348,3 +348,42 @@ Her aşama sonunda: kaynak + yazı tipleri + gradle wrapper + `git bundle --all`
 - Kaynak: `scripts/generate-icon.py` (tek tanımdan SVG + VectorDrawable üretir; XML'leri elle değil bu betikle değiştirin: `python3 scripts/generate-icon.py <klasör>` sonra üç XML'i `res/drawable/`'a kopyalayın).
 - Google Play: `play/simge/gallerypro-play-simge-512.png` (512 × 512, tam kare, sRGB — Play köşeleri kendisi yuvarlar), ayrıca `gallerypro-simge-1024.png` ve katmanlı SVG.
 - Sürüm, paket kimliği, izinler ve imza değişmedi (`1.0.0` / versionCode 32). Simgenin gerçek cihazda (Samsung One UI, Tecno HiOS) görünümü kontrol edilmeli.
+
+## 17 Kasım 2026 — Google Play 1.0.0 son paket kontrolü (asama-play-100-son-kontrol)
+
+- Güncel `main`'den yeni çalışma dalı oluşturuldu. Sürüm ve uygulama kodu değiştirilmedi (`1.0.0` / `versionCode 32`).
+- `scripts/play/verify_play_manifest.py` eklendi: debug/kaynak manifest yerine **Gradle ile gerçekten üretilen release birleşik manifest** denetlenir. `INTERNET` veya `REQUEST_INSTALL_PACKAGES` görülürse hata verir, galeri için `READ_MEDIA_IMAGES` ve `READ_MEDIA_VIDEO` yoksa da derlemeyi durdurur; manifest üretilemediyse kontrol atlanmaz.
+- Hem `.github/workflows/apk.yml`, hem `.github/workflows/aab.yml` bu denetimi derlemeden sonra çalıştırır. TEST AAB hâlâ deneme anahtarıyla üretilir ve Play'e yüklenmez; gerçek yayın `publish=true` koşuluna dokunulmadı.
+- 16 KB bellek sayfası uyumluluğu: `scripts/play/check_native_16k.py` APK/AAB içindeki **64-bit** (`arm64-v8a`, `x86_64`) `.so` ELF LOAD hizalamalarını denetler; 16 KB altı varsa CI başarısız olur. APK iş akışında Android SDK `zipalign -c -P 16` paket hizalaması da doğrulanır. Bağımlılık yükseltilmedi; gerekirse sorunlu native SDK lisansı/sürümü ayrıca incelenecek.
+- `play/PHOTO-VIDEO-IZIN-BEYANI.md`: Google Play fotoğraf/video izinleri gerekçesi için Türkçe taslak hazırlandı.
+- **Derleme tamamlanmadan onay iddiası yok.** Dalın GitHub Actions APK ve Play AAB sonuçları, sürüm ve paketteki izinler kontrol edilecek. PR ana dala yalnızca CI başarılı olunca ve kullanıcı kararıyla birleştirilecek.
+- **Dışa bağımlı kalanlar:** SFace FP32 model ağırlığı ve eğitim verilerinin ticari dağıtım hakkı; gerçek upload anahtarlı yeni AAB (mevcut 0.9.9 AAB kullanılmaz); canlı HTTPS gizlilik bağlantısı ve Play Console formları, kullanıcı kimlik doğrulaması, gerçek Android cihazda video kırpma/yüz tanıma testleri, gerekirse kapalı test. Bu adımlar otomatik tamamlanmış sayılmaz.
+
+- İlk Play AAB denemesinde 8 tane **yalnızca 32-bit** kütüphane (`armeabi-v7a`, `x86`) 4 KB hizalı bulundu. Google Play 16 KB koşulu 64-bit cihazlar için olduğundan kontrol 64-bit ABI'lerle sınırlandı; 64-bit kütüphaneler ilk denemede uygun göründü. Düzeltmenin nihai CI sonucu ayrıca kontrol edilecek.
+
+## 17 Kasım 2026 — Gerçek Play upload key, mağaza dosyaları ve gizlilik bağlantısı
+
+- Önceki 0.9.9 **gerçek yükleme anahtarlı AAB** GitHub Release `play-upload-v0.9.9-4` üzerinde bulundu. 13.11.2026 Play AAB `publish=true` iş akışında dört GitHub imza Secret'ı başarıyla doğrulanmış. Yeni anahtar üretilmedi ve özel anahtar/şifreler kaynak koduna veya sohbet metnine alınmadı.
+- Bu dalda Play AAB `push` QA imzalama modu eklendi: yalnızca `asama-play-100-son-kontrol` dalında mevcut Secrets kullanılıyor, **GitHub Actions artifact** üretiliyor; üretim Release veya Play Console'a yükleme yapılmıyor. Normal Play hazırlık dalları test imzasını kullanmaya devam ediyor.
+- **Başarılı imzalı QA:** https://github.com/mmustafatasoy/Gallerypro/actions/runs/44057117430 (17.11.2026). Aynı dönemde APK: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44057117479. İmzalı 1.0.0 AAB'nin SHA-256 sertifika parmak izi **`2bdfaeac96e36faf05141c320b8ebc64fd1e6c258436e44f34eec4311aa2c28a`**, 0.9.9 ile **tam aynı**. 14 adet 64-bit .so 16 KB hizalama, birleşik izinler, modeller ve AAB imzası başarılı.
+- İmzalı QA iş akışı ayrıca yalnızca **açık sertifikayı** `Gallerypro-upload-cert.pem` olarak çıkaracak ve özel `release.jks` geçici dosyasını iş sonunda silecek şekilde genişletildi. Açık sertifika özel anahtarın yedeği değildir.
+- Google Play için `play/generate_store_assets.py` ve `Play Store Assets` Actions eklendi; 512×512 onaylı simgeyi kaynak alarak **1024×500, RGB, şeffaf olmayan** tanıtım görseli üretir. İlk başarılı grafik işi: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44058293205. Üretilen resim uygulama ekran görüntüsü değildir.
+- `play/PLAY-CONSOLE-ADIMLARI.md` ve `play/GERCEK-EKRAN-GORUNTULERI.md` eklendi; gerçek cihazdan en az iki görüntü gereklidir.
+- **Gizlilik politikası linki:** Ayarlar → Gizlilik bölümüne Türkçe/İngilizce metinli dış tarayıcı bağlantısı eklendi. Sabit URL: `https://atasoyyazilim.com/gallerypro-gizlilik.html`. Uygulamanın kendi `INTERNET` izni geri getirilmedi. Site dosyası ve kısıtlı FTPS yayını için site deposunda PR #36 açık; canlı HTTPS yayını henüz doğrulanmadı.
+- Google Play geliştirici kimlik doğrulaması 17.11.2026 Google Play Console e-postasıyla başarılı. Ancak Play Console form/yayın ve hesap türüne bağlı 12/14 kapalı test otomatik tamamlanmış değildir.
+- **Açık engeller:** SFace 2021dec FP32 ONNX ağırlığının ticari dağıtım ve eğitim verisi hakları; gerçek cihaz video kırpma/yüz indeksleme/Motion Photo/EXIF/gizli albüm testleri; canlı HTTPS gizlilik bağlantısı; gerçek ekran görüntüleri; Play Console formları ve gerekiyorsa kapalı test. Genel halka açık dağıtım bunlar çözülmeden yapılmaz.
+- Bu ek belgeler ve arayüz bağlantısı sonrası **yeniden APK/Play AAB CI** başarılı olmadan kullanıcıya son sürüm/kararlı yayın onayı verilmez; proje kuralı gereği PR #31'i kullanıcı birleştirir.
+
+## 17 Kasım 2026 — Play için kaynak lisansı ve ana dal AAB hazırlığı (son inceleme)
+- Google Play 2026 hedef API politikası doğrulandı; `targetSdk=36`, `compileSdk=37`, paket `com.atasoy.gallerypro`, sürüm `1.0.0 (32)` korunuyor.
+- Gizlilik URL'si `https://atasoyyazilim.com/gallerypro-gizlilik.html` anonim HTTPS üzerinden GitHub Actions testinde doğrulandı: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44066256630
+- Gerçek Android emülatöründe uygulama açılıp Kütüphane ve Koleksiyonlar ekranları alındı; emülatör test iş akışı yeşil: https://github.com/mmustafatasoy/Gallerypro/actions/runs/44064352135. Fiziksel cihazda kapsamlı medya testleri ayrıca gerekli.
+- OpenCV Zoo model ağırlıklarını derleme sırasında SHA-256 ile kesin doğrulama eklendi:
+  - YuNet `8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4`
+  - SFace FP32 `0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79`
+  - Lisansların yanı sıra `scripts/play/SFACE-MODEL-PROVENANCE.txt` pakete ekleniyor; Ayarlar > Uygulama Hakkında > Açık kaynak lisansları bölümünde OpenCV lisans ve kaynak bağlantıları gösteriliyor.
+- **SFace riski:** Apache-2.0 model dosyaları için OpenCV Zoo resmi README beyanı var; ancak tam ağırlıkların eğitim veri lisanslarının geçmişi ilgili issue #313'te belirsiz. Kaynak gösterme yeterli olduğu garanti edilemez; gerekli hukuki inceleme notu korunur.
+- `play/PLAY-FORMLARI-2026.md` Play Console için 2026 form ve izin açıklamalarını barındırıyor; bir formun doldurulduğu iddia edilmez.
+- `.github/workflows/aab.yml` ana dala yalnızca **[PLAY-UPLOAD-1.0.0]** içeren merge başlığıyla geçişte tek seferlik gerçek upload key AAB'yi ön sürüm GitHub Release'ine koyacak şekilde hazırlandı; normal main push'larda özel imzalı yayın üretmeyecek. Ayrıca manuel `workflow_dispatch publish=true` hâlâ var.
+- Mevcut upload anahtarı GitHub Secrets'ta; yeni anahtar yok, secret açıklanmıyor. Main final iş akışı yeşil olmadan 'yayına hazır' deme.
+- Play Console'da AAB yüklemek / içerik beyanları / üretim erişimi / olası 12 testçi-14 gün / gerçek telefon testleri kullanıcı hesabıyla yapılmalı. **AAB yayınlanması Google Play'e yükleme veya genel yayın değildir.**

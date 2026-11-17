@@ -1,0 +1,36 @@
+name: Play Store Assets
+
+on:
+  push:
+    branches: ['asama-play-*']
+    paths:
+      - 'play/generate_store_assets.py'
+      - 'play/simge/**'
+      - '.github/workflows/play-store-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  graphics:
+    name: Google Play tanıtım görseli
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Görsel aracı
+        run: python3 -m pip install --no-cache-dir Pillow==11.3.0
+      - name: Onaylı simge ve tanıtım görselini oluştur ve doğrula
+        run: python3 play/generate_store_assets.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GalleryPro-Play-Magaza-Gorselleri
+          path: |
+            play/generated/GalleryPro-feature-1024x500.png
+            play/generated/GalleryPro-play-icon-512-RGBA.png
+          if-no-files-found: error
+          retention-days: 30

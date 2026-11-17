@@ -1,5 +1,7 @@
 package com.atasoy.gallerypro.feature.permission
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -55,6 +58,8 @@ fun PermissionScreen(
     onRequest: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
+    val context = LocalContext.current
+    val privacyUrl = stringResource(R.string.settings_privacy_policy_url)
     val backdrop = rememberLayerBackdrop()
     val transition = rememberInfiniteTransition(label = "blobs")
     val t by transition.animateFloat(
@@ -140,6 +145,26 @@ fun PermissionScreen(
                 BasicText(
                     text = stringResource(if (showSettings) R.string.permission_settings else R.string.permission_allow),
                     style = GalleryType.Button.copy(color = Color.White, fontSize = GalleryType.Body.fontSize)
+                )
+            }
+            // İzin verilmeden önce de politika okunabilir: Google Play gizlilik erişimi.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .clickable(role = Role.Button) {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(privacyUrl)))
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                BasicText(
+                    text = stringResource(R.string.settings_privacy_policy),
+                    style = GalleryType.Body.copy(
+                        color = GalleryColors.Accent,
+                        textAlign = TextAlign.Center
+                    )
                 )
             }
         }
