@@ -125,6 +125,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon -PaabBuild=true testDebugUnitTest bundleRelease
 
+      - name: 16 KB yerel kütüphane uyumluluğu (AAB)
+        run: python3 scripts/play/check_native_16k.py app/build/outputs/bundle/release/app-release.aab
+
       - name: Play AAB birleşik izin denetimi
         run: python3 scripts/play/verify_play_manifest.py
 
