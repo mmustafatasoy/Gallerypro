@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 ICON = ROOT / 'play/simge/gallerypro-play-simge-512.png'
 OUTPUT = ROOT / 'play/generated/GalleryPro-feature-1024x500.png'
+PLAY_ICON = ROOT / 'play/generated/GalleryPro-play-icon-512-RGBA.png'
 WIDTH, HEIGHT = 1024, 500
 
 
@@ -47,6 +48,15 @@ def draw_feature():
     raw_icon = Image.open(ICON)
     if raw_icon.size != (512, 512):
         raise ValueError('Google Play simgesi 512x512 olmalı: ' + str(raw_icon.size))
+    # Play Console requires a 512x512 32-bit RGBA PNG. Preserve the approved
+    # artwork pixel-for-pixel by adding only a full-opacity alpha channel.
+    PLAY_ICON.parent.mkdir(parents=True, exist_ok=True)
+    raw_icon.convert('RGBA').save(PLAY_ICON, 'PNG', optimize=True)
+    with Image.open(PLAY_ICON) as verified_icon:
+        if verified_icon.size != (512, 512) or verified_icon.mode != 'RGBA':
+            raise ValueError('Google Play icon must be a 512x512 32-bit RGBA PNG')
+    if PLAY_ICON.stat().st_size >= 1024 * 1024:
+        raise ValueError('Google Play icon exceeds 1024KB')
     icon = raw_icon.convert('RGBA').resize((274, 274), Image.Resampling.LANCZOS)
 
     canvas = background()
@@ -94,6 +104,7 @@ def draw_feature():
     if OUTPUT.stat().st_size > 15 * 1024 * 1024:
         raise ValueError('Google Play tanıtım görseli 15 MB sınırını aşıyor.')
     print(f'PASS: {OUTPUT.relative_to(ROOT)}, {OUTPUT.stat().st_size} bayt')
+    print(f'PASS: {PLAY_ICON.relative_to(ROOT)}, {PLAY_ICON.stat().st_size} bayt (32-bit RGBA)')
 
 
 def ImageChops_multiply(first, second):
